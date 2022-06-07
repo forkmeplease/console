@@ -10,6 +10,8 @@ import App from './app/app'
 import { environment } from './environments/environment'
 import './styles.scss'
 import posthog from 'posthog-js'
+import { QueryClient, QueryClientProvider } from 'react-query'
+import { ReactQueryDevtools } from 'react-query/devtools'
 
 const OAUTH_CALLBACK = '/login/auth0-callback'
 
@@ -25,6 +27,9 @@ const onRedirectCallback = (appState: AppState | undefined) => {
   history.replace(appState?.returnTo || window.location.pathname)
 }
 
+// Create a client
+const queryClient = new QueryClient()
+
 ReactDOM.render(
   // <IntercomProvider appId={environment.intercom} autoBoot={process.env['NODE_ENV'] === 'production'
   <IntercomProvider appId={environment.intercom} autoBoot>
@@ -38,12 +43,16 @@ ReactDOM.render(
       cacheLocation={'localstorage'}
     >
       <Provider store={store}>
-        <BrowserRouter>
-          <ModalProvider>
-            <App />
-            <ToastBehavior />
-          </ModalProvider>
-        </BrowserRouter>
+        {/* Provide the client to your App */}
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <ModalProvider>
+              <App />
+              <ToastBehavior />
+            </ModalProvider>
+          </BrowserRouter>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </QueryClientProvider>
       </Provider>
     </Auth0Provider>
   </IntercomProvider>,
