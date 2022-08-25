@@ -22,7 +22,7 @@
     "@nrwl/linter": "14.5.8",
     "@nrwl/nx-cloud": "14.1.0",
     "@nrwl/storybook": "14.5.8",
-    "@nrwl/tao": "13.8.5",
+    "@nrwl/tao": "14.5.10",
     "@nrwl/workspace": "14.4.2",
     "@nrwl/react": "14.3.6",
     "@nrwl/web": "14.3.6",
