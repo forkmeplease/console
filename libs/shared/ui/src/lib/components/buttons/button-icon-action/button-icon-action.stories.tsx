@@ -1,6 +1,6 @@
-import { Meta, Story } from '@storybook/react'
-import { Icon } from '@qovery/shared/ui'
-import { ButtonIconAction, ButtonIconActionProps } from './button-icon-action'
+import { type Meta, type Story } from '@storybook/react'
+import Icon from '../../icon/icon'
+import { ButtonIconAction, type ButtonIconActionProps } from './button-icon-action'
 
 export default {
   component: ButtonIconAction,
@@ -13,6 +13,7 @@ export const Primary = Template.bind({})
 Primary.args = {
   actions: [
     {
+      triggerTooltip: 'More actions',
       iconLeft: <Icon name="icon-solid-ellipsis-v" />,
       menus: [
         {

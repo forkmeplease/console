@@ -1,26 +1,28 @@
-import React from 'react'
+import { type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 export interface TabsItem {
-  name: string | React.ReactNode
+  name: string | ReactNode
   link?: string
   onClick?: () => void
   active?: boolean
   external?: boolean
-  icon?: React.ReactNode
+  icon?: ReactNode
 }
 
 export interface TabsProps {
   items: TabsItem[]
-  contentRight?: React.ReactNode
+  contentRight?: ReactNode
   className?: string
   classNameBtn?: string
-  isDark?: boolean
   fullWidth?: boolean
 }
 
+/**
+ * @deprecated This should be migrated to the tabs-primitives component
+ */
 export function Tabs(props: TabsProps) {
-  const { items = [], contentRight, className = 'bg-white pl-4', classNameBtn = '', isDark, fullWidth } = props
+  const { items = [], contentRight, className = 'bg-white pl-4', classNameBtn = '', fullWidth } = props
 
   function content(item: TabsItem) {
     return typeof item.name === 'string' ? (
@@ -33,15 +35,13 @@ export function Tabs(props: TabsProps) {
     )
   }
 
-  const btnClassName = `h-14 border-b-2 px-4 flex gap-3 items-center group transition ease-in-out duration-200 ${classNameBtn} ${
-    isDark ? 'hover:border-text-100 hover:text-text-100' : 'hover:border-brand-500 hover:text-brand-500'
-  }`
+  const btnClassName = `h-14 border-b-2 px-4 flex gap-3 items-center group transition ease-in-out duration-200 ${classNameBtn} dark:hover:border-neutral-50 dark:hover:text-neutral-50 hover:border-brand-500 hover:text-brand-500`
 
   const btnClassNameActive = (item: TabsItem) =>
     `${
       item?.active
-        ? `${isDark ? 'text-brand-50 border-brand-50' : 'text-brand-500 border-brand-500'}`
-        : `${isDark ? 'text-text-500 border-text-500' : 'text-text-400 border-element-light-lighter-500'}`
+        ? `dark:text-brand-50 dark:border-brand-50 text-brand-500 border-brand-500`
+        : `dark:text-neutral-400 dark:border-neutral-400 text-neutral-350 border-neutral-250`
     }`
 
   const contentTab = (item: TabsItem, index: number) => {
@@ -50,7 +50,7 @@ export function Tabs(props: TabsProps) {
         <span
           key={index}
           onClick={item.onClick}
-          className={`cursor-pointer flex ${btnClassName} ${btnClassNameActive(item)}`}
+          className={`flex cursor-pointer ${btnClassName} ${btnClassNameActive(item)}`}
         >
           {content(item)}
         </span>
@@ -77,8 +77,8 @@ export function Tabs(props: TabsProps) {
   }
 
   return (
-    <div className={`w-full h-14 flex shrink-0 justify-between items-center rounded-b ${className}`}>
-      <div className={`flex gap-1 h-14 ${fullWidth ? 'flex-grow' : ''}`}>
+    <div className={`flex h-14 w-full shrink-0 items-center justify-between rounded-b ${className}`}>
+      <div className={`flex h-14 gap-1 ${fullWidth ? 'flex-grow' : ''}`}>
         {items.map((item: TabsItem, index: number) => contentTab(item, index))}
       </div>
       {contentRight && <div className="flex items-center">{contentRight}</div>}

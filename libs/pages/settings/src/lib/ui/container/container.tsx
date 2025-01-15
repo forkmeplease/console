@@ -1,34 +1,44 @@
-import { ReactNode } from 'react'
-import { NavigationLeft, NavigationLeftLinkProps } from '@qovery/shared/ui'
+import { type ReactNode } from 'react'
+import { useParams } from 'react-router-dom'
+import { CreateProjectModal } from '@qovery/domains/projects/feature'
+import { ErrorBoundary, NavigationLeft, type NavigationLeftLinkProps, useModal } from '@qovery/shared/ui'
 
 export interface ContainerProps {
   organizationLinks: NavigationLeftLinkProps[]
   projectLinks: NavigationLeftLinkProps[]
-  accountLinks: NavigationLeftLinkProps[]
   children: ReactNode
 }
 
 export function Container(props: ContainerProps) {
-  const { organizationLinks, projectLinks, accountLinks, children } = props
+  const { organizationId = '' } = useParams()
+  const { organizationLinks, projectLinks, children } = props
+  const { openModal, closeModal } = useModal()
 
   return (
-    <div className="bg-white flex rounded">
-      <div className="w-72 border-r border-element-light-lighter-400 relative shrink-0 min-h-[calc(100vh-10px)] pb-10">
-        <div className="sticky top-7">
-          <NavigationLeft title="Organization" links={organizationLinks} className="py-6" />
-          <NavigationLeft
-            title="Projects"
-            links={projectLinks}
-            className="py-6 border-t border-element-light-lighter-400"
-          />
-          <NavigationLeft
-            title="Account"
-            links={accountLinks}
-            className="py-6 border-t border-element-light-lighter-400"
-          />
+    <div className="flex flex-1 rounded-t bg-white">
+      <ErrorBoundary>
+        <div className="relative w-72 shrink-0 border-r border-neutral-200 pb-10">
+          <div className="sticky top-12">
+            <NavigationLeft title="Organization" links={organizationLinks} className="py-6" />
+            <NavigationLeft
+              title="Projects"
+              links={projectLinks}
+              link={{
+                title: 'New',
+                onClick: () => {
+                  openModal({
+                    content: <CreateProjectModal onClose={closeModal} organizationId={organizationId} />,
+                  })
+                },
+              }}
+              className="border-t border-neutral-200 py-6"
+            />
+          </div>
         </div>
-      </div>
-      <div className="flex flex-grow min-h-[calc(100vh-10px)]">{children}</div>
+        <div className="flex grow">
+          <ErrorBoundary>{children}</ErrorBoundary>
+        </div>
+      </ErrorBoundary>
     </div>
   )
 }

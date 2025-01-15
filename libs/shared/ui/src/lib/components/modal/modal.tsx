@@ -1,16 +1,31 @@
 import * as Dialog from '@radix-ui/react-dialog'
-import { ReactElement, ReactNode, cloneElement, useState } from 'react'
+import { type ReactElement, type ReactNode, cloneElement, useContext, useEffect, useState } from 'react'
 import { Icon } from '../icon/icon'
+import useModalAlert from '../modal-alert/use-modal-alert/use-modal-alert'
+import { ModalContext } from './modal-root'
 
 export interface ModalProps {
   children: ReactElement
   trigger?: ReactNode
   defaultOpen?: boolean
   buttonClose?: boolean
-  width?: number
+  width?: number | string
+  fullScreen?: boolean
   className?: string
   externalOpen?: boolean
   setExternalOpen?: (e: boolean) => void
+  /**
+   * This is a workaround to avoid radix dialog restriction.
+   * Radix use [react-remove-scroll](https://www.npmjs.com/package/react-remove-scroll) to prevent wheel / scroll event directly on `<html>` node
+   * in some cases like with Select inside Modal, it causes issues.
+   * https://qovery.atlassian.net/browse/FRT-868
+   * https://qovery.atlassian.net/browse/FRT-1134
+   *
+   * It worth noting that scroll lock is also important for accessibility reasons
+   * This `fakeModal` mode is visually identical than the `modal` mode without the drawback of locking the scroll.
+   * https://github.com/radix-ui/primitives/blob/b32a93318cdfce383c2eec095710d35ffbd33a1c/packages/react/dialog/src/Dialog.tsx#L204
+   */
+  fakeModal?: boolean
 }
 
 export interface ModalContentProps {
@@ -22,34 +37,108 @@ export const Modal = (props: ModalProps) => {
     children,
     trigger,
     width = '474',
+    fullScreen = false,
     className = '',
     defaultOpen = false,
     buttonClose = true,
     externalOpen = false,
     setExternalOpen,
+    fakeModal = false,
   } = props
 
   const [open, setOpen] = useState(defaultOpen)
+  const { setModalAlertOpen } = useModalAlert()
+
+  const { setAlertModalChoice, enableAlertClickOutside, alertClickOutside, alertModalChoice } = useContext(ModalContext)
+
+  useEffect(() => {
+    if (!open)
+      // when the modal just open nothing should be dirty in the modal
+      enableAlertClickOutside && enableAlertClickOutside(false)
+  }, [open, enableAlertClickOutside])
+
+  useEffect(() => {
+    if (alertModalChoice) {
+      setOpen(false)
+      setAlertModalChoice && setAlertModalChoice(undefined)
+    }
+  }, [alertModalChoice, setOpen, setAlertModalChoice])
+
+  useEffect(() => {
+    if (alertClickOutside && setAlertModalChoice && alertModalChoice) {
+      setExternalOpen ? setExternalOpen(false) : setOpen(false)
+      setModalAlertOpen(false)
+      setAlertModalChoice(undefined)
+      enableAlertClickOutside && enableAlertClickOutside(false)
+    }
+  }, [
+    setModalAlertOpen,
+    enableAlertClickOutside,
+    setExternalOpen,
+    alertModalChoice,
+    alertClickOutside,
+    setAlertModalChoice,
+  ])
 
   return (
     <Dialog.Root
       open={externalOpen ? externalOpen : open}
-      onOpenChange={setExternalOpen ? () => setExternalOpen(!externalOpen) : () => setOpen(!open)}
+      onOpenChange={
+        setExternalOpen
+          ? () => {
+              setExternalOpen(!externalOpen)
+            }
+          : () => {
+              setOpen(!open)
+            }
+      }
+      modal={!fakeModal}
     >
       {trigger && <div onClick={() => setOpen(!open)}>{trigger}</div>}
       <Dialog.Portal>
-        <Dialog.Overlay className="modal__overlay flex fixed top-0 left-0 bg-element-light-darker-500/20 w-full h-screen z-30" />
+        <Dialog.Overlay
+          data-testid="overlay"
+          onClick={(event) => {
+            if (alertClickOutside) {
+              event.preventDefault()
+              setModalAlertOpen(true)
+            } else {
+              setExternalOpen ? setExternalOpen(false) : setOpen(false)
+            }
+          }}
+          className="modal__overlay fixed left-0 top-0 flex h-screen w-full bg-neutral-700/20"
+        />
+        {fakeModal && (
+          <div
+            className="modal__overlay fixed left-0 top-0 flex h-screen w-full bg-neutral-700/20"
+            onClick={(event) => {
+              if (alertClickOutside) {
+                event.preventDefault()
+                setModalAlertOpen(true)
+              } else {
+                setExternalOpen ? setExternalOpen(false) : setOpen(false)
+              }
+            }}
+          />
+        )}
         <Dialog.Content
-          style={{ width: `${width}px` }}
-          className={`modal__content fixed top-[84px] left-1/2 bg-white rounded-md shadow-[0_0_32px_rgba(0,0,0,0.08)] z-40 ${className}`}
+          onPointerDownOutside={(event) => {
+            event.preventDefault()
+          }}
+          style={
+            fullScreen
+              ? { width: 'calc(100vw - 48px)', height: 'calc(100vh  - 48px)', top: 24 }
+              : { width: `${width}px` }
+          }
+          className={`modal__content fixed left-1/2 top-[84px] rounded-md bg-white shadow-[0_0_32px_rgba(0,0,0,0.08)] dark:bg-neutral-550 ${className}`}
         >
-          <div className="max-h-[80vh] overflow-auto">
+          <div className={`overflow-auto ${fullScreen ? '' : 'max-h-[80vh]'}`}>
             {cloneElement(children, {
               setOpen: setExternalOpen ? setExternalOpen : setOpen,
             })}
             {buttonClose && (
-              <Dialog.Close className="absolute top-4 right-4">
-                <span className="flex w-7 h-7 items-center justify-center bg-element-light-lighter-400 text-text-400 hover:text-text-500 hover:bg-element-light-lighter-500 ease-out duration-300 rounded-full">
+              <Dialog.Close className="absolute right-4 top-4">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-neutral-200 text-neutral-350 duration-300 ease-out hover:bg-neutral-250 hover:text-neutral-400">
                   <Icon name="icon-solid-xmark" />
                 </span>
               </Dialog.Close>

@@ -1,41 +1,40 @@
-import { StateEnum } from 'qovery-typescript-axios'
-import { useState } from 'react'
-import { Menu, MenuAlign, StatusMenuActions, StatusMenuInformation } from '@qovery/shared/ui'
-import { MenuItemProps } from '../../../menu/menu-item/menu-item'
-import StatusMenuAction from '../../../status-menu-action/status-menu-action'
+import { type ReactNode } from 'react'
+import Button from '../../../button/button'
+import { Menu, MenuAlign, type MenuData } from '../../../menu/menu'
+import Tooltip from '../../../tooltip/tooltip'
 
 export interface ButtonIconActionElementProps {
-  iconLeft?: React.ReactNode
-  iconRight?: React.ReactNode
+  triggerTooltip?: string
+  iconLeft?: ReactNode
+  iconRight?: ReactNode
   onClick?: () => void
-  menus?: {
-    items: MenuItemProps[]
-  }[]
+  menus?: MenuData
   menusClassName?: string
   menuAlign?: MenuAlign
-  statusActions?: {
-    status: StateEnum | undefined
-    actions: StatusMenuActions[]
-    information?: StatusMenuInformation
-  }
-  statusInformation?: StatusMenuInformation
-  triggerClassName?: string
 }
 
 export function ButtonIconActionElement(props: ButtonIconActionElementProps) {
   const {
+    triggerTooltip,
     iconLeft,
     iconRight,
     onClick,
     menus,
     menusClassName = '',
-    triggerClassName = '',
-    statusActions,
-    statusInformation,
     menuAlign = MenuAlign.START,
   } = props
 
-  const [open, setOpen] = useState(false)
+  const tooltipWrapper = (content: ReactNode, withRightBorder = false) => {
+    if (triggerTooltip) {
+      return (
+        <Tooltip content={triggerTooltip} delayDuration={100}>
+          <span className={`flex ${withRightBorder ? 'border-r border-r-neutral-250' : ''}`}>{content}</span>
+        </Tooltip>
+      )
+    } else {
+      return content
+    }
+  }
 
   if (menus) {
     return (
@@ -44,45 +43,26 @@ export function ButtonIconActionElement(props: ButtonIconActionElementProps) {
         menus={menus}
         arrowAlign={menuAlign}
         width={248}
-        onOpen={(isOpen) => setOpen(isOpen)}
         trigger={
-          <div
-            data-testid="element"
-            className={`btn-icon-action__element ${triggerClassName} ${open ? 'is-active' : ''}`}
-          >
+          <Button data-testid="element" variant="outline" size="md" className="w-9 justify-center">
             {iconLeft}
             {iconRight}
-          </div>
+          </Button>
         }
-      />
-    )
-  } else if (statusActions && statusActions.status) {
-    return (
-      <StatusMenuAction
-        className={menusClassName}
-        width={248}
-        statusActions={{
-          status: statusActions.status,
-          actions: statusActions.actions,
-          information: statusInformation,
-        }}
-        setOpen={(isOpen) => setOpen(isOpen)}
-        paddingMenuX={8}
-        paddingMenuY={8}
-        trigger={
-          <div data-testid="element" className={`btn-icon-action__element ${open ? 'is-active' : ''}`}>
-            {iconLeft}
-            {iconRight}
-          </div>
-        }
+        triggerTooltip={triggerTooltip}
       />
     )
   } else {
     return (
-      <div data-testid="element" className="btn-icon-action__element" onClick={onClick}>
-        {iconLeft}
-        {iconRight}
-      </div>
+      <>
+        {tooltipWrapper(
+          <div data-testid="element" className="btn-icon-action__element" onClick={onClick}>
+            {iconLeft}
+            {iconRight}
+          </div>,
+          true
+        )}
+      </>
     )
   }
 }

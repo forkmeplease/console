@@ -1,65 +1,90 @@
-import { useEffect, useState } from 'react'
-import { FieldValues, FormProvider, useForm } from 'react-hook-form'
-import { useDispatch, useSelector } from 'react-redux'
+import { DatabaseModeEnum, KubernetesEnum } from 'qovery-typescript-axios'
+import { FormProvider, useForm } from 'react-hook-form'
 import { useParams } from 'react-router-dom'
-import { editDatabase, selectDatabaseById } from '@qovery/domains/database'
-import { DatabaseEntity } from '@qovery/shared/interfaces'
-import { AppDispatch, RootState } from '@qovery/store'
+import { useCluster } from '@qovery/domains/clusters/feature'
+import { useEnvironment, useListDatabaseConfigurations } from '@qovery/domains/environments/feature'
+import { useAnnotationsGroups, useLabelsGroups } from '@qovery/domains/organizations/feature'
+import { useDeploymentStatus, useEditService, useService } from '@qovery/domains/services/feature'
+import { DEPLOYMENT_LOGS_VERSION_URL, ENVIRONMENT_LOGS_URL } from '@qovery/shared/routes'
+import { buildEditServicePayload } from '@qovery/shared/util-services'
 import PageSettingsGeneral from '../../ui/page-settings-general/page-settings-general'
 
-export const handleSubmit = (data: FieldValues, database: DatabaseEntity) => {
-  const cloneDatabase = Object.assign({}, database as DatabaseEntity)
-  cloneDatabase.name = data['name']
-  cloneDatabase.accessibility = data['accessibility']
-
-  return cloneDatabase
-}
-
 export function PageSettingsGeneralFeature() {
-  const { databaseId = '' } = useParams()
-  const dispatch = useDispatch<AppDispatch>()
-  const database = useSelector<RootState, DatabaseEntity | undefined>((state) => selectDatabaseById(state, databaseId))
+  const { organizationId = '', environmentId = '', databaseId = '' } = useParams()
 
-  const [loading, setLoading] = useState(false)
+  const { data: environment } = useEnvironment({ environmentId })
+  const { data: cluster } = useCluster({ organizationId, clusterId: environment?.cluster_id ?? '' })
+
+  const { data: deploymentStatus } = useDeploymentStatus({ environmentId, serviceId: databaseId })
+  const { data: database } = useService({ serviceId: databaseId, serviceType: 'DATABASE' })
+  const { mutate: editService, isLoading: isLoadingService } = useEditService({
+    environmentId,
+    logsLink:
+      ENVIRONMENT_LOGS_URL(environment?.organization.id, environment?.project.id, environment?.id) +
+      DEPLOYMENT_LOGS_VERSION_URL(database?.id, deploymentStatus?.execution_id),
+  })
+  const { data: databaseConfigurations, isLoading } = useListDatabaseConfigurations({ environmentId })
+
+  const { data: labelsGroups = [] } = useLabelsGroups({ organizationId })
+  const { data: annotationsGroups = [] } = useAnnotationsGroups({ organizationId })
+
+  const databaseVersionOptions = databaseConfigurations
+    ?.find((c) => c.database_type === database?.type)
+    ?.version?.filter((v) => v.supported_mode === database?.mode)
+    .map((v) => ({
+      label: v.name || '',
+      value: v.name || '',
+    }))
+
+  const publicOptionNotAvailable =
+    cluster?.kubernetes === KubernetesEnum.K3_S && database?.mode === DatabaseModeEnum.CONTAINER
 
   const methods = useForm({
     mode: 'onChange',
     reValidateMode: 'onChange',
-  })
-
-  const onSubmit = methods.handleSubmit((data) => {
-    if (data && database) {
-      setLoading(true)
-      const cloneDatabase = handleSubmit(data, database)
-
-      dispatch(
-        editDatabase({
-          databaseId: databaseId,
-          data: cloneDatabase,
-        })
-      )
-        .unwrap()
-        .then(() => setLoading(false))
-        .catch((e) => {
-          setLoading(false)
-          console.error(e)
-        })
-    }
-  })
-
-  useEffect(() => {
-    methods.reset({
+    defaultValues: {
       name: database?.name,
+      description: database?.description,
+      icon_uri: database?.icon_uri,
       type: database?.type,
       mode: database?.mode,
       version: database?.version,
       accessibility: database?.accessibility,
-    })
-  }, [methods, database?.name, database?.type, database?.mode, database?.version, database?.accessibility])
+      annotations_groups: database?.annotations_groups?.map((group) => group.id),
+      labels_groups: database?.labels_groups?.map((group) => group.id),
+    },
+  })
+
+  const onSubmit = methods.handleSubmit((data) => {
+    if (data && database) {
+      const { annotations_groups, labels_groups, ...dataWithoutAnnotationsLabelsGroups } = data
+
+      editService({
+        serviceId: databaseId,
+        payload: buildEditServicePayload({
+          service: database,
+          request: {
+            ...dataWithoutAnnotationsLabelsGroups,
+            labels_groups: labelsGroups.filter((group) => data.labels_groups?.includes(group.id)),
+            annotations_groups: annotationsGroups.filter((group) => data.annotations_groups?.includes(group.id)),
+          },
+        }),
+      })
+    }
+  })
 
   return (
     <FormProvider {...methods}>
-      <PageSettingsGeneral onSubmit={onSubmit} loading={loading} />
+      {database && (
+        <PageSettingsGeneral
+          onSubmit={onSubmit}
+          loading={isLoadingService}
+          publicOptionNotAvailable={publicOptionNotAvailable}
+          databaseVersionLoading={isLoading}
+          databaseVersionOptions={databaseVersionOptions}
+          database={database}
+        />
+      )}
     </FormProvider>
   )
 }

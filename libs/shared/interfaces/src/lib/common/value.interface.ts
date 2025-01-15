@@ -1,7 +1,10 @@
-import { ReactNode } from 'react'
+import { type ReactNode } from 'react'
 
 export interface Value {
-  label: string
+  label: ReactNode
   value: string
   icon?: ReactNode
+  isDisabled?: boolean
+  onClickEditable?: () => void
+  description?: string
 }

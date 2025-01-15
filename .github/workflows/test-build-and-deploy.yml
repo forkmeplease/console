@@ -1,4 +1,4 @@
-name: Test, Build And Deploy to Qovery
+name: Test, Build And Deploy to S3
 
 on:
   workflow_call:
@@ -6,10 +6,12 @@ on:
       flow:
         required: true
         type: string
-      branch:
+      configuration:
         required: true
         type: string
-      configuration:
+
+      # Qovery params
+      branch:
         required: true
         type: string
       project-name:
@@ -25,6 +27,24 @@ on:
         required: true
         type: string
     secrets:
+      aws-region:
+        required: false
+      aws-access-key-id:
+        required: false
+      aws-secret-access-key:
+        required: false
+      s3-bucket-name:
+        required: false
+      cloudflare-zone:
+        required: false
+      cloudflare-token:
+        required: false
+      nx-cloud-access-token:
+        required: true
+      codecov-token:
+        required: true
+
+      # Qovery secrets
       organization-id:
         required: true
       api-token:
@@ -33,39 +53,121 @@ on:
 # Define a concurrency group at the branch level for the current workflows..
 # Trigerred workflow will be queued and cancel the previous ones.
 concurrency:
-  group: pr-${{ github.ref }}
+  group: ${{ github.workflow }}-s3-${{ github.event.number || github.ref }}
   cancel-in-progress: true
 
-env:
-  NX_BRANCH: ${{ github.head_ref }}
-  NX_CLOUD_DISTRIBUTED_EXECUTION: true
-
 jobs:
+  # NOTE: Create a "variables" ouput which expose github repository variables as .env string
+  # for NX Cloud main reusable workflow.
+  #
+  # https://github.com/nrwl/ci?tab=readme-ov-file#limited-secrets-support
+  # https://docs.github.com/en/enterprise-cloud@latest/actions/learn-github-actions/variables#defining-configuration-variables-for-multiple-workflows
+  env-vars:
+    runs-on: ubuntu-latest
+    outputs:
+      variables: ${{ steps.var.outputs.variables }}
+    steps:
+      - name: Setting global variables
+        uses: actions/github-script@v7
+        id: var
+        with:
+          script: |
+            const varsFromJSON = ${{ toJSON(vars) }}
+            const variables = []
+            for (const v in varsFromJSON) {
+              variables.push(v + '=' + varsFromJSON[v])
+            }
+            core.setOutput('variables', variables.join('\n'))
+
   nx-main:
+    needs: [env-vars]
     name: Nx Cloud - Main Job
-    uses: ./.github/workflows/nx-cloud-main.yml
+    uses: nrwl/ci/.github/workflows/nx-cloud-main.yml@v0.13.0
+    secrets:
+      NX_CLOUD_ACCESS_TOKEN: ${{ secrets.nx-cloud-access-token }}
     with:
-      number-of-agents: 3
+      environment-variables: |
+        ${{ needs.env-vars.outputs.variables }}
+        NX_PUBLIC_GIT_SHA=${{ inputs.application-commit-id }}
+      # NOTE: Here we are using the special `nx-cloud record` command to ensure that any commands we run that do not go through the cloud task runner natively
+      # (i.e. anything that starts with `nx run`/`nx run-many`/`nx affected --target`), are still captured in the Nx Cloud UI and Github App comment for
+      # easier troubleshooting. See more here: https://nx.dev/nx-cloud/set-up/record-commands#recording-non-nx-commands
+      parallel-commands: |
+        npx nx-cloud record -- npx nx format:check
       parallel-commands-on-agents: |
-        npx nx affected --target=test --parallel=3 --configuration=${{ inputs.configuration }} --ci --code-coverage --coverageReporters=lcov
-        npx nx affected --target=build --parallel=3 --configuration=${{ inputs.configuration }}
+        npx nx affected --target=lint --parallel=3
+        npx nx affected --target=test --parallel=3 --configuration=${{ inputs.configuration }} --ci --coverage --coverageReporters=lcov --silent
+        npx nx affected --target=build --parallel=3
+      artifacts-path: |
+        dist/
+        coverage/
+        !coverage/**/*.js
+        !coverage/**/*.css
+        !coverage/**/*.html
+        !coverage/**/*.png
+      artifacts-name: dist-and-coverage-artifacts
 
   agents:
+    needs: [env-vars]
     name: Nx Cloud - Agents
-    uses: nrwl/ci/.github/workflows/nx-cloud-agents.yml@v0.8
+    uses: nrwl/ci/.github/workflows/nx-cloud-agents.yml@v0.13.0
+    secrets:
+      NX_CLOUD_ACCESS_TOKEN: ${{ secrets.nx-cloud-access-token }}
     with:
       number-of-agents: 3
+      environment-variables: |
+        ${{ needs.env-vars.outputs.variables }}
+        NX_PUBLIC_GIT_SHA=${{ inputs.application-commit-id }}
+
+  codecoverage:
+    runs-on: ubuntu-latest
+    name: Code Coverage
+    needs: ['nx-main']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v3
+        with:
+          name: dist-and-coverage-artifacts
+          path: coverage
+      - name: Display structure of downloaded files
+        run: ls -R
+      - uses: codecov/codecov-action@v4
+        with:
+          directory: ./coverage/coverage
+          flags: unittests # optional
+          fail_ci_if_error: false # optional (default = false)
+          token: ${{ secrets.codecov-token }}
+          verbose: true # optional (default = false)
 
   deploy:
+    name: Deploy to S3
+    runs-on: ubuntu-latest
+    needs: [nx-main]
+    if: ${{ inputs.flow != 'pull-request' }}
+    steps:
+      - name: Git clone the repository
+        uses: actions/checkout@v4
+      - uses: actions/download-artifact@v3
+        with:
+          name: dist-and-coverage-artifacts
+          path: dist/
+      - name: Copy assets to S3
+        run: |
+          AWS_REGION=${{ secrets.aws-region }} AWS_ACCESS_KEY_ID=${{ secrets.aws-access-key-id }} AWS_SECRET_ACCESS_KEY=${{ secrets.aws-secret-access-key }} aws s3 cp ./dist/dist/apps/console/ s3://${{ secrets.s3-bucket-name }}/  --recursive --exclude "index.html"
+      - name: Copy index.html to S3 last
+        run: |
+          AWS_REGION=${{ secrets.aws-region }} AWS_ACCESS_KEY_ID=${{ secrets.aws-access-key-id }} AWS_SECRET_ACCESS_KEY=${{ secrets.aws-secret-access-key }} aws s3 cp ./dist/dist/apps/console/index.html s3://${{ secrets.s3-bucket-name }}/
+
+  deploy-qovery:
     name: Deploy to Qovery
     runs-on: ubuntu-latest
     needs: [nx-main]
     if: ${{ inputs.flow != 'pull-request' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Deploy on Qovery
-        uses: Qovery/qovery-action@v0.12.5
+        uses: Qovery/qovery-action@v0.14.7
         id: qovery
         with:
           qovery-organization-id: ${{ secrets.organization-id }}

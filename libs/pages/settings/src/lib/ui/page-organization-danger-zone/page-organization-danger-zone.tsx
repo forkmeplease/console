@@ -1,18 +1,17 @@
-import { EnvironmentModeEnum } from 'qovery-typescript-axios'
-import { OrganizationEntity } from '@qovery/shared/interfaces'
-import { BlockContentDelete, HelpSection, IconAwesomeEnum } from '@qovery/shared/ui'
+import { EnvironmentModeEnum, type Organization } from 'qovery-typescript-axios'
+import { BlockContentDelete, IconAwesomeEnum } from '@qovery/shared/ui'
 
 export interface PageOrganizationDangerZoneProps {
   deleteOrganization: () => void
   loading: boolean
-  organization?: OrganizationEntity
+  organization?: Organization
 }
 
 export function PageOrganizationDangerZone(props: PageOrganizationDangerZoneProps) {
   const { deleteOrganization, organization, loading } = props
   return (
-    <div className="flex flex-col justify-between w-full">
-      <div className="p-8 max-w-content-with-navigation-left">
+    <div className="flex w-full flex-col justify-between">
+      <div className="max-w-content-with-navigation-left p-8">
         <BlockContentDelete
           title="Delete organization"
           ctaLabel="Delete organization"
@@ -39,21 +38,10 @@ export function PageOrganizationDangerZone(props: PageOrganizationDangerZoneProp
           modalConfirmation={{
             mode: EnvironmentModeEnum.PRODUCTION,
             title: 'Delete organization',
-            description: 'To confirm the deletion of your organization, please type the name of the organization:',
             name: organization?.name,
           }}
         />
       </div>
-      <HelpSection
-        description="Need help? You may find these links useful"
-        links={[
-          {
-            link: 'https://hub.qovery.com/docs/using-qovery/configuration/organization/#delete-an-organization',
-            linkLabel: 'How to delete my organization',
-            external: true,
-          },
-        ]}
-      />
     </div>
   )
 }

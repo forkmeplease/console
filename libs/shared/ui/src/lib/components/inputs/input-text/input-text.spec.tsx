@@ -1,6 +1,5 @@
-import { fireEvent, screen } from '@testing-library/react'
-import { render } from '__tests__/utils/setup-jest'
-import InputText, { InputTextProps } from './input-text'
+import { fireEvent, render, screen } from '__tests__/utils/setup-jest'
+import InputText, { type InputTextProps } from './input-text'
 
 describe('InputText', () => {
   let props: InputTextProps
@@ -24,7 +23,7 @@ describe('InputText', () => {
 
     let inputContainer = screen.getByLabelText('input-container')
 
-    expect(inputContainer.className).toContain('input--error')
+    expect(inputContainer).toHaveClass('input--error')
 
     props.error = ''
 
@@ -35,7 +34,7 @@ describe('InputText', () => {
 
     fireEvent.change(input, { target: { value: 'some new text value' } })
 
-    expect(inputContainer.className).not.toContain('input--error')
+    expect(inputContainer).not.toHaveClass('input--error')
   })
 
   it('should set the text value when the input event is emitted', async () => {
@@ -45,7 +44,7 @@ describe('InputText', () => {
 
     fireEvent.input(input, { target: { value: 'some new text value' } })
 
-    expect((input as HTMLInputElement).value).toBe('some new text value')
+    expect(input as HTMLInputElement).toHaveValue('some new text value')
   })
 
   it('should display a floating component on the right', async () => {
@@ -56,5 +55,8 @@ describe('InputText', () => {
 
     const wrapper = screen.getByTestId('right-floating-component')
     expect(wrapper).toHaveClass('absolute top-1/2 -translate-y-1/2 right-4')
+
+    const input = screen.getByRole('textbox')
+    expect(input).toHaveClass('!pr-9')
   })
 })

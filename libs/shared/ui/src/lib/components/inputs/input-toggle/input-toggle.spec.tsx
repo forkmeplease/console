@@ -1,7 +1,5 @@
-import { render } from '__tests__/utils/setup-jest'
-import { act, screen } from '@testing-library/react'
-
-import InputToggle, { InputToggleProps } from './input-toggle'
+import { act, render, screen } from '__tests__/utils/setup-jest'
+import InputToggle, { type InputToggleProps } from './input-toggle'
 
 describe('InputToggle', () => {
   let props: InputToggleProps
@@ -23,8 +21,8 @@ describe('InputToggle', () => {
     let bg = screen.getByLabelText('bg')
     let circle = screen.getByLabelText('circle')
 
-    expect(bg.className).toContain('w-12 h-6')
-    expect(circle.className).toContain('w-5 h-5')
+    expect(bg).toHaveClass('w-12 h-6')
+    expect(circle).toHaveClass('w-5 h-5')
 
     props.small = true
 
@@ -33,8 +31,8 @@ describe('InputToggle', () => {
     bg = screen.getByLabelText('bg')
     circle = screen.getByLabelText('circle')
 
-    expect(bg.className).toContain('w-8 h-4.5')
-    expect(circle.className).toContain('w-3.5 h-3.5')
+    expect(bg).toHaveClass('w-8 h-4.5')
+    expect(circle).toHaveClass('w-3.5 h-3.5')
   })
 
   it('should apply the accurate classes when toggling', () => {
@@ -49,8 +47,8 @@ describe('InputToggle', () => {
     let bg = screen.getByLabelText('bg')
     let circle = screen.getByLabelText('circle')
 
-    expect(bg.className).toContain('bg-brand-500')
-    expect(circle.className).toContain('translate-x-6')
+    expect(bg).toHaveClass('bg-brand-500')
+    expect(circle).toHaveClass('translate-x-6')
 
     props.small = true
 
@@ -59,7 +57,7 @@ describe('InputToggle', () => {
     bg = screen.getByLabelText('bg')
     circle = screen.getByLabelText('circle')
 
-    expect(bg.className).toContain('bg-brand-500')
-    expect(circle.className).toContain('translate-x-3.5')
+    expect(bg).toHaveClass('bg-brand-500')
+    expect(circle).toHaveClass('translate-x-3.5')
   })
 })

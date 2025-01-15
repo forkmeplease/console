@@ -1,0 +1,49 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ValuesOverrideAsYamlSetting should match snapshot 1`] = `
+<body>
+  <div>
+    <div
+      class="mb-5 rounded border border-neutral-250 bg-neutral-100 w-full"
+      data-testid="block-content"
+    >
+      <div
+        class="flex h-9 items-center justify-between border-b border-neutral-250 px-4"
+      >
+        <h2
+          class="text-ssm font-medium text-neutral-400"
+        >
+          Raw YAML
+        </h2>
+      </div>
+      <div
+        class="p-0"
+      >
+        <div
+          class="my-4 px-10 py-5 text-center"
+        >
+          <i
+            aria-hidden="true"
+            class="fa-solid fa-wave-pulse text-neutral-350"
+          />
+          <p
+            class="mb-3 mt-1 text-xs font-medium text-neutral-350"
+          >
+            No override defined.
+          </p>
+          <button
+            class="inline-flex items-center shrink-0 font-medium transition focus-visible:[&:not(:active)]:outline-2 outline-0 shadow-sm disabled:shadow-none active:shadow-none outline-neutral-500 text-sm h-9 px-3 rounded bg-brand-500 active:bg-brand-600 hover:bg-brand-400 text-white disabled:text-brand-300 disabled:bg-brand-100"
+            type="button"
+          >
+            Create override 
+            <i
+              aria-hidden="true"
+              class="fa-solid fa-pen ml-2"
+            />
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+`;

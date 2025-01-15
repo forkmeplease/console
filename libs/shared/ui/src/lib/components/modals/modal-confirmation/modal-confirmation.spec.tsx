@@ -1,7 +1,5 @@
-import { render } from '__tests__/utils/setup-jest'
-import { fireEvent, screen } from '@testing-library/react'
-
-import ModalConfirmation, { ModalConfirmationProps } from './modal-confirmation'
+import { fireEvent, render, screen } from '__tests__/utils/setup-jest'
+import ModalConfirmation, { type ModalConfirmationProps } from './modal-confirmation'
 
 describe('ModalConfirmation', () => {
   let props: ModalConfirmationProps
@@ -35,5 +33,28 @@ describe('ModalConfirmation', () => {
     fireEvent.click(copy)
 
     expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith('production')
+  })
+
+  it('should match delete mode without description', () => {
+    props.description = undefined
+    props.isDelete = true
+
+    const { container } = render(<ModalConfirmation {...props} />)
+
+    expect(container).toMatchSnapshot()
+  })
+
+  it('should match delete mode with description', () => {
+    props.isDelete = true
+
+    const { container } = render(<ModalConfirmation {...props} />)
+
+    expect(container).toMatchSnapshot()
+  })
+
+  it('should match confirm mode with description', () => {
+    const { container } = render(<ModalConfirmation {...props} />)
+
+    expect(container).toMatchSnapshot()
   })
 })

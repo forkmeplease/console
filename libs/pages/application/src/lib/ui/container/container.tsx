@@ -1,251 +1,149 @@
-import { Environment, ServiceDeploymentStatusEnum } from 'qovery-typescript-axios'
-import { createContext, useState } from 'react'
-import { useDispatch } from 'react-redux'
-import { useParams } from 'react-router-dom'
-import { postApplicationActionsDeploy, postApplicationActionsRestart } from '@qovery/domains/application'
-import { IconEnum, ServiceTypeEnum, getServiceType } from '@qovery/shared/enums'
-import { ApplicationEntity, GitApplicationEntity } from '@qovery/shared/interfaces'
+import { type Environment } from 'qovery-typescript-axios'
+import { type PropsWithChildren, useContext } from 'react'
+import { useLocation, useParams } from 'react-router-dom'
+import { useCluster } from '@qovery/domains/clusters/feature'
+import { EnvironmentMode, useEnvironment } from '@qovery/domains/environments/feature'
+import { type AnyService, type Database } from '@qovery/domains/services/data-access'
 import {
-  Button,
-  ButtonIconAction,
-  ButtonSize,
-  ButtonStyle,
-  Header,
-  Icon,
-  Menu,
-  MenuData,
-  MenuItemProps,
-  Skeleton,
-  StatusMenuActions,
-  Tag,
-  TagMode,
-  TagSize,
-} from '@qovery/shared/ui'
-import { copyToClipboard, urlCodeEditor } from '@qovery/shared/utils'
-import { AppDispatch } from '@qovery/store'
+  NeedRedeployFlag,
+  ServiceActionToolbar,
+  ServiceAvatar,
+  ServiceStateChip,
+  ServiceTemplateIndicator,
+  ServiceTerminalContext,
+  useService,
+} from '@qovery/domains/services/feature'
+import { VariablesProvider } from '@qovery/domains/variables/feature'
+import { IconEnum } from '@qovery/shared/enums'
+import {
+  APPLICATION_DEPLOYMENTS_URL,
+  APPLICATION_GENERAL_URL,
+  APPLICATION_SETTINGS_URL,
+  APPLICATION_URL,
+  APPLICATION_VARIABLES_URL,
+  CLUSTER_URL,
+} from '@qovery/shared/routes'
+import { Badge, ErrorBoundary, Header, Icon, Link, Section, Skeleton, type TabsItem, Tooltip } from '@qovery/shared/ui'
 import TabsFeature from '../../feature/tabs-feature/tabs-feature'
-import NeedRedeployFlag from '../need-redeploy-flag/need-redeploy-flag'
 
-export const ApplicationContext = createContext<{
-  showHideAllEnvironmentVariablesValues: boolean
-  setShowHideAllEnvironmentVariablesValues: (b: boolean) => void
-}>({
-  showHideAllEnvironmentVariablesValues: false,
-  setShowHideAllEnvironmentVariablesValues: (b: boolean) => {},
-})
-
-export interface ContainerProps {
-  statusActions: StatusMenuActions[]
-  application?: ApplicationEntity
+export interface ContainerProps extends PropsWithChildren {
+  service?: Exclude<AnyService, Database>
   environment?: Environment
-  children?: React.ReactNode
-  removeApplication?: (applicationId: string) => void
 }
 
-export function Container(props: ContainerProps) {
-  const { application, environment, children, statusActions, removeApplication } = props
-  const { organizationId, projectId, environmentId = '', applicationId = '' } = useParams()
-  const [showHideAllEnvironmentVariablesValues, setShowHideAllEnvironmentVariablesValues] = useState<boolean>(false)
+export function Container({ children }: ContainerProps) {
+  const { organizationId = '', projectId = '', environmentId = '', applicationId = '' } = useParams()
+  const { data: environment } = useEnvironment({ environmentId })
+  const { data: service } = useService({ environmentId, serviceId: applicationId })
 
-  const dispatch = useDispatch<AppDispatch>()
+  const { setOpen } = useContext(ServiceTerminalContext)
 
-  const redeployApplication = () => {
-    if (application) {
-      if (application?.status?.service_deployment_status === ServiceDeploymentStatusEnum.NEVER_DEPLOYED) {
-        dispatch(
-          postApplicationActionsDeploy({ environmentId, applicationId, serviceType: getServiceType(application) })
-        )
-      } else {
-        dispatch(
-          postApplicationActionsRestart({ environmentId, applicationId, serviceType: getServiceType(application) })
-        )
-      }
-    }
-  }
+  const { data: cluster } = useCluster({ organizationId, clusterId: environment?.cluster_id ?? '' })
 
-  const copyContent = `Organization ID: ${organizationId}\nProject ID: ${projectId}\nEnvironment ID: ${environmentId}\nService ID: ${applicationId}`
+  const location = useLocation()
 
-  const menuLink: MenuData = []
-
-  const buttonActionsDefault = [
+  const tabItems: TabsItem[] = [
     {
-      iconLeft: <Icon name="icon-solid-play" className="px-0.5" />,
-      iconRight: <Icon name="icon-solid-angle-down" className="px-0.5" />,
-      menusClassName: 'border-r border-r-element-light-lighter-500',
-      statusActions: {
-        status: application?.status && application?.status.state,
-        actions: statusActions,
-      },
+      icon: <ServiceStateChip mode="running" environmentId={service?.environment?.id} serviceId={service?.id} />,
+      name: 'Overview',
+      active:
+        location.pathname ===
+        APPLICATION_URL(organizationId, projectId, environmentId, applicationId) + APPLICATION_GENERAL_URL,
+      link: APPLICATION_URL(organizationId, projectId, environmentId, applicationId) + APPLICATION_GENERAL_URL,
     },
     {
-      ...(application &&
-        getServiceType(application) === ServiceTypeEnum.APPLICATION && {
-          iconLeft: <Icon name="icon-solid-scroll" className="px-0.5" />,
-          iconRight: <Icon name="icon-solid-angle-down" className="px-0.5" />,
-          menusClassName: 'border-r border-r-element-light-lighter-500',
-          menus: [
-            {
-              items: [
-                {
-                  name: 'Deployment logs',
-                  contentLeft: <Icon name="icon-solid-scroll" className="text-brand-500 text-sm" />,
-                  onClick: () =>
-                    window
-                      .open(
-                        `https://console.qovery.com/platform/organization/${organizationId}/projects/${projectId}/environments/${environmentId}/applications?fullscreenLogs=true`,
-                        '_blank'
-                      )
-                      ?.focus(),
-                },
-                {
-                  name: 'Application logs',
-                  contentLeft: <Icon name="icon-solid-scroll" className="text-brand-500 text-sm" />,
-                  onClick: () =>
-                    window
-                      .open(
-                        `https://console.qovery.com/platform/organization/${organizationId}/projects/${projectId}/environments/${environmentId}/applications/${applicationId}/summary?fullscreenLogs=true`,
-                        '_blank'
-                      )
-                      ?.focus(),
-                },
-              ],
-            },
-          ],
-        }),
+      icon: <ServiceStateChip mode="deployment" environmentId={service?.environment?.id} serviceId={service?.id} />,
+      name: 'Deployments History',
+      active:
+        location.pathname ===
+        APPLICATION_URL(organizationId, projectId, environmentId, applicationId) + APPLICATION_DEPLOYMENTS_URL,
+      link: APPLICATION_URL(organizationId, projectId, environmentId, applicationId) + APPLICATION_DEPLOYMENTS_URL,
     },
     {
-      ...(removeApplication && {
-        iconLeft: <Icon name="icon-solid-ellipsis-v" className="px-0.5" />,
-        menus: [
-          {
-            items:
-              application && getServiceType(application) === ServiceTypeEnum.APPLICATION
-                ? [
-                    {
-                      name: 'Edit code',
-                      contentLeft: <Icon name="icon-solid-code" className="text-sm text-brand-400" />,
-                      link: {
-                        url: urlCodeEditor((application as GitApplicationEntity)?.git_repository) || '',
-                        external: true,
-                      },
-                    },
-                    {
-                      name: 'Copy identifiers',
-                      contentLeft: <Icon name="icon-solid-copy" className="text-sm text-brand-400" />,
-                      onClick: () => copyToClipboard(copyContent),
-                    },
-                    {
-                      name: 'Remove',
-                      contentLeft: <Icon name="icon-solid-trash" className="text-sm text-brand-400" />,
-                      onClick: () => removeApplication(applicationId ? applicationId : ''),
-                    },
-                  ]
-                : [
-                    {
-                      name: 'Remove',
-                      contentLeft: <Icon name="icon-solid-trash" className="text-sm text-brand-400" />,
-                      onClick: () => removeApplication(applicationId ? applicationId : ''),
-                    },
-                  ],
-          },
-        ],
-      }),
+      icon: <Icon iconName="key" iconStyle="regular" />,
+      name: 'Variables',
+      active:
+        location.pathname ===
+        APPLICATION_URL(organizationId, projectId, environmentId, applicationId) + APPLICATION_VARIABLES_URL,
+      link: APPLICATION_URL(organizationId, projectId, environmentId, applicationId) + APPLICATION_VARIABLES_URL,
+    },
+    {
+      icon: <Icon iconName="gear" iconStyle="regular" />,
+      name: 'Settings',
+      active: location.pathname.includes(
+        APPLICATION_URL(organizationId, projectId, environmentId, applicationId) + APPLICATION_SETTINGS_URL
+      ),
+      link: APPLICATION_URL(organizationId, projectId, environmentId, applicationId) + APPLICATION_SETTINGS_URL,
     },
   ]
 
-  if (application && application.links && application.links.items) {
-    const items: MenuItemProps[] = application.links.items.map((link) => {
-      return {
-        name: link.url || '',
-        link: {
-          url: link.url || '',
-          external: true,
-        },
-        copy: link.url || undefined,
-        copyTooltip: 'Copy the link',
-      }
-    })
-
-    menuLink.push({
-      title: 'Links',
-      items,
-    })
-  }
-
-  const headerButtons = (
-    <div className="flex items-start gap-2">
-      {/*<ButtonIcon icon="icon-solid-terminal" style={ButtonIconStyle.STROKED} />*/}
-      {/*<ButtonIcon icon="icon-solid-scroll" style={ButtonIconStyle.STROKED} />*/}
-      {/*<ButtonIcon icon="icon-solid-clock-rotate-left" style={ButtonIconStyle.STROKED} />*/}
-      {application?.links && application.links.items && application.links.items.length > 0 && (
-        <Menu
-          menus={menuLink}
-          trigger={
-            <Button iconRight="icon-solid-link" style={ButtonStyle.STROKED} size={ButtonSize.SMALL}>
-              Open links
-            </Button>
-          }
-        />
-      )}
+  const headerActions = (
+    <div className="flex flex-row items-center gap-4">
+      <Skeleton width={150} height={36} show={!service || !environment}>
+        {service && environment && (
+          <ServiceActionToolbar serviceId={service.id} environment={environment} shellAction={() => setOpen(true)} />
+        )}
+      </Skeleton>
+      <div className="h-4 w-px bg-neutral-250" />
+      <div className="flex flex-row items-center gap-2">
+        {environment && (
+          <Skeleton width={80} height={24} show={!environment?.mode}>
+            <EnvironmentMode mode={environment.mode} />
+          </Skeleton>
+        )}
+        <Skeleton width={120} height={24} show={!cluster}>
+          <Tooltip content={cluster?.name ?? ''}>
+            <Link
+              as="button"
+              color="neutral"
+              variant="surface"
+              size="xs"
+              to={CLUSTER_URL(environment?.organization.id, environment?.cluster_id)}
+            >
+              <Icon
+                name={
+                  cluster?.kubernetes === 'SELF_MANAGED'
+                    ? IconEnum.KUBERNETES
+                    : (environment?.cloud_provider.provider as IconEnum)
+                }
+                width="16"
+              />
+              <p className="ml-1.5 max-w-[200px] truncate">{cluster?.name}</p>
+            </Link>
+          </Tooltip>
+        </Skeleton>
+        <Skeleton width={22} height={24} show={!service}>
+          {service && 'auto_deploy' in service && service.auto_deploy && (
+            <Tooltip content="Auto-deploy">
+              <Badge variant="outline">
+                <Icon className="text-neutral-350" iconName="arrows-rotate" />
+              </Badge>
+            </Tooltip>
+          )}
+        </Skeleton>
+      </div>
     </div>
   )
 
-  const headerActions = (
-    <>
-      <Skeleton width={150} height={32} show={!application?.status}>
-        <div className="flex">
-          {environment && application && application?.status && (
-            <>
-              <ButtonIconAction
-                className="!h-8"
-                actions={buttonActionsDefault}
-                statusInformation={{
-                  id: application?.id,
-                  name: application?.name,
-                  mode: environment?.mode,
-                }}
-              />
-              <span className="ml-4 mr-1 mt-2 h-4 w-[1px] bg-element-light-lighter-400"></span>
-            </>
-          )}
-        </div>
-      </Skeleton>
-      {environment && (
-        <Skeleton width={80} height={32} show={!environment?.mode}>
-          <TagMode size={TagSize.BIG} status={environment?.mode} />
-        </Skeleton>
-      )}
-      <Skeleton width={40} height={32} show={!environment?.cloud_provider}>
-        <div className="border border-element-light-lighter-400 bg-white h-8 px-3 rounded text-xs items-center inline-flex font-medium gap-2">
-          {application && <Icon name={getServiceType(application)} width="16" height="16" />}
-        </div>
-      </Skeleton>
-      <Skeleton width={100} height={32} show={!environment?.cloud_provider}>
-        <div className="border border-element-light-lighter-400 bg-white h-8 px-3 rounded text-xs items-center inline-flex font-medium gap-2">
-          <Icon name={environment?.cloud_provider.provider as IconEnum} width="16" />
-          <p className="max-w-[54px] truncate">{environment?.cloud_provider.cluster}</p>
-        </div>
-      </Skeleton>
-      <Tag className="bg-element-light-lighter-300 gap-2 hidden">
-        <span className="w-2 h-2 rounded-lg bg-progressing-300"></span>
-        <span className="w-2 h-2 rounded-lg bg-accent3-500"></span>
-      </Tag>
-    </>
-  )
-
   return (
-    <ApplicationContext.Provider
-      value={{ showHideAllEnvironmentVariablesValues, setShowHideAllEnvironmentVariablesValues }}
-    >
-      <Header title={application?.name} icon={IconEnum.APPLICATION} buttons={headerButtons} actions={headerActions} />
-      <TabsFeature />
-      {application &&
-        application.status &&
-        application.status.service_deployment_status !== ServiceDeploymentStatusEnum.UP_TO_DATE && (
-          <NeedRedeployFlag application={application} onClickCTA={redeployApplication} />
-        )}
-      {children}
-    </ApplicationContext.Provider>
+    <VariablesProvider>
+      <ErrorBoundary>
+        <Section className="flex-1">
+          <Header title={service?.name} actions={headerActions}>
+            {service && (
+              <ServiceTemplateIndicator service={service} size="md">
+                <ServiceAvatar service={service} size="md" border="solid" />
+              </ServiceTemplateIndicator>
+            )}
+          </Header>
+          <TabsFeature items={tabItems} />
+          <NeedRedeployFlag />
+          <div className="mt-2 flex min-h-0 flex-grow flex-col items-stretch rounded-b-none rounded-t-sm bg-white">
+            <ErrorBoundary key={tabItems.find(({ active }) => active)?.link}>{children}</ErrorBoundary>
+          </div>
+        </Section>
+      </ErrorBoundary>
+    </VariablesProvider>
   )
 }
 

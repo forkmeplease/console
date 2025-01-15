@@ -1,0 +1,11 @@
+.code-ansi {
+  a {
+    display: inline-block;
+    transition: 0.25s color $timing-cubic;
+    color: theme('colors.sky.500');
+
+    &:hover {
+      color: theme('colors.sky.600');
+    }
+  }
+}

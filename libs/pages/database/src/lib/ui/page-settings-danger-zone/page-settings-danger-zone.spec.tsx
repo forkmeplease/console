@@ -1,5 +1,5 @@
-import { render } from '__tests__/utils/setup-jest'
-import PageSettingsDangerZone, { PageSettingsDangerZoneProps } from './page-settings-danger-zone'
+import { renderWithProviders } from '@qovery/shared/util-tests'
+import PageSettingsDangerZone, { type PageSettingsDangerZoneProps } from './page-settings-danger-zone'
 
 const props: PageSettingsDangerZoneProps = {
   deleteDatabase: jest.fn(),
@@ -7,7 +7,7 @@ const props: PageSettingsDangerZoneProps = {
 
 describe('PageSettingsDangerZone', () => {
   it('should render successfully', () => {
-    const { baseElement } = render(<PageSettingsDangerZone {...props} />)
+    const { baseElement } = renderWithProviders(<PageSettingsDangerZone {...props} />)
     expect(baseElement).toBeTruthy()
   })
 })

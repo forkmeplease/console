@@ -1,52 +1,49 @@
-import { OrganizationPlanType, OrganizationPrice } from '@qovery/domains/organization'
-import { InputRadio } from '@qovery/shared/ui'
+import { PlanEnum } from 'qovery-typescript-axios'
+import { Button, Icon } from '@qovery/shared/ui'
 
 export interface PlanCardProps {
-  name: string
-  selected: string
   title: string
+  name: string
   text: string
-  price?: number
-  listPrice?: OrganizationPrice[]
-  currentValue?: { [name: string]: { number?: string | undefined } }
-  onClick: (plan: string) => void
-  disable?: boolean | undefined
+  onClick: () => void
+  loading: string
+  price: number
+  list: string[]
 }
 
 export function PlanCard(props: PlanCardProps) {
-  const { name, selected, title, text, price, listPrice = [], currentValue = {}, onClick, disable = false } = props
+  const { name, title, text, price, loading, onClick, list } = props
 
   return (
-    <div
-      className={`${
-        selected === name ? 'bg-white text-text-700' : 'text-text-500 bg-element-light-lighter-200 hover:bg-white'
-      } p-5 mb-2 border border-element-light-lighter-500 rounded flex justify-between items-center  transition-all ${
-        disable ? 'opacity-50' : 'cursor-pointer hover:text-text-700'
-      }`}
-      onClick={() => (!disable ? onClick(name) : null)}
-    >
-      <div className="flex items-start gap-3">
-        <InputRadio name="plan" value={name} isChecked={selected === name} disable={disable} />
-        <div>
-          <h2 className="leading-none text-base font-normal mb-1">
-            <b className="font-bold">{title}</b> <span className="text-text-500">plan</span>
-          </h2>
-          <p className="text-sm text-text-500">{text}</p>
-        </div>
-      </div>
-      {name !== OrganizationPlanType.ENTERPRISE && (
-        <p className="text-xl font-bold flex items-center gap-1">
-          {'$'}
-          {name === OrganizationPlanType.PROFESSIONAL}
-          {name === OrganizationPlanType.FREE && price}
-          {name === OrganizationPlanType.BUSINESS &&
-            listPrice.find((p) => p.number === currentValue[OrganizationPlanType.BUSINESS].number)?.price}
-          {name === OrganizationPlanType.PROFESSIONAL &&
-            listPrice.find((p) => p.number === currentValue[OrganizationPlanType.PROFESSIONAL].number)?.price}
-          <span className="text-sm font-normal text-text-500">/ Month</span>
-        </p>
-      )}
-      {name === OrganizationPlanType.ENTERPRISE && <p className="text-xs font-bold uppercase">Contact us</p>}
+    <div className="rounded border border-neutral-250 bg-neutral-100 px-5 py-4 lg:w-80">
+      <h2 className="h5 mb-1">{title}</h2>
+      <p className="mb-2 text-sm text-neutral-400">{text}</p>
+      <p className="mb-4 flex items-center text-xs text-neutral-400">
+        {name !== PlanEnum.ENTERPRISE ? (
+          <>
+            <span className="h5 mr-2 block">${price}</span> per user/month
+          </>
+        ) : (
+          <span className="h5">Custom</span>
+        )}
+      </p>
+      <Button
+        type="button"
+        className="mb-4 w-full justify-center"
+        size="lg"
+        onClick={() => onClick()}
+        loading={loading === name}
+      >
+        Select plan
+      </Button>
+      <ul>
+        {list.map((line: string, index: number) => (
+          <li key={index} className="mb-2 text-xs text-neutral-400 last:mb-10">
+            <Icon iconName="check" className="mr-1.5 text-green-500" />
+            {line}
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

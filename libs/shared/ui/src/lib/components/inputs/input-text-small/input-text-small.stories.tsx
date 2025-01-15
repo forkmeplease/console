@@ -1,5 +1,5 @@
-import { Meta, Story } from '@storybook/react'
-import { InputTextSmall, InputTextSmallProps } from './input-text-small'
+import { type Meta, type Story } from '@storybook/react'
+import { InputTextSmall, type InputTextSmallProps } from './input-text-small'
 
 export default {
   component: InputTextSmall,
@@ -20,4 +20,6 @@ Primary.args = {
   placeholder: 'Adding an environment name',
   errorMessagePosition: 'bottom',
   error: 'This is an error',
+  type: 'password',
+  hasShowPasswordButton: false,
 }

@@ -1,29 +1,23 @@
-import { Cluster, ProjectDeploymentRule, ProjectDeploymentRuleRequest } from 'qovery-typescript-axios'
+import { type ProjectDeploymentRuleRequest } from 'qovery-typescript-axios'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useParams } from 'react-router-dom'
-import { fetchClusters, selectClustersEntitiesByOrganizationId } from '@qovery/domains/organization'
-import { fetchDeploymentRule, selectDeploymentRuleById, updateDeploymentRule } from '@qovery/domains/projects'
-import { ENVIRONMENTS_DEPLOYMENT_RULES_URL, ENVIRONMENTS_URL } from '@qovery/shared/router'
-import { dateToHours, useDocumentTitle } from '@qovery/shared/utils'
-import { AppDispatch, RootState } from '@qovery/store'
+import { useClusters } from '@qovery/domains/clusters/feature'
+import { useDeploymentRule, useEditDeploymentRule } from '@qovery/domains/projects/feature'
+import { ENVIRONMENTS_DEPLOYMENT_RULES_URL, ENVIRONMENTS_URL } from '@qovery/shared/routes'
+import { dateToHours } from '@qovery/shared/util-dates'
+import { useDocumentTitle } from '@qovery/shared/util-hooks'
 import PageCreateEditDeploymentRule from '../../ui/page-create-edit-deployment-rule/page-create-edit-deployment-rule'
 
 export function PageEditDeploymentRuleFeature() {
   const { deploymentRuleId = '', organizationId = '', projectId = '' } = useParams()
   useDocumentTitle('Edit Deployment Rule - Qovery')
-  const dispatch = useDispatch<AppDispatch>()
   const navigate = useNavigate()
   const { control, handleSubmit, setValue } = useForm()
 
-  const deploymentRule = useSelector<RootState, ProjectDeploymentRule | undefined>((state) =>
-    selectDeploymentRuleById(state, deploymentRuleId)
-  )
-
-  const clusters = useSelector<RootState, Cluster[]>((state) =>
-    selectClustersEntitiesByOrganizationId(state, organizationId)
-  )
+  const { data: deploymentRule } = useDeploymentRule({ projectId, deploymentRuleId })
+  const { data: clusters } = useClusters({ organizationId })
+  const { mutateAsync: editDeploymentRule } = useEditDeploymentRule()
 
   const onSubmit = handleSubmit(async (data) => {
     if (data) {
@@ -32,19 +26,18 @@ export function PageEditDeploymentRuleFeature() {
 
       delete data['id']
 
-      const result = await dispatch(
-        updateDeploymentRule({ projectId, deploymentRuleId, data: data as ProjectDeploymentRuleRequest })
-      )
-      if (result.payload) {
+      try {
+        await editDeploymentRule({
+          projectId,
+          deploymentRuleId,
+          deploymentRuleRequest: data as ProjectDeploymentRuleRequest,
+        })
         navigate(`${ENVIRONMENTS_URL(organizationId, projectId)}${ENVIRONMENTS_DEPLOYMENT_RULES_URL}`)
+      } catch (error) {
+        console.error(error)
       }
     }
   })
-
-  useEffect(() => {
-    dispatch(fetchDeploymentRule({ projectId, deploymentRuleId }))
-    dispatch(fetchClusters({ organizationId }))
-  }, [dispatch, organizationId, projectId, deploymentRuleId])
 
   useEffect(() => {
     const startTime = deploymentRule?.start_time && dateToHours(deploymentRule?.start_time)
@@ -56,8 +49,6 @@ export function PageEditDeploymentRuleFeature() {
     setValue('start_time', startTime)
     setValue('stop_time', stopTime)
     setValue('mode', deploymentRule?.mode)
-    setValue('auto_deploy', deploymentRule?.auto_deploy)
-    setValue('auto_delete', deploymentRule?.auto_delete)
     setValue('auto_stop', deploymentRule?.auto_stop)
     setValue('weekdays', deploymentRule?.weekdays)
     setValue('wildcard', deploymentRule?.wildcard)

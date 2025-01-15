@@ -1,38 +1,38 @@
-import { useForm } from 'react-hook-form'
 import { render } from '__tests__/utils/setup-jest'
-import StepPersonalize, { StepPersonalizeProps } from './step-personalize'
-import { fireEvent, screen } from '@testing-library/react'
+import { type TypeOfUseEnum } from 'qovery-typescript-axios'
+import { useForm } from 'react-hook-form'
+import StepPersonalize, { type StepPersonalizeProps } from './step-personalize'
 
 describe('StepPersonalize', () => {
-  let props: StepPersonalizeProps
-  let Wrapper: React.FC
+  let props: Partial<StepPersonalizeProps>
 
   beforeEach(() => {
     props = {
       dataTypes: [{ label: 'some-label', value: 'some-value' }],
+      dataCloudProviders: [{ label: 'some-label', value: 'some-value', icon: <div>some-icon</div> }],
       onSubmit: jest.fn(),
       authLogout: jest.fn(),
-      control: null as any,
     }
 
-    Wrapper = () => {
+    const Wrapper = () => {
       const { control } = useForm<{
         first_name: string
         last_name: string
         user_email: string
-        type_of_use: string
+        type_of_use: TypeOfUseEnum
+        infrastructure_hosting: string
       }>()
 
       props.control = control
 
-      return <StepPersonalize {...props} />
+      return <StepPersonalize {...(props as StepPersonalizeProps)} />
     }
 
     render(<Wrapper />)
   })
 
   it('should render successfully', () => {
-    const { baseElement } = render(<StepPersonalize {...props} />)
+    const { baseElement } = render(<StepPersonalize {...(props as StepPersonalizeProps)} />)
     expect(baseElement).toBeTruthy()
   })
 })

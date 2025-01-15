@@ -1,22 +1,34 @@
+import { type PropsWithChildren } from 'react'
+import { twMerge } from '@qovery/shared/util-js'
+
 export interface BlockContentProps {
-  children: React.ReactNode
   title: string
   customWidth?: string
   className?: string
   classNameContent?: string
+  dataTestId?: string
+  headRight?: React.ReactNode
 }
 
-export function BlockContent(props: BlockContentProps) {
-  const { children, className = '', title, customWidth = 'w-full', classNameContent = 'p-5' } = props
-
+export function BlockContent({
+  children,
+  className = '',
+  title,
+  customWidth = 'w-full',
+  classNameContent,
+  dataTestId = 'block-content',
+  headRight,
+}: PropsWithChildren<BlockContentProps>) {
   return (
     <div
-      className={`border border-element-light-lighter-500 bg-element-light-lighter-200 rounded mb-5 ${className} ${customWidth}`}
+      data-testid={dataTestId}
+      className={twMerge('mb-5 rounded border border-neutral-250 bg-neutral-100', customWidth, className)}
     >
-      <div className="flex items-center justify-between h-9 px-4 border-b border-element-light-lighter-500">
-        <h2 className="font-medium text-text-600 text-ssm">{title}</h2>
+      <div className="flex h-9 items-center justify-between border-b border-neutral-250 px-4">
+        <h2 className="text-ssm font-medium text-neutral-400">{title}</h2>
+        {headRight}
       </div>
-      <div className={classNameContent}>{children}</div>
+      <div className={twMerge('p-5', classNameContent)}>{children}</div>
     </div>
   )
 }

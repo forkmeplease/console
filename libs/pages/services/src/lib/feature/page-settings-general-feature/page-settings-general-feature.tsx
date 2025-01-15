@@ -1,42 +1,34 @@
-import equal from 'fast-deep-equal'
-import { Cluster, Environment } from 'qovery-typescript-axios'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { FormProvider, useForm } from 'react-hook-form'
-import { useDispatch, useSelector } from 'react-redux'
 import { useParams } from 'react-router-dom'
-import { selectEnvironmentById, updateEnvironment } from '@qovery/domains/environment'
-import { fetchClusters, selectClustersEntitiesByOrganizationId } from '@qovery/domains/organization'
-import { useDocumentTitle } from '@qovery/shared/utils'
-import { AppDispatch, RootState } from '@qovery/store'
+import { useClusters } from '@qovery/domains/clusters/feature'
+import { useEditEnvironment, useEnvironment } from '@qovery/domains/environments/feature'
+import { useDocumentTitle } from '@qovery/shared/util-hooks'
 import PageSettingsGeneral from '../../ui/page-settings-general/page-settings-general'
 
 export function PageSettingsGeneralFeature() {
   const { organizationId = '', environmentId = '' } = useParams()
   useDocumentTitle('Environment General - Settings - Qovery')
-  const dispatch = useDispatch<AppDispatch>()
   const methods = useForm({
     mode: 'onChange',
   })
 
-  const clusters = useSelector<RootState, Cluster[]>((state) =>
-    selectClustersEntitiesByOrganizationId(state, organizationId)
-  )
+  const { data: clusters = [] } = useClusters({ organizationId })
 
-  const environment = useSelector<RootState, Environment | undefined>(
-    (state) => selectEnvironmentById(state, environmentId),
-    equal
-  )
+  const { data: environment } = useEnvironment({ environmentId })
+  const { mutateAsync: editEnvironment } = useEditEnvironment()
+
+  const [loading, setLoading] = useState(false)
 
   const onSubmit = methods.handleSubmit(async (data) => {
+    setLoading(true)
+
     if (data) {
       delete data['cluster_id']
-      await dispatch(updateEnvironment({ environmentId, data }))
+      await editEnvironment({ environmentId, payload: data })
+      setLoading(false)
     }
   })
-
-  useEffect(() => {
-    dispatch(fetchClusters({ organizationId }))
-  }, [dispatch, organizationId])
 
   useEffect(() => {
     methods.setValue('name', environment?.name)
@@ -46,7 +38,7 @@ export function PageSettingsGeneralFeature() {
 
   return (
     <FormProvider {...methods}>
-      <PageSettingsGeneral clusters={clusters} onSubmit={onSubmit} />
+      <PageSettingsGeneral clusters={clusters} onSubmit={onSubmit} loading={loading} />
     </FormProvider>
   )
 }

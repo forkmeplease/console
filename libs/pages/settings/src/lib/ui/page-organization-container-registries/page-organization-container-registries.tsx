@@ -1,137 +1,136 @@
-import { ContainerRegistryKindEnum, ContainerRegistryResponse } from 'qovery-typescript-axios'
+import { type ContainerRegistryResponse } from 'qovery-typescript-axios'
+import { NeedHelp } from '@qovery/shared/assistant/feature'
 import { IconEnum } from '@qovery/shared/enums'
-import { LoadingStatus } from '@qovery/shared/interfaces'
 import {
   BlockContent,
   Button,
-  ButtonIcon,
-  ButtonIconStyle,
-  ButtonSize,
-  EmptyState,
-  HelpSection,
+  Heading,
   Icon,
-  IconAwesomeEnum,
+  Indicator,
   LoaderSpinner,
+  Section,
   Tooltip,
+  Truncate,
 } from '@qovery/shared/ui'
-import { dateYearMonthDayHourMinuteSecond, timeAgo } from '@qovery/shared/utils'
+import { dateMediumLocalFormat, dateUTCString, timeAgo } from '@qovery/shared/util-dates'
+import { containerRegistryKindToIcon } from '@qovery/shared/util-js'
 
 export interface PageOrganizationContainerRegistriesProps {
   onAddRegistry: () => void
+  onOpenServicesAssociatedModal: (registry: ContainerRegistryResponse) => void
   onEdit: (registry: ContainerRegistryResponse) => void
   onDelete: (registry: ContainerRegistryResponse) => void
   containerRegistries?: ContainerRegistryResponse[]
-  loading?: LoadingStatus
-}
-
-export const logoByRegistryKind = (kind?: ContainerRegistryKindEnum) => {
-  switch (kind) {
-    case ContainerRegistryKindEnum.DOCR:
-      return IconEnum.DO
-    case ContainerRegistryKindEnum.DOCKER_HUB:
-      return IconEnum.DOCKER
-    case ContainerRegistryKindEnum.SCALEWAY_CR:
-      return IconEnum.SCW
-    default:
-      return IconEnum.AWS
-  }
+  isFetched?: boolean
 }
 
 export function PageOrganizationContainerRegistries(props: PageOrganizationContainerRegistriesProps) {
-  const { containerRegistries, loading, onAddRegistry, onEdit, onDelete } = props
+  const { containerRegistries, isFetched, onAddRegistry, onEdit, onDelete, onOpenServicesAssociatedModal } = props
 
   return (
-    <div className="flex flex-col justify-between w-full">
-      <div className="p-8 max-w-content-with-navigation-left">
-        <div className="flex justify-between mb-8">
-          <div>
-            <h1 className="h5 text-text-700 mb-2">Container registries</h1>
-            <p className="text-text-500 text-xs">
-              Define and manage the container registry to be used within your organization.
+    <div className="flex w-full flex-col justify-between">
+      <Section className="max-w-content-with-navigation-left p-8">
+        <div className="mb-8 flex justify-between gap-2">
+          <div className="space-y-3">
+            <Heading className="text-neutral-400">Container registries</Heading>
+            <p className="text-xs text-neutral-400">
+              Define and manage the container registry to be used within your organization to deploy applications.
             </p>
+            <NeedHelp />
           </div>
-          <Button onClick={() => onAddRegistry()} iconRight={IconAwesomeEnum.CIRCLE_PLUS}>
+          <Button className="gap-2" size="md" onClick={() => onAddRegistry()}>
             Add registry
+            <Icon iconName="circle-plus" iconStyle="regular" />
           </Button>
         </div>
-        {(loading === 'not loaded' || loading === 'loading') && containerRegistries?.length === 0 ? (
-          <div data-testid="registries-loader" className="flex justify-center">
-            <LoaderSpinner className="w-6" />
-          </div>
-        ) : containerRegistries && containerRegistries.length > 0 ? (
-          <BlockContent title="Container registries" classNameContent="">
-            {containerRegistries?.map((registry: ContainerRegistryResponse) => (
-              <div
-                data-testid={`registries-list-${registry.id}`}
-                key={registry.id}
-                className="flex justify-between items-center px-5 py-4 border-b border-element-light-lighter-500 last:border-0"
-              >
-                <div className="flex">
-                  <Icon name={logoByRegistryKind(registry.kind)} width="20" height="20" />
-                  <div className="ml-4">
-                    <h2 className="flex text-xs text-text-600 font-medium mb-1">
-                      {registry.name}
-                      {registry.description && (
-                        <Tooltip content={registry.description}>
-                          <div className="ml-1 cursor-pointer">
-                            <Icon name={IconAwesomeEnum.CIRCLE_INFO} className="text-text-400" />
-                          </div>
-                        </Tooltip>
-                      )}
-                    </h2>
-                    <p className="text-xs text-text-400">
-                      {registry.kind}{' '}
-                      <span className="inline-block ml-3">
-                        Last updated {timeAgo(new Date(registry.updated_at || ''))}
-                      </span>{' '}
-                      <span className="inline-block ml-3">
-                        Created since {dateYearMonthDayHourMinuteSecond(new Date(registry.created_at || ''), false)}
-                      </span>
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <ButtonIcon
-                    icon={IconAwesomeEnum.WHEEL}
-                    style={ButtonIconStyle.STROKED}
-                    size={ButtonSize.TINY}
-                    onClick={() => onEdit(registry)}
-                    className="text-text-400 hover:text-text-500 bg-transparent !w-9 !h-8 mr-2"
-                    iconClassName="!text-xs"
-                  />
-                  <ButtonIcon
-                    icon={IconAwesomeEnum.TRASH}
-                    style={ButtonIconStyle.STROKED}
-                    size={ButtonSize.TINY}
-                    onClick={() => onDelete(registry)}
-                    className="text-text-400 hover:text-text-500 bg-transparent !w-9 !h-8"
-                    iconClassName="!text-xs"
-                  />
-                </div>
-              </div>
-            ))}
-          </BlockContent>
-        ) : (
-          loading === 'loaded' &&
-          containerRegistries?.length === 0 && (
-            <EmptyState
-              dataTestId="empty-state"
-              title="No container registry"
-              description="Define a container registry for your organization"
-            />
-          )
-        )}
-      </div>
-      <HelpSection
-        description="Need help? You may find these links useful"
-        links={[
-          {
-            link: 'https://hub.qovery.com/docs/using-qovery/configuration/organization/#container-registry-management',
-            linkLabel: 'How to configure my container registry',
-            external: true,
-          },
-        ]}
-      />
+        <BlockContent title="Container registries" classNameContent="p-0">
+          {!isFetched ? (
+            <div data-testid="registries-loader" className="flex justify-center p-5">
+              <LoaderSpinner className="w-6" />
+            </div>
+          ) : containerRegistries && containerRegistries.length > 0 ? (
+            <ul>
+              {containerRegistries
+                ?.filter((registry) => !registry.cluster)
+                .map((registry: ContainerRegistryResponse) => (
+                  <li
+                    data-testid={`registries-list-${registry.id}`}
+                    key={registry.id}
+                    className="flex items-center justify-between border-b border-neutral-250 px-5 py-4 last:border-0"
+                  >
+                    <div className="flex">
+                      <Icon
+                        name={registry.kind ? containerRegistryKindToIcon(registry.kind) : IconEnum.AWS}
+                        width="20"
+                        height="20"
+                      />
+                      <div className="ml-4">
+                        <h2 className="mb-1 flex text-xs font-medium text-neutral-400">
+                          <Truncate
+                            truncateLimit={60}
+                            text={`${registry.name}${registry.config?.access_key_id ? ` (${registry.config?.access_key_id})` : registry.config?.scaleway_access_key ? ` (${registry.config?.scaleway_access_key})` : registry.config?.username ? ` (${registry.config?.username})` : ''}`}
+                          />
+                          {registry.description && (
+                            <Tooltip content={registry.description}>
+                              <div className="ml-1 cursor-pointer">
+                                <Icon iconName="circle-info" iconStyle="regular" />
+                              </div>
+                            </Tooltip>
+                          )}
+                        </h2>
+                        <p className="text-xs text-neutral-350">
+                          {registry.kind}{' '}
+                          {registry.updated_at && (
+                            <span className="ml-3 inline-block" title={dateUTCString(registry.updated_at)}>
+                              Last updated {timeAgo(new Date(registry.updated_at))}
+                            </span>
+                          )}{' '}
+                          {registry.created_at && (
+                            <span className="ml-3 inline-block" title={dateUTCString(registry.created_at)}>
+                              Created since {dateMediumLocalFormat(registry.created_at)}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Indicator
+                        content={
+                          <span className="relative right-1 top-1 flex h-3 w-3 items-center justify-center rounded-full bg-brand-500 text-3xs font-bold leading-[0] text-white">
+                            {registry.associated_services_count}
+                          </span>
+                        }
+                      >
+                        <Button
+                          variant="surface"
+                          color="neutral"
+                          size="md"
+                          disabled={registry.associated_services_count === 0}
+                          onClick={() => onOpenServicesAssociatedModal(registry)}
+                        >
+                          <Icon iconName="layer-group" iconStyle="regular" />
+                        </Button>
+                      </Indicator>
+                      <Button size="md" variant="surface" color="neutral" onClick={() => onEdit(registry)}>
+                        <Icon iconName="gear" iconStyle="regular" />
+                      </Button>
+                      <Button size="md" variant="surface" color="neutral" onClick={() => onDelete(registry)}>
+                        <Icon iconName="trash-can" iconStyle="regular" />
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+            </ul>
+          ) : (
+            <div className="my-4 px-5 text-center">
+              <Icon iconName="wave-pulse" className="text-neutral-350" />
+              <p className="mt-1 text-xs font-medium text-neutral-350">
+                No container registry found. <br /> Please add one.
+              </p>
+            </div>
+          )}
+        </BlockContent>
+      </Section>
     </div>
   )
 }

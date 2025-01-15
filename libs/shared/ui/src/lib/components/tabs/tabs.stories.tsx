@@ -1,5 +1,6 @@
-import { Meta, Story } from '@storybook/react'
-import { Icon, Tabs, TabsProps } from '@qovery/shared/ui'
+import { type Meta, type Story } from '@storybook/react'
+import Icon from '../icon/icon'
+import { Tabs, type TabsProps } from './tabs'
 
 export default {
   component: Tabs,

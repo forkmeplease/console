@@ -1,12 +1,11 @@
-import Button, { ButtonStyle } from '../buttons/button/button'
+import { Button } from '../button/button'
 import Icon from '../icon/icon'
 import useModalConfirmation from '../modals/modal-confirmation/use-modal-confirmation/use-modal-confirmation'
 
 export interface BlockContentDeleteProps {
   title: string
-  modalConfirmation: {
+  modalConfirmation?: {
     title: string
-    description: string
     name?: string
     mode?: string
   }
@@ -20,6 +19,7 @@ export interface BlockContentDeleteProps {
   ctaLoading?: boolean
   callback?: () => void
   customWidth?: string
+  customModalConfirmation?: () => void
 }
 
 export function BlockContentDelete(props: BlockContentDeleteProps) {
@@ -27,44 +27,47 @@ export function BlockContentDelete(props: BlockContentDeleteProps) {
     title,
     className = '',
     customWidth = 'w-full',
-    description = 'All your data are going to be deleted. Use it carefully this action is irreversible.',
+    description = 'All your data are going to be deleted. Use it carefully this action is irreversible. The operation might take a few minutes to complete.',
     ctaLabel = 'Delete',
     callback,
     list,
     modalConfirmation,
     ctaLoading,
+    customModalConfirmation,
   } = props
 
   const { openModalConfirmation } = useModalConfirmation()
 
   return (
-    <div className={`border border-error-300 bg-error-50 rounded ${className} ${customWidth}`}>
-      <div className="flex items-center justify-between h-9 px-4 border-b border-error-300">
-        <h2 className="font-medium text-text-600 text-ssm">{title}</h2>
+    <div className={`rounded border border-red-300 bg-red-50 ${className} ${customWidth}`}>
+      <div className="flex h-9 items-center justify-between border-b border-red-300 px-4">
+        <h2 className="text-ssm font-medium text-neutral-400">{title}</h2>
       </div>
       <div className="p-5">
-        <p className="mb-5 text-sm text-text-600">{description}</p>
+        <p className="mb-5 text-sm text-neutral-400">{description}</p>
         {list?.map((element, index) => (
-          <p key={index} data-testid={element.text} className="text-text-600 font-medium text-sm mb-2">
-            <Icon name={element.icon || 'icon-solid-trash'} className="mr-3 text-error-500" />
+          <p key={index} data-testid={element.text} className="mb-2 text-sm font-medium text-neutral-400">
+            <Icon name={element.icon || 'icon-solid-trash'} className="mr-3 text-red-500" />
             {element.text}
           </p>
         ))}
         <div className="flex justify-end">
           <Button
-            className="mt-3 ml-auto"
+            className="ml-auto mt-3"
             loading={ctaLoading}
             onClick={() => {
-              openModalConfirmation({
-                mode: modalConfirmation.mode,
-                title: modalConfirmation.title,
-                description: modalConfirmation.description,
-                name: modalConfirmation.name,
-                action: () => callback && callback(),
-                isDelete: true,
-              })
+              customModalConfirmation
+                ? customModalConfirmation()
+                : openModalConfirmation({
+                    title: modalConfirmation?.title ?? '',
+                    mode: modalConfirmation?.mode,
+                    name: modalConfirmation?.name,
+                    action: () => callback && callback(),
+                    isDelete: true,
+                  })
             }}
-            style={ButtonStyle.ERROR}
+            color="red"
+            size="md"
           >
             {ctaLabel}
           </Button>

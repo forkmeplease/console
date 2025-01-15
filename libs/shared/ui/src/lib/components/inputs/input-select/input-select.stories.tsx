@@ -1,8 +1,8 @@
-import { Meta, Story } from '@storybook/react'
-import { Value } from '@qovery/shared/interfaces'
-import { IconEnum } from '../../../../../../enums/src'
-import Icon from '../../icon/icon'
-import { InputSelect, InputSelectProps } from './input-select'
+import { type Meta, type Story } from '@storybook/react'
+import { IconEnum } from '@qovery/shared/enums'
+import { type Value } from '@qovery/shared/interfaces'
+import { Icon } from '../../icon/icon'
+import { InputSelect, type InputSelectProps } from './input-select'
 
 export default {
   component: InputSelect,
@@ -14,15 +14,18 @@ const options: Value[] = [
     label: 'Test 1',
     value: 'test1',
     icon: <Icon name={IconEnum.GITHUB} className="w-4" />,
+    onClickEditable: () => console.log('editable'),
   },
   {
     label: 'Test 2',
     value: 'test2',
     icon: <Icon name={IconEnum.GITLAB} className="w-4" />,
+    onClickEditable: () => console.log('editable'),
   },
   {
     label: 'Test 3',
     value: 'test3',
+    onClickEditable: () => console.log('editable'),
   },
 ]
 
@@ -34,6 +37,11 @@ Single.args = {
   options: options,
   value: 'test1',
   isSearchable: false,
+  menuListButton: {
+    label: 'New element',
+    icon: <Icon iconName="circle-plus" className="text-brand-500" />,
+    onClick: () => console.log('new element'),
+  },
 }
 
 export const Multi = Template.bind({})

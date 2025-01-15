@@ -1,24 +1,23 @@
 import {
   EnvironmentModeEnum,
   OrganizationCustomRoleProjectPermission,
-  OrganizationCustomRoleProjectPermissions,
-  OrganizationCustomRoleUpdateRequestPermissions,
+  type OrganizationCustomRoleProjectPermissionsInner,
+  type OrganizationCustomRoleUpdateRequestProjectPermissionsInnerPermissionsInner,
 } from 'qovery-typescript-axios'
 import { useState } from 'react'
-import { Controller, useFormContext } from 'react-hook-form'
+import { Controller, type FieldValues, type UseFormSetValue, useFormContext } from 'react-hook-form'
 import { InputCheckbox } from '@qovery/shared/ui'
-import { upperCaseFirstLetter } from '@qovery/shared/utils'
+import { upperCaseFirstLetter } from '@qovery/shared/util-js'
 import { defaultProjectPermission } from '../../../feature/page-organization-roles-edit-feature/page-organization-roles-edit-feature'
 
 export interface RowProjectProps {
-  project: OrganizationCustomRoleProjectPermissions
+  project: OrganizationCustomRoleProjectPermissionsInner
 }
 
 enum ProjectPermissionAdmin {
   ADMIN = 'ADMIN',
 }
 
-type OrganizationCustomRoleProjectPermissionAdmin = OrganizationCustomRoleProjectPermission | ProjectPermissionAdmin
 export const OrganizationCustomRoleProjectPermissionAdmin = {
   ...OrganizationCustomRoleProjectPermission,
   ...ProjectPermissionAdmin,
@@ -46,15 +45,16 @@ const setGlobalCheckByValue = (
 }
 
 const onChangeHeadCheckbox = (
-  project: OrganizationCustomRoleProjectPermissions,
+  project: OrganizationCustomRoleProjectPermissionsInner,
   currentPermission: string,
   globalCheck: string,
   setGlobalCheck: (value: string) => void,
-  setValue: (key: string, value: string) => void
+  setValue: UseFormSetValue<FieldValues>
 ) => {
   // get new value if currentPermission is already checked
   const newValue =
     globalCheck !== currentPermission ? currentPermission : OrganizationCustomRoleProjectPermissionAdmin.NO_ACCESS
+
   setGlobalCheck(newValue)
   // set value for nextPermission if admin is uncheck
   Object.keys(EnvironmentModeEnum).forEach((currentMode) => {
@@ -72,11 +72,8 @@ export function RowProject(props: RowProjectProps) {
 
   return (
     <>
-      <div
-        data-testid="project-head"
-        className="flex items-center h-10 bg-element-light-lighter-300 border-element-light-lighter-400 border-b"
-      >
-        <div className="flex-auto flex items-center h-full px-4 w-1/4 border-r border-element-light-lighter-500 font-medium">
+      <div data-testid="project-head" className="flex h-10 items-center border-b border-neutral-200 bg-neutral-150">
+        <div className="flex h-full w-1/4 flex-auto items-center border-r border-neutral-250 px-4 font-medium">
           {project.project_name}
         </div>
         {Object.keys(OrganizationCustomRoleProjectPermissionAdmin)
@@ -84,24 +81,16 @@ export function RowProject(props: RowProjectProps) {
           .map((permission) => (
             <div
               key={permission}
-              className="flex-1 flex items-center justify-center h-full px-4 border-r border-element-light-lighter-500 last:border-0"
+              className="flex h-full flex-1 items-center justify-center border-r border-neutral-250 px-4 last:border-0"
             >
-              <Controller
+              <InputCheckbox
+                dataTestId={`project.${permission}`}
                 name={`project_permissions.${project.project_id}`}
-                control={control}
-                render={({ field }) => (
-                  <InputCheckbox
-                    dataTestId={`project.${permission}`}
-                    name={field.name}
-                    value={globalCheck}
-                    formValue={permission}
-                    onChange={(e) => {
-                      onChangeHeadCheckbox(project, permission, globalCheck, setGlobalCheck, setValue)
-                      // set change for react-hook-form
-                      field.onChange(e)
-                    }}
-                  />
-                )}
+                value={globalCheck}
+                formValue={permission}
+                onChange={(e) => {
+                  onChangeHeadCheckbox(project, permission, globalCheck, setGlobalCheck, setValue)
+                }}
               />
             </div>
           ))}
@@ -110,20 +99,20 @@ export function RowProject(props: RowProjectProps) {
         {(project.is_admin ? defaultProjectPermission('ADMIN') : project.permissions)?.map(
           (
             permission:
-              | OrganizationCustomRoleUpdateRequestPermissions
+              | OrganizationCustomRoleUpdateRequestProjectPermissionsInnerPermissionsInner
               | { environment_type: EnvironmentModeEnum; permission: string }
           ) => (
             <div
               key={`${project.project_id}-${permission.environment_type}`}
-              className="flex h-10 border-element-light-lighter-500 border-b"
+              className="flex h-10 border-b border-neutral-250"
             >
-              <div className="flex-auto flex items-center h-full px-4 w-1/4 border-r border-element-light-lighter-500 font-medium">
+              <div className="flex h-full w-1/4 flex-auto items-center border-r border-neutral-250 px-4 font-medium">
                 <svg xmlns="http://www.w3.org/2000/svg" width="7" height="8" fill="none" viewBox="0 0 7 8">
                   <path fill="#C6D3E7" fillRule="evenodd" d="M2 0H.5v8h6V6.5H2V0z" clipRule="evenodd" />
                 </svg>
-                <span className="inline-block ml-3">{upperCaseFirstLetter(permission.environment_type)}</span>
+                <span className="ml-3 inline-block">{upperCaseFirstLetter(permission.environment_type)}</span>
               </div>
-              <div className="flex-1 flex items-center justify-center h-full px-4 border-r border-element-light-lighter-500">
+              <div className="flex h-full flex-1 items-center justify-center border-r border-neutral-250 px-4">
                 <InputCheckbox
                   dataTestId="admin-checkbox"
                   name={`${project.project_id}.${permission.environment_type}`}
@@ -139,7 +128,7 @@ export function RowProject(props: RowProjectProps) {
                 .map((currentPermission) => (
                   <div
                     key={currentPermission}
-                    className="flex-1 flex items-center justify-center h-full px-4 border-r border-element-light-lighter-500 last:border-0"
+                    className="flex h-full flex-1 items-center justify-center border-r border-neutral-250 px-4 last:border-0"
                   >
                     <Controller
                       name={`project_permissions.${project.project_id}.${permission.environment_type}`}

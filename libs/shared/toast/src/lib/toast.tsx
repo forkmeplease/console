@@ -1,4 +1,5 @@
-import { Toast, toast as toastAction } from 'react-hot-toast'
+import { type IconName } from '@fortawesome/fontawesome-common-types'
+import { type Toast, toast as toastAction } from 'react-hot-toast'
 import { ToastContent } from '@qovery/shared/ui'
 
 export enum ToastEnum {
@@ -8,11 +9,11 @@ export enum ToastEnum {
 }
 
 export const toast = (
-  status: ToastEnum,
+  status: ToastEnum | keyof typeof ToastEnum,
   title: string,
   description?: string,
   callback?: () => void,
-  iconAction?: string,
+  iconAction?: IconName,
   labelAction?: string,
   externalLink?: string
 ) => {

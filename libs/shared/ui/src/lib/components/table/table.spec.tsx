@@ -1,6 +1,5 @@
-import { screen } from '@testing-library/react'
-import { render } from '__tests__/utils/setup-jest'
-import Table, { TableProps } from './table'
+import { render, screen, waitFor } from '__tests__/utils/setup-jest'
+import Table, { type TableProps } from './table'
 
 describe('Table', () => {
   let props: TableProps
@@ -54,9 +53,28 @@ describe('Table', () => {
     ]
 
     render(<Table {...props} />)
-
     const tableHeadTitle = screen.queryByTestId('table-head-title')
 
-    expect(tableHeadTitle).toBeNull()
+    expect(tableHeadTitle).not.toBeInTheDocument()
+  })
+
+  it('should sort by default key', async () => {
+    props.dataHead = [
+      {
+        title: 'Title',
+        filter: [
+          {
+            key: 'mode',
+          },
+        ],
+      },
+    ]
+
+    const spy = jest.fn()
+    render(<Table {...props} defaultSortingKey="name" setDataSort={spy} data={[{ name: 'b' }, { name: 'a' }]} />)
+
+    await waitFor(() => {
+      expect(spy).toHaveBeenCalled()
+    })
   })
 })

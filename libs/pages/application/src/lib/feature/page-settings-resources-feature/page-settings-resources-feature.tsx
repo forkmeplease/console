@@ -1,117 +1,111 @@
-import { useEffect, useState } from 'react'
-import { FieldValues, FormProvider, useForm } from 'react-hook-form'
-import { useDispatch, useSelector } from 'react-redux'
+import { type Environment } from 'qovery-typescript-axios'
+import { type FieldValues, FormProvider, useForm } from 'react-hook-form'
 import { useParams } from 'react-router-dom'
-import { editApplication, postApplicationActionsRestart, selectApplicationById } from '@qovery/domains/application'
-import { MemorySizeEnum, getServiceType } from '@qovery/shared/enums'
-import { ApplicationEntity } from '@qovery/shared/interfaces'
-import { convertCpuToVCpu } from '@qovery/shared/utils'
-import { AppDispatch, RootState } from '@qovery/store'
+import { match } from 'ts-pattern'
+import { useEnvironment } from '@qovery/domains/environments/feature'
+import { type AnyService, type Database, type Helm } from '@qovery/domains/services/data-access'
+import { useDeploymentStatus, useEditService, useService } from '@qovery/domains/services/feature'
+import { DEPLOYMENT_LOGS_VERSION_URL, ENVIRONMENT_LOGS_URL } from '@qovery/shared/routes'
+import { buildEditServicePayload } from '@qovery/shared/util-services'
 import PageSettingsResources from '../../ui/page-settings-resources/page-settings-resources'
 
-export const handleSubmit = (
-  data: FieldValues,
-  application: ApplicationEntity,
-  memorySize: MemorySizeEnum | string
-) => {
-  const cloneApplication = Object.assign({}, application)
-  const currentMemory = Number(data['memory'])
-
-  cloneApplication.memory = memorySize === MemorySizeEnum.GB ? currentMemory * 1024 : currentMemory
-  cloneApplication.cpu = convertCpuToVCpu(data['cpu'][0], true)
-  cloneApplication.min_running_instances = data['instances'][0]
-  cloneApplication.max_running_instances = data['instances'][1]
-
-  return cloneApplication
+export interface SettingsResourcesFeatureProps {
+  service: Exclude<AnyService, Helm | Database>
+  environment: Environment
 }
 
-export function PageSettingsResourcesFeature() {
-  const { applicationId = '', environmentId = '' } = useParams()
+export function SettingsResourcesFeature({ service, environment }: SettingsResourcesFeatureProps) {
+  const { data: deploymentStatus } = useDeploymentStatus({ environmentId: environment.id, serviceId: service.id })
 
-  const [loading, setLoading] = useState(false)
-  const dispatch = useDispatch<AppDispatch>()
+  const { mutate: editService, isLoading: isLoadingService } = useEditService({
+    environmentId: environment.id,
+    logsLink:
+      ENVIRONMENT_LOGS_URL(environment.organization.id, environment.project.id, environment.id) +
+      DEPLOYMENT_LOGS_VERSION_URL(service.id, deploymentStatus?.execution_id),
+  })
 
-  const application = useSelector<RootState, ApplicationEntity | undefined>(
-    (state) => selectApplicationById(state, applicationId),
-    (a, b) =>
-      a?.memory === b?.memory &&
-      a?.cpu === b?.cpu &&
-      a?.min_running_instances === b?.min_running_instances &&
-      a?.max_running_instances === b?.max_running_instances &&
-      JSON.stringify(a?.instances) === JSON.stringify(b?.instances)
-  )
+  const defaultInstances = match(service)
+    .with({ serviceType: 'JOB' }, () => ({}))
+    .otherwise((s) => ({
+      min_running_instances: s.min_running_instances || 1,
+      max_running_instances: s.max_running_instances || 1,
+    }))
 
   const methods = useForm({
     mode: 'onChange',
     defaultValues: {
-      memory: application?.memory,
-      cpu: [convertCpuToVCpu(application?.cpu)],
-      instances: [application?.min_running_instances || 1, application?.max_running_instances || 1],
+      memory: service.memory,
+      cpu: service.cpu,
+      ...defaultInstances,
     },
   })
 
-  const [memorySize, setMemorySize] = useState<MemorySizeEnum | string>(MemorySizeEnum.MB)
-
-  const getMemoryUnit = (value: string) => {
-    setMemorySize(value)
-    return value
-  }
-
-  useEffect(() => {
-    methods.reset({
-      memory: application?.memory,
-      cpu: [convertCpuToVCpu(application?.cpu)],
-      instances: [application?.min_running_instances || 1, application?.max_running_instances || 1],
-    })
-  }, [
-    methods,
-    application?.memory,
-    application?.cpu,
-    application?.min_running_instances,
-    application?.max_running_instances,
-  ])
-
-  const toasterCallback = () => {
-    if (application) {
-      dispatch(
-        postApplicationActionsRestart({ applicationId, environmentId, serviceType: getServiceType(application) })
-      )
+  const onSubmit = methods.handleSubmit((data: FieldValues) => {
+    const request = {
+      memory: Number(data['memory']),
+      cpu: data['cpu'],
     }
-  }
 
-  const onSubmit = methods.handleSubmit((data) => {
-    if (!application) return
+    let requestWithInstances = {}
+    if (service.serviceType !== 'JOB') {
+      requestWithInstances = {
+        ...request,
+        ...{
+          min_running_instances: data['min_running_instances'],
+          max_running_instances: data['max_running_instances'],
+        },
+      }
+    }
 
-    setLoading(true)
-    const cloneApplication = handleSubmit(data, application, memorySize)
+    const payload = match(service)
+      .with({ serviceType: 'JOB' }, (service) => buildEditServicePayload({ service, request }))
+      .with({ serviceType: 'APPLICATION' }, (service) =>
+        buildEditServicePayload({
+          service,
+          request: requestWithInstances,
+        })
+      )
+      .with({ serviceType: 'CONTAINER' }, (service) =>
+        buildEditServicePayload({
+          service,
+          request: requestWithInstances,
+        })
+      )
+      .exhaustive()
 
-    dispatch(
-      editApplication({
-        applicationId: applicationId,
-        data: cloneApplication,
-        serviceType: getServiceType(application),
-        toasterCallback,
-      })
-    )
-      .unwrap()
-      .then(() => setLoading(false))
-      .catch(() => setLoading(false))
+    editService({
+      serviceId: service.id,
+      payload,
+    })
   })
 
-  const displayWarningCpu: boolean = methods.watch('cpu')[0] > (application?.cpu || 0) / 1000
+  const displayWarningCpu: boolean = (methods.watch('cpu') || 0) > (service.maximum_cpu || 0)
 
   return (
     <FormProvider {...methods}>
       <PageSettingsResources
         onSubmit={onSubmit}
-        loading={loading}
-        application={application}
-        memorySize={memorySize}
-        getMemoryUnit={getMemoryUnit}
+        loading={isLoadingService}
+        service={service}
         displayWarningCpu={displayWarningCpu}
       />
     </FormProvider>
   )
+}
+
+export function PageSettingsResourcesFeature() {
+  const { environmentId = '', applicationId = '' } = useParams()
+
+  const { data: environment } = useEnvironment({ environmentId })
+  const { data: service } = useService({ environmentId, serviceId: applicationId })
+
+  if (!environment) return null
+
+  return match(service)
+    .with({ serviceType: 'APPLICATION' }, { serviceType: 'CONTAINER' }, { serviceType: 'JOB' }, (service) => (
+      <SettingsResourcesFeature service={service} environment={environment} />
+    ))
+    .otherwise(() => null)
 }
 
 export default PageSettingsResourcesFeature

@@ -1,5 +1,5 @@
+import { type ReactNode } from 'react'
 import { FormProvider, useForm } from 'react-hook-form'
-import React from 'react'
 
 /**
  * Testing Library utility function to wrap tested component in React Hook Form
@@ -8,8 +8,11 @@ import React from 'react'
  * @param {Object} objectParameters.defaultValues Initial form values to pass into
  * React Hook Form, which you can then assert against
  */
-export function wrapWithReactHookForm(ui: React.ReactElement, { defaultValues = {} } = {}) {
-  const Wrapper = ({ children }: { children: React.ReactElement }) => {
+export function wrapWithReactHookForm<T extends { [x: string]: any } | undefined>(
+  ui: ReactNode,
+  { defaultValues }: { defaultValues?: T } = {}
+) {
+  const Wrapper = ({ children }: { children: ReactNode }) => {
     const methods = useForm({ defaultValues, mode: 'all' })
     return <FormProvider {...methods}>{children}</FormProvider>
   }

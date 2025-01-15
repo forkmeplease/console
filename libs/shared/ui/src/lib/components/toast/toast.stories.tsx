@@ -1,14 +1,14 @@
-import { Meta, Story } from '@storybook/react'
-import { ToastEnum, toast } from '@qovery/shared/toast'
-import { Button } from '../buttons/button/button'
-import { ToastBehavior, ToastProps } from './toast'
+import { type Meta, type Story } from '@storybook/react'
+import { ToastEnum, toast } from '../../utils/toast'
+import Button from '../button/button'
+import { ToastBehavior, type ToastProps } from './toast'
 
 export default {
   component: ToastBehavior,
   title: 'Toaster',
   argTypes: {
     actionIcon: {
-      options: ['icon-solid-wheel', 'icon-solid-circle-plus', 'icon-solid-book', 'icon-solid-key'],
+      options: ['gear', 'plus', 'book', 'key'],
       control: { type: 'select' },
     },
   },
@@ -18,10 +18,12 @@ const Template: Story<ToastProps> = (args) => {
   return (
     <div>
       <Button
+        type="button"
+        size="lg"
         onClick={() =>
           toast(
             args.status,
-            args.title,
+            args.title || '',
             args.description,
             args.callback,
             args.actionIcon,
@@ -53,7 +55,7 @@ WithActionIcon.args = {
   title: 'Cluster installed',
   description: '3 applications has been deployed',
   callback: () => console.log('my-callback'),
-  actionIcon: 'icon-solid-pen',
+  actionIcon: 'pen',
 }
 export const WithActionLabel = Template.bind({})
 

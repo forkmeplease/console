@@ -1,18 +1,17 @@
-import { DeploymentHistoryDatabase } from 'qovery-typescript-axios'
-import React, { useEffect, useState } from 'react'
-import { BaseLink, HelpSection, Table, TableRowDeployment } from '@qovery/shared/ui'
+import { type DeploymentHistoryDatabase } from 'qovery-typescript-axios'
+import { memo, useEffect, useState } from 'react'
+import { Table, type TableFilterProps, TableRowDeployment } from '@qovery/shared/ui'
 
 export interface PageDeploymentsProps {
-  databaseId?: string
   deployments?: DeploymentHistoryDatabase[]
-  listHelpfulLinks: BaseLink[]
   isLoading?: boolean
 }
 
 export function Deployments(props: PageDeploymentsProps) {
-  const { databaseId, deployments = [], listHelpfulLinks, isLoading = true } = props
+  const { deployments = [], isLoading = true } = props
 
   const [data, setData] = useState<DeploymentHistoryDatabase[]>(deployments)
+  const [filter, setFilter] = useState<TableFilterProps[]>([])
 
   useEffect(() => {
     deployments && setData(deployments)
@@ -51,37 +50,33 @@ export function Deployments(props: PageDeploymentsProps) {
   ]
 
   return (
-    <>
-      <Table
-        dataHead={tableHead}
-        defaultData={deployments}
-        filterData={data}
-        setFilterData={setData}
-        className="mt-2 rounded-sm"
-      >
-        <div>
-          {data?.map((currentData, index) => (
-            <TableRowDeployment
-              id={databaseId}
-              data={currentData as DeploymentHistoryDatabase}
-              key={index}
-              dataHead={tableHead}
-              isLoading={isLoading}
-              noCommit
-            />
-          ))}
-        </div>
-      </Table>
-      <div className="rounded-b bg-white">
-        <HelpSection description="Need help? You may find these links useful" links={listHelpfulLinks} />
+    <Table dataHead={tableHead} data={deployments} setFilter={setFilter} filter={filter} setDataSort={setData}>
+      <div>
+        {data?.map((currentData, index) => (
+          <TableRowDeployment
+            key={index}
+            data={currentData as DeploymentHistoryDatabase}
+            filter={filter}
+            dataHead={tableHead}
+            isLoading={isLoading}
+            fromService
+            noCommit
+          />
+        ))}
       </div>
-    </>
+    </Table>
   )
 }
 
-export const PageDeployments = React.memo(Deployments, (prevProps, nextProps) => {
-  const prevDeploymentIds = prevProps.deployments?.map((deployment) => deployment.id)
-  const nextDeploymentIds = nextProps.deployments?.map((deployment) => deployment.id)
+export const PageDeployments = memo(Deployments, (prevProps, nextProps) => {
+  const prevDeployment = prevProps.deployments?.map((deployment) => ({
+    id: deployment.id,
+    status: deployment.status,
+  }))
+  const nextDeployment = nextProps.deployments?.map((deployment) => ({
+    id: deployment.id,
+    status: deployment.status,
+  }))
 
-  return JSON.stringify(prevDeploymentIds) === JSON.stringify(nextDeploymentIds)
+  return JSON.stringify(prevDeployment) === JSON.stringify(nextDeployment)
 })

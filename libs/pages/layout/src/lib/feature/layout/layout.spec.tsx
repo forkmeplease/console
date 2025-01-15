@@ -1,7 +1,8 @@
-import { render } from '__tests__/utils/setup-jest'
-import React from 'react'
+import { createElement } from 'react'
+import { IntercomProvider } from 'react-use-intercom'
+import { renderWithProviders } from '@qovery/shared/util-tests'
 import { setCurrentOrganizationIdOnStorage, setCurrentProjectIdOnStorage } from '../../utils/utils'
-import Layout, { LayoutProps } from './layout'
+import Layout, { type LayoutProps } from './layout'
 
 jest.mock('../../utils/utils')
 
@@ -10,12 +11,16 @@ describe('Layout', () => {
 
   beforeEach(() => {
     props = {
-      children: React.createElement('div'),
+      children: createElement('div'),
     }
   })
 
   it('should render successfully', () => {
-    const { baseElement } = render(<Layout {...props} />)
+    const { baseElement } = renderWithProviders(
+      <IntercomProvider appId="__test__app__id__" autoBoot={false}>
+        <Layout {...props} />
+      </IntercomProvider>
+    )
     expect(baseElement).toBeTruthy()
   })
 
@@ -24,14 +29,22 @@ describe('Layout', () => {
       typeof setCurrentOrganizationIdOnStorage
     >
     mockSetOrganizationId.mockImplementation()
-    render(<Layout {...props} />)
-    expect(mockSetOrganizationId).toBeCalled()
+    renderWithProviders(
+      <IntercomProvider appId="__test__app__id__" autoBoot={false}>
+        <Layout {...props} />
+      </IntercomProvider>
+    )
+    expect(mockSetOrganizationId).toHaveBeenCalled()
   })
 
   it('should save the current project id on local storage', () => {
     const mockSetProjectId = setCurrentProjectIdOnStorage as jest.Mock<typeof setCurrentProjectIdOnStorage>
     mockSetProjectId.mockImplementation()
-    render(<Layout {...props} />)
-    expect(mockSetProjectId).toBeCalled()
+    renderWithProviders(
+      <IntercomProvider appId="__test__app__id__" autoBoot={false}>
+        <Layout {...props} />
+      </IntercomProvider>
+    )
+    expect(mockSetProjectId).toHaveBeenCalled()
   })
 })

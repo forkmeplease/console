@@ -1,15 +1,15 @@
-import React from 'react'
 import { render } from '__tests__/utils/setup-jest'
-import Container, { ContainerProps } from './container'
+import { createElement } from 'react'
+import Container, { type ContainerProps } from './container'
 
 describe('Container', () => {
   let props: ContainerProps
 
   beforeEach(() => {
     props = {
-      children: React.createElement('div'),
+      children: createElement('div'),
       params: {
-        ['*']: 'some-value',
+        '*': 'some-value',
       },
       firstStep: true,
     }

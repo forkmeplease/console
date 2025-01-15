@@ -1,7 +1,5 @@
-import { render } from '__tests__/utils/setup-jest'
-import { screen } from '@testing-library/react'
-
-import TableRow, { TableRowProps } from './table-row'
+import { render, screen } from '__tests__/utils/setup-jest'
+import TableRow, { type TableRowProps } from './table-row'
 
 describe('TableRow', () => {
   let props: TableRowProps
@@ -10,6 +8,7 @@ describe('TableRow', () => {
     props = {
       link: '/',
       children: <div>cell</div>,
+      filter: [],
     }
   })
 

@@ -1,77 +1,113 @@
-import React, { Dispatch, SetStateAction, useState } from 'react'
+import { type Dispatch, type ReactNode, type SetStateAction, useEffect, useState } from 'react'
+import { twMerge } from '@qovery/shared/util-js'
 import { TableHeadFilter } from './table-head-filter/table-head-filter'
 import TableHeadSort from './table-head-sort/table-head-sort'
 
-export interface TableProps {
-  children: React.ReactElement
-  dataHead: TableHeadProps[]
+export interface TableFilterProps {
+  key?: string
+  value?: string
+}
+
+export interface TableProps<T> {
+  children: ReactNode
+  dataHead: TableHeadProps<T>[]
   className?: string
   classNameHead?: string
   columnsWidth?: string
-  defaultData?: any[]
-  filterData?: any[]
-  setFilterData?: Dispatch<SetStateAction<any[]>>
+  data?: T[]
+  setFilter?: Dispatch<SetStateAction<TableFilterProps[]>>
+  filter?: TableFilterProps[]
+  setDataSort?: Dispatch<SetStateAction<T[]>>
+  defaultSortingKey?: keyof T
 }
 
-export interface TableHeadProps {
+export interface TableHeadProps<T> {
   title: string
   className?: string
-  filter?: {
-    key: string
-    search?: boolean
-    title?: string
-  }[]
+  classNameTitle?: string
+  menuWidth?: number
+  filter?: TableHeadCustomFilterProps<T>[]
   sort?: {
     key: string
   }
 }
 
-export function Table(props: TableProps) {
-  const {
-    dataHead,
-    className = 'bg-white rounded-sm',
-    classNameHead = '',
-    columnsWidth = `repeat(${dataHead.length},minmax(0,1fr))`,
-    children,
-    defaultData,
-    filterData,
-    setFilterData,
-  } = props
+export interface TableHeadCustomFilterProps<T> {
+  key: string
+  search?: boolean
+  title?: string
+  itemsCustom?: string[]
+  itemContentCustom?: (data: T, currentFilter: string, item?: string) => ReactNode
+  hideFilterNumber?: boolean
+}
 
-  const ALL = 'ALL'
-  const [currentFilter, setCurrentFilter] = useState(ALL)
+/**
+ * @deprecated Prefer TablePrimitives + tanstack-table for type-safety and documentation
+ */
+export function Table<T>({
+  dataHead,
+  className,
+  classNameHead = '',
+  columnsWidth = `repeat(${dataHead.length},minmax(0,1fr))`,
+  children,
+  data,
+  filter,
+  setFilter,
+  setDataSort,
+  defaultSortingKey,
+}: TableProps<T>) {
+  const [isSorted, setIsSorted] = useState(false)
+
+  useEffect(() => {
+    if (!isSorted && defaultSortingKey && data && setDataSort) {
+      const sortedData = data.sort((a, b) =>
+        (a[defaultSortingKey] as string).toLowerCase() < (b[defaultSortingKey] as string).toLowerCase() ? 1 : -1
+      )
+      setDataSort(sortedData)
+    }
+  }, [data, defaultSortingKey, isSorted, setDataSort])
 
   return (
-    <div className={className}>
+    <div className={twMerge('flex flex-col-reverse rounded-sm bg-white', className)}>
+      <div className="grow">{children}</div>
       <div
         data-testid="table-container"
-        className={`grid items-center border-b-element-light-lighter-400 border-b sticky top-0 bg-white z-10 ${classNameHead}`}
+        className={`sticky top-0 grid h-10 items-center border-b border-b-neutral-200 bg-white ${classNameHead}`}
         style={{ gridTemplateColumns: columnsWidth }}
       >
-        {dataHead.map(({ title, className = 'px-4 py-2', filter, sort }, index) => (
-          <div key={index} className={className}>
-            {!sort && !filter && (
-              <span data-testid="table-head-title" className="text-text-600 text-xs font-medium">
-                {title}
-              </span>
-            )}
-            {filter && defaultData && setFilterData && (
-              <TableHeadFilter
-                title={title}
-                dataHead={dataHead.filter((head) => head.title === title)}
-                defaultData={defaultData}
-                setFilterData={setFilterData}
-                currentFilter={currentFilter}
-                setCurrentFilter={setCurrentFilter}
-              />
-            )}
-            {sort && filterData && setFilterData && (
-              <TableHeadSort title={title} currentKey={sort.key} data={filterData} setFilterData={setFilterData} />
-            )}
-          </div>
-        ))}
+        {dataHead.map(
+          (
+            { title, className = 'px-4 py-2', classNameTitle = 'text-neutral-400 ', filter: hasFilter, sort },
+            index
+          ) => (
+            <div key={index} className={className}>
+              {!sort && !hasFilter && (
+                <span data-testid="table-head-title" className={`text-xs font-medium ${classNameTitle}`}>
+                  {title}
+                </span>
+              )}
+              {hasFilter && data && filter && setFilter && (
+                <TableHeadFilter
+                  title={title}
+                  dataHead={dataHead.filter((head) => head.title === title)[0]}
+                  defaultData={data}
+                  filter={filter}
+                  setFilter={setFilter}
+                />
+              )}
+              {sort && data && (
+                <TableHeadSort
+                  title={title}
+                  currentKey={sort.key}
+                  data={data}
+                  setData={setDataSort}
+                  setIsSorted={setIsSorted}
+                />
+              )}
+            </div>
+          )
+        )}
       </div>
-      <div>{children}</div>
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { ComponentMeta, ComponentStory } from '@storybook/react'
+import { type ComponentMeta, type ComponentStory } from '@storybook/react'
 import { StickyActionFormToaster } from './sticky-action-form-toaster'
 
 export default {
@@ -13,7 +13,5 @@ Primary.args = {
   description: 'Warning, there are still unsaved changes!',
   resetLabel: '',
   submitLabel: 'Save modifications',
-  onSubmit: () => {},
-  onReset: () => {},
   disabledValidation: false,
 }

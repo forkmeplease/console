@@ -1,12 +1,9 @@
-import '@testing-library/jest-dom/extend-expect'
-import { act, findAllByTestId, fireEvent, getByTestId, screen, waitFor } from '@testing-library/react'
-import { render } from '__tests__/utils/setup-jest'
+import { act, findAllByTestId, fireEvent, getByTestId, render, screen, waitFor } from '__tests__/utils/setup-jest'
 import { wrapWithReactHookForm } from '__tests__/utils/wrap-with-react-hook-form'
 import { APIVariableScopeEnum } from 'qovery-typescript-axios'
-import React from 'react'
 import { jsonToForm } from '../../feature/import-environment-variable-modal-feature/utils/file-to-form'
 import ImportEnvironmentVariableModal, {
-  ImportEnvironmentVariableModalProps,
+  type ImportEnvironmentVariableModalProps,
 } from './import-environment-variable-modal'
 
 describe('ImportEnvironmentVariableModal', () => {
@@ -53,24 +50,19 @@ describe('ImportEnvironmentVariableModal', () => {
   })
 
   describe('with only one entry', () => {
-    let defaultValues: any
-    let baseElement: any
+    const json = JSON.stringify({
+      key1: 'value1',
+    })
+    const defaultValues = jsonToForm(json)
 
     beforeEach(() => {
-      baseElement = null
-      const json = JSON.stringify({
-        key1: 'value1',
-      })
-      defaultValues = jsonToForm(json)
       props.keys = Object.keys(JSON.parse(json))
     })
 
     it('should render row with correct form inputs', async () => {
-      await act(() => {
-        baseElement = render(
-          wrapWithReactHookForm(<ImportEnvironmentVariableModal {...props} />, { defaultValues })
-        ).baseElement
-      })
+      const { baseElement } = render(
+        wrapWithReactHookForm(<ImportEnvironmentVariableModal {...props} />, { defaultValues })
+      )
 
       await waitFor(async () => {
         const formRows = await findAllByTestId(baseElement, 'form-row')
@@ -95,8 +87,10 @@ describe('ImportEnvironmentVariableModal', () => {
         fireEvent.input(input, { target: { value: '' } })
       })
 
-      const warningIcon = screen.getByTestId('warning-icon-left')
-      expect(warningIcon).toBeInTheDocument()
+      await waitFor(() => {
+        const warningIcon = screen.getByTestId('warning-icon-left')
+        expect(warningIcon).toBeInTheDocument()
+      })
 
       await waitFor(async () => {
         const button = await getByTestId(baseElement, 'submit-button')
@@ -123,10 +117,10 @@ describe('ImportEnvironmentVariableModal', () => {
 
       await act(() => {
         const select = screen.getByTestId('select-scope-for-all')
-        fireEvent.change(select, { target: { value: APIVariableScopeEnum.ENVIRONMENT } })
+        fireEvent.change(select, { target: { value: APIVariableScopeEnum.PROJECT } })
       })
 
-      expect(spy).toHaveBeenCalledWith(APIVariableScopeEnum.ENVIRONMENT)
+      expect(spy).toHaveBeenCalledWith(APIVariableScopeEnum.PROJECT)
     })
 
     it('should toggle all on click on secret toggle', async () => {
@@ -174,7 +168,7 @@ describe('ImportEnvironmentVariableModal', () => {
     it('should render dropzone', async () => {
       const defaultValues = {}
       render(wrapWithReactHookForm(<ImportEnvironmentVariableModal {...props} />, { defaultValues }))
-      expect(await screen.getByTestId('drop-input')).toBeTruthy()
+      expect(await screen.getByTestId('drop-input')).toBeInTheDocument()
     })
   })
 })

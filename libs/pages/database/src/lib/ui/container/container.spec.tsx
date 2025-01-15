@@ -1,6 +1,6 @@
 import { render } from '__tests__/utils/setup-jest'
-import { userSignUpFactoryMock } from '@qovery/domains/user'
-import Container, { ContainerProps } from '../container/container'
+import { userSignUpFactoryMock } from '@qovery/shared/factories'
+import Container, { type ContainerProps } from '../container/container'
 
 describe('Container', () => {
   const props: ContainerProps = {

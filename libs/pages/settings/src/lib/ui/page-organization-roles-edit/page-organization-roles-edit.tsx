@@ -1,20 +1,12 @@
-import { OrganizationCustomRole, OrganizationCustomRoleProjectPermissions } from 'qovery-typescript-axios'
-import { FormEventHandler } from 'react'
-import { Controller, useFormContext } from 'react-hook-form'
-import { useNavigate, useParams } from 'react-router-dom'
-import { SETTINGS_ROLES_URL, SETTINGS_URL } from '@qovery/shared/router'
 import {
-  BlockContent,
-  Button,
-  ButtonSize,
-  ButtonStyle,
-  HelpSection,
-  Icon,
-  IconAwesomeEnum,
-  InputText,
-  InputTextArea,
-  LoaderSpinner,
-} from '@qovery/shared/ui'
+  type OrganizationCustomRole,
+  type OrganizationCustomRoleProjectPermissionsInner,
+} from 'qovery-typescript-axios'
+import { type FormEventHandler } from 'react'
+import { Controller, useFormContext } from 'react-hook-form'
+import { useParams } from 'react-router-dom'
+import { SETTINGS_ROLES_URL, SETTINGS_URL } from '@qovery/shared/routes'
+import { BlockContent, Button, Icon, InputText, InputTextArea, Link, LoaderSpinner } from '@qovery/shared/ui'
 import RowProject from './row-project/row-project'
 import TableClusters from './table-clusters/table-clusters'
 import Table from './table/table'
@@ -32,38 +24,40 @@ export function PageOrganizationRolesEdit(props: PageOrganizationRolesEditProps)
 
   const { control, formState } = useFormContext()
   const { organizationId = '' } = useParams()
-  const navigate = useNavigate()
 
   return (
-    <div className="flex flex-col justify-between w-full">
+    <div className="flex w-full flex-col justify-between">
       <div className="p-8">
         {loading ? (
-          <div data-testid="custom-roles-loader" className="flex justify-center mt-5">
+          <div data-testid="custom-roles-loader" className="mt-5 flex justify-center">
             <LoaderSpinner className="w-6" />
           </div>
         ) : (
           currentRole && (
             <>
-              <div className="flex justify-between mb-8">
+              <div className="mb-8 flex justify-between">
                 <div>
-                  <Button
-                    size={ButtonSize.TINY}
-                    style={ButtonStyle.FLAT}
-                    onClick={() => navigate(SETTINGS_URL(organizationId) + SETTINGS_ROLES_URL)}
-                    className="!px-0 mb-1"
+                  <Link
+                    color="brand"
+                    size="xs"
+                    className="mb-1 gap-1"
+                    to={SETTINGS_URL(organizationId) + SETTINGS_ROLES_URL}
                   >
-                    <Icon name={IconAwesomeEnum.ARROW_LEFT} className="mr-1 text-xs" />
+                    <Icon iconName="arrow-left" className="mr-1 text-xs" />
                     Back
-                  </Button>
-                  <h1 className="h5 text-text-700 mb-2">Edit your custom role: {currentRole.name}</h1>
-                  <p className="text-text-500 text-xs">
-                    Set cluster and project permissions for each of your custom role.
+                  </Link>
+                  <h1 className="h5 mb-2 text-neutral-400">Edit your custom role: {currentRole.name}</h1>
+                  <p className="text-xs text-neutral-400">
+                    Set permissions for your custom role. Cluster level permissions allow you to define access
+                    permission to each cluster of your organization (default is "Read-only"). Project Level permissions
+                    allow you to customize the access to each project and its environments based on its type (PROD,DEV
+                    etc.. default is "No Access").
                   </p>
                 </div>
               </div>
               <form onSubmit={onSubmit}>
                 <div className="max-w-content-with-navigation-left">
-                  <BlockContent title="General informations">
+                  <BlockContent title="General information">
                     <Controller
                       name="name"
                       control={control}
@@ -125,26 +119,25 @@ export function PageOrganizationRolesEdit(props: PageOrganizationRolesEditProps)
                       },
                     ]}
                   >
-                    {currentRole.project_permissions.map((project: OrganizationCustomRoleProjectPermissions) => (
+                    {currentRole.project_permissions.map((project: OrganizationCustomRoleProjectPermissionsInner) => (
                       <RowProject key={project.project_id} project={project} />
                     ))}
                   </Table>
                 )}
-                <div className="flex gap-3 justify-between mt-6">
+                <div className="mb-24 mt-6 flex justify-between gap-3">
                   <Button
-                    dataTestId="delete-button"
-                    className="btn--no-min-w"
-                    style={ButtonStyle.ERROR}
-                    size={ButtonSize.XLARGE}
+                    type="button"
+                    data-testid="delete-button"
+                    color="red"
+                    size="lg"
                     onClick={() => onDeleteRole(currentRole)}
                   >
                     Delete role
                   </Button>
                   <Button
-                    dataTestId="submit-save-button"
-                    className="btn--no-min-w"
+                    data-testid="submit-save-button"
+                    size="lg"
                     type="submit"
-                    size={ButtonSize.XLARGE}
                     disabled={!formState.isValid}
                     loading={loadingForm}
                   >
@@ -156,16 +149,6 @@ export function PageOrganizationRolesEdit(props: PageOrganizationRolesEditProps)
           )
         )}
       </div>
-      <HelpSection
-        description="Need help? You may find these links useful"
-        links={[
-          {
-            link: 'https://hub.qovery.com/docs/using-qovery/configuration/organization/#custom-roles',
-            linkLabel: 'How to configure my custom roles',
-            external: true,
-          },
-        ]}
-      />
     </div>
   )
 }

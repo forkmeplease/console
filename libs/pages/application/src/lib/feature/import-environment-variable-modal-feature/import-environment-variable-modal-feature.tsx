@@ -2,34 +2,25 @@ import { APIVariableScopeEnum } from 'qovery-typescript-axios'
 import { useCallback, useEffect, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { FormProvider, useForm } from 'react-hook-form'
-import { useDispatch, useSelector } from 'react-redux'
-import {
-  getEnvironmentVariablesState,
-  selectEnvironmentVariablesByApplicationId,
-  selectSecretEnvironmentVariablesByApplicationId,
-} from '@qovery/domains/environment-variable'
-import { ServiceTypeEnum } from '@qovery/shared/enums'
-import {
-  EnvironmentVariableEntity,
-  EnvironmentVariableSecretOrPublic,
-  LoadingStatus,
-  SecretEnvironmentVariableEntity,
-} from '@qovery/shared/interfaces'
-import { parseEnvText } from '@qovery/shared/utils'
-import { AppDispatch, RootState } from '@qovery/store'
+import { match } from 'ts-pattern'
+import { type ServiceType } from '@qovery/domains/services/data-access'
+import { useService } from '@qovery/domains/services/feature'
+import { useImportVariables, useVariables } from '@qovery/domains/variables/feature'
+import { useModal } from '@qovery/shared/ui'
+import { computeAvailableScope, parseEnvText } from '@qovery/shared/util-js'
 import ImportEnvironmentVariableModal from '../../ui/import-environment-variable-modal/import-environment-variable-modal'
-import { computeAvailableScope } from '../../utils/compute-available-environment-variable-scope'
 import { changeScopeForAll } from './utils/change-scope-all'
 import { deleteEntry } from './utils/delete-entry'
 import { parsedToForm } from './utils/file-to-form'
-import { handleSubmit } from './utils/handle-submit'
+import { formatData } from './utils/handle-submit'
 import { onDrop } from './utils/on-drop'
 import { triggerToggleAll } from './utils/trigger-toggle-all'
 
 export interface ImportEnvironmentVariableModalFeatureProps {
+  environmentId: string
   applicationId: string
   closeModal: () => void
-  serviceType?: ServiceTypeEnum
+  serviceType?: ServiceType
 }
 
 export function ImportEnvironmentVariableModalFeature(props: ImportEnvironmentVariableModalFeatureProps) {
@@ -38,24 +29,24 @@ export function ImportEnvironmentVariableModalFeature(props: ImportEnvironmentVa
   const [keys, setKeys] = useState<string[]>([])
   const [overwriteEnabled, setOverwriteEnabled] = useState<boolean>(false)
 
-  const dispatch = useDispatch<AppDispatch>()
+  const { enableAlertClickOutside } = useModal()
 
-  const environmentVariables: EnvironmentVariableEntity[] = useSelector<RootState, EnvironmentVariableEntity[]>(
-    (state) => selectEnvironmentVariablesByApplicationId(state, props.applicationId)
-  )
-  const loadingStatus: LoadingStatus = useSelector<RootState, LoadingStatus>(
-    (state) => getEnvironmentVariablesState(state).loadingStatus
-  )
-  const secretEnvironmentVariables: SecretEnvironmentVariableEntity[] = useSelector<
-    RootState,
-    SecretEnvironmentVariableEntity[]
-  >((state) => selectSecretEnvironmentVariablesByApplicationId(state, props.applicationId))
+  const { data: service } = useService({
+    environmentId: props.environmentId,
+    serviceId: props.applicationId,
+  })
 
-  const [existingEnvVars, setExistingEnvVars] = useState<EnvironmentVariableSecretOrPublic[]>([])
+  const scope = match(service?.serviceType)
+    .with('APPLICATION', () => APIVariableScopeEnum.APPLICATION)
+    .with('CONTAINER', () => APIVariableScopeEnum.CONTAINER)
+    .with('JOB', () => APIVariableScopeEnum.JOB)
+    .with('HELM', () => APIVariableScopeEnum.HELM)
+    .otherwise(() => undefined)
 
-  useEffect(() => {
-    setExistingEnvVars([...environmentVariables, ...secretEnvironmentVariables])
-  }, [environmentVariables, secretEnvironmentVariables])
+  const { data: existingEnvVars = [], isLoading } = useVariables({
+    parentId: props.applicationId,
+    scope,
+  })
 
   const handleData = useCallback(
     async (data: string) => {
@@ -74,9 +65,15 @@ export function ImportEnvironmentVariableModalFeature(props: ImportEnvironmentVa
     methods.trigger()
   }, [fileParsed, methods])
 
+  useEffect(() => {
+    if (fileParsed) enableAlertClickOutside(true)
+  }, [fileParsed, enableAlertClickOutside])
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: (acceptedFiles) => onDrop(acceptedFiles, handleData),
   })
+
+  const { mutateAsync: importVariables, isLoading: isImportVariablesLoading } = useImportVariables()
 
   return (
     <FormProvider {...methods}>
@@ -86,19 +83,23 @@ export function ImportEnvironmentVariableModalFeature(props: ImportEnvironmentVa
         changeScopeForAll={(scope) => changeScopeForAll(scope as APIVariableScopeEnum, methods.setValue, keys)}
         keys={keys}
         closeModal={props.closeModal}
-        loading={loadingStatus === 'loading'}
+        loading={isLoading || isImportVariablesLoading}
         availableScopes={computeAvailableScope(undefined, false)}
-        onSubmit={methods.handleSubmit(() =>
-          handleSubmit(
-            methods.getValues(),
-            props.applicationId,
-            keys,
-            dispatch,
-            props.closeModal,
-            overwriteEnabled,
-            props.serviceType
-          )
-        )}
+        onSubmit={methods.handleSubmit(async () => {
+          if (!scope) {
+            return
+          }
+          const vars = formatData(methods.getValues(), keys)
+          await importVariables({
+            serviceType: scope,
+            serviceId: props.applicationId,
+            variableImportRequest: {
+              overwrite: overwriteEnabled,
+              vars,
+            },
+          })
+          props.closeModal()
+        })}
         showDropzone={!fileParsed}
         dropzoneGetInputProps={getInputProps}
         dropzoneGetRootProps={getRootProps}
@@ -109,6 +110,7 @@ export function ImportEnvironmentVariableModalFeature(props: ImportEnvironmentVa
         }}
         overwriteEnabled={overwriteEnabled}
         setOverwriteEnabled={setOverwriteEnabled}
+        serviceType={props.serviceType}
       />
     </FormProvider>
   )

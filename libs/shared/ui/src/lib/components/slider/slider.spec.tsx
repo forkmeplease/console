@@ -1,10 +1,8 @@
-import { ResizeObserver } from '__tests__/utils/resize-observer'
 import { act, render, screen } from '__tests__/utils/setup-jest'
-import { Slider, SliderProps } from './slider'
+import { Slider, type SliderProps } from './slider'
 
 describe('Slider', () => {
   let props: SliderProps
-  window.ResizeObserver = ResizeObserver
 
   beforeEach(() => {
     props = {
@@ -43,7 +41,7 @@ describe('Slider', () => {
       input[1].setAttribute('aria-valuenow', '35')
     })
 
-    expect(input[0].getAttribute('aria-valuenow')).toBe('25')
-    expect(input[1].getAttribute('aria-valuenow')).toBe('35')
+    expect(input[0]).toHaveAttribute('aria-valuenow', '25')
+    expect(input[1]).toHaveAttribute('aria-valuenow', '35')
   })
 })

@@ -1,6 +1,5 @@
-import { act } from '@testing-library/react'
-import { render } from '__tests__/utils/setup-jest'
-import StickyActionFormToaster, { StickyActionFormToasterProps } from './sticky-action-form-toaster'
+import { renderWithProviders, screen } from '@qovery/shared/util-tests'
+import StickyActionFormToaster, { type StickyActionFormToasterProps } from './sticky-action-form-toaster'
 
 const props: StickyActionFormToasterProps = {
   onReset: jest.fn(),
@@ -12,18 +11,16 @@ const props: StickyActionFormToasterProps = {
 
 describe('StickyActionFormToaster', () => {
   it('should render successfully', () => {
-    const { baseElement } = render(<StickyActionFormToaster {...props} />)
+    const { baseElement } = renderWithProviders(<StickyActionFormToaster {...props} />)
     expect(baseElement).toBeTruthy()
   })
 
   it('should handle reset on click', async () => {
     const spy = jest.fn()
     props.onReset = spy
-    const { getByText } = render(<StickyActionFormToaster {...props} />)
+    const { userEvent } = renderWithProviders(<StickyActionFormToaster {...props} />)
 
-    await act(() => {
-      getByText('Reset').click()
-    })
+    await userEvent.click(screen.getByText('Reset'))
 
     expect(spy).toHaveBeenCalled()
   })
@@ -31,11 +28,9 @@ describe('StickyActionFormToaster', () => {
   it('should handle submit on click', async () => {
     const spy = jest.fn()
     props.onSubmit = spy
-    const { getByText } = render(<StickyActionFormToaster {...props} />)
+    const { userEvent } = renderWithProviders(<StickyActionFormToaster {...props} />)
 
-    await act(() => {
-      getByText('Save modifications').click()
-    })
+    await userEvent.click(screen.getByText('Save modifications'))
 
     expect(spy).toHaveBeenCalled()
   })
@@ -44,8 +39,8 @@ describe('StickyActionFormToaster', () => {
     const spy = jest.fn()
     props.onSubmit = spy
     props.disabledValidation = true
-    const { getByTestId } = render(<StickyActionFormToaster {...props} />)
+    renderWithProviders(<StickyActionFormToaster {...props} />)
 
-    expect(getByTestId('submit-button')).toBeDisabled()
+    expect(screen.getByTestId('submit-button')).toBeDisabled()
   })
 })

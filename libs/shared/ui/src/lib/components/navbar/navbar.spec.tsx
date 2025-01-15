@@ -1,7 +1,5 @@
-import { render } from '__tests__/utils/setup-jest'
-import { screen } from '@testing-library/react'
-
-import Navbar, { NavbarProps } from './navbar'
+import { render, screen } from '__tests__/utils/setup-jest'
+import Navbar, { type NavbarProps } from './navbar'
 
 describe('Navbar', () => {
   let props: NavbarProps
@@ -22,6 +20,6 @@ describe('Navbar', () => {
 
     const progressContainer = screen.getByLabelText('progress-container')
 
-    expect(progressContainer.className).toContain('bg-element-light-lighter-500')
+    expect(progressContainer).toHaveClass('bg-neutral-250')
   })
 })

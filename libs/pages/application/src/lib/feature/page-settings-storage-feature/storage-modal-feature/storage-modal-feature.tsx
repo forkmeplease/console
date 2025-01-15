@@ -1,83 +1,76 @@
-import { ServiceStorageStorage, StorageTypeEnum } from 'qovery-typescript-axios'
+import { type ServiceStorageStorageInner, StorageTypeEnum } from 'qovery-typescript-axios'
 import { FormProvider, useForm } from 'react-hook-form'
-import { useDispatch, useSelector } from 'react-redux'
-import { editApplication, getApplicationsState, postApplicationActionsRestart } from '@qovery/domains/application'
-import { getServiceType } from '@qovery/shared/enums'
-import { ApplicationEntity } from '@qovery/shared/interfaces'
-import { AppDispatch, RootState } from '@qovery/store'
+import { match } from 'ts-pattern'
+import { type Application, type Container } from '@qovery/domains/services/data-access'
+import { useDeploymentStatus, useEditService } from '@qovery/domains/services/feature'
+import { DEPLOYMENT_LOGS_VERSION_URL, ENVIRONMENT_LOGS_URL } from '@qovery/shared/routes'
+import { buildEditServicePayload } from '@qovery/shared/util-services'
 import StorageModal from '../../../ui/page-settings-storage/storage-modal/storage-modal'
 
 export interface StorageModalFeatureProps {
-  storage?: ServiceStorageStorage
-  application?: ApplicationEntity
-  applicationId: string
+  organizationId: string
+  projectId: string
+  service: Application | Container
   onClose: () => void
+  storage?: ServiceStorageStorageInner
 }
 
-export const handleSubmit = (
-  data: { size: number; type: StorageTypeEnum; mount_point: string },
-  application: ApplicationEntity,
-  storage?: ServiceStorageStorage
-) => {
-  const app = { ...application }
+export function StorageModalFeature({
+  organizationId,
+  projectId,
+  service,
+  storage,
+  onClose,
+}: StorageModalFeatureProps) {
+  const { data: deploymentStatus } = useDeploymentStatus({
+    environmentId: service.environment.id,
+    serviceId: service.id,
+  })
 
-  // edit mode
-  if (storage?.id) {
-    const editedStorage: ServiceStorageStorage = { id: storage.id, ...data }
-    app.storage = app.storage?.filter((s) => s.id !== storage.id)
-    app.storage?.push(editedStorage)
-  } else {
-    // creation mode
-    app.storage = [...(app.storage || []), data] as ServiceStorageStorage[]
-  }
+  const { mutateAsync: editService, isLoading: isLoadingEditService } = useEditService({
+    environmentId: service.environment.id,
+    logsLink:
+      ENVIRONMENT_LOGS_URL(organizationId, projectId, service.environment.id) +
+      DEPLOYMENT_LOGS_VERSION_URL(service.id, deploymentStatus?.execution_id),
+  })
 
-  return app
-}
-
-export function StorageModalFeature(props: StorageModalFeatureProps) {
   const methods = useForm({
     defaultValues: {
-      size: props.storage?.size || 4,
-      type: props.storage?.type || StorageTypeEnum.FAST_SSD,
-      mount_point: props.storage?.mount_point || '',
+      size: storage?.size || 4,
+      type: storage?.type || StorageTypeEnum.FAST_SSD,
+      mount_point: storage?.mount_point || '',
     },
     mode: 'onChange',
   })
 
-  const toasterCallback = () => {
-    if (props.application) {
-      dispatch(
-        postApplicationActionsRestart({
-          applicationId: props.application.id,
-          environmentId: props.application.environment?.id || '',
-          serviceType: getServiceType(props.application),
-        })
-      )
-    }
-  }
+  const onSubmit = methods.handleSubmit(async (data) => {
+    const request = storage?.id
+      ? {
+          storage: service.storage?.map((s) => (s.id === storage.id ? { ...s, ...data } : s)),
+        }
+      : {
+          storage: [...(service.storage || []), data],
+        }
 
-  const loadingStatus = useSelector((state: RootState) => getApplicationsState(state).loadingStatus)
-  const dispatch = useDispatch<AppDispatch>()
+    const payload = match(service)
+      .with({ serviceType: 'APPLICATION' }, (s) => buildEditServicePayload({ service: s, request }))
+      .with({ serviceType: 'CONTAINER' }, (s) => buildEditServicePayload({ service: s, request }))
+      .exhaustive()
 
-  const onSubmit = methods.handleSubmit((data) => {
-    if (!props.application) {
-      return
+    try {
+      await editService({
+        serviceId: service.id,
+        payload,
+      })
+      onClose()
+    } catch (error) {
+      console.error(error)
     }
-    const app = handleSubmit(data, props.application, props.storage)
-    dispatch(editApplication({ data: app, applicationId: app.id, serviceType: getServiceType(app), toasterCallback }))
-      .unwrap()
-      .then(() => props.onClose())
-      .catch((e) => console.error(e))
   })
 
   return (
     <FormProvider {...methods}>
-      <StorageModal
-        onClose={props.onClose}
-        onSubmit={onSubmit}
-        isEdit={!!props.storage}
-        loading={loadingStatus === 'loading'}
-      />
+      <StorageModal onClose={onClose} onSubmit={onSubmit} isEdit={!!storage} loading={isLoadingEditService} />
     </FormProvider>
   )
 }

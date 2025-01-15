@@ -1,179 +1,170 @@
-import { ClickEvent } from '@szhsin/react-menu'
-import { StateEnum } from 'qovery-typescript-axios'
-import { ReactNode, useContext } from 'react'
-import { useSelector } from 'react-redux'
+import { APIVariableScopeEnum } from 'qovery-typescript-axios'
 import { matchPath, useLocation, useParams } from 'react-router-dom'
-import { getApplicationsState } from '@qovery/domains/application'
-import { RunningStatus, getServiceType } from '@qovery/shared/enums'
-import { ApplicationEntity } from '@qovery/shared/interfaces'
+import { match } from 'ts-pattern'
+import { type AnyService } from '@qovery/domains/services/data-access'
 import {
-  APPLICATION_DEPLOYMENTS_URL,
-  APPLICATION_GENERAL_URL,
-  APPLICATION_SETTINGS_URL,
+  ServiceAccessModal,
+  ServiceLinksPopover,
+  useDeployService,
+  useDeploymentStatus,
+  useService,
+} from '@qovery/domains/services/feature'
+import { ShowAllVariablesToggle, VariablesActionToolbar } from '@qovery/domains/variables/feature'
+import {
   APPLICATION_URL,
   APPLICATION_VARIABLES_URL,
-} from '@qovery/shared/router'
-import {
-  Button,
-  ButtonAction,
-  ButtonStyle,
-  Icon,
-  IconAwesomeEnum,
-  MenuItemProps,
-  Skeleton,
-  StatusChip,
-  Tabs,
-  TabsItem,
-  useModal,
-} from '@qovery/shared/ui'
-import { RootState } from '@qovery/store'
-import { ApplicationContext } from '../../ui/container/container'
-import CrudEnvironmentVariableModalFeature, {
-  EnvironmentVariableCrudMode,
-  EnvironmentVariableType,
-} from '../crud-environment-variable-modal-feature/crud-environment-variable-modal-feature'
+  DEPLOYMENT_LOGS_VERSION_URL,
+  ENVIRONMENT_LOGS_URL,
+} from '@qovery/shared/routes'
+import { Button, Icon, Tabs, type TabsItem, toast, useModal } from '@qovery/shared/ui'
 import ImportEnvironmentVariableModalFeature from '../import-environment-variable-modal-feature/import-environment-variable-modal-feature'
 
-export function TabsFeature() {
-  const { organizationId, projectId = '', environmentId = '', applicationId = '' } = useParams()
-  const application = useSelector<RootState, ApplicationEntity | undefined>(
-    (state) => getApplicationsState(state).entities[applicationId]
-  )
-  const location = useLocation()
+function ContentRightEnvVariable({
+  organizationId,
+  projectId,
+  service,
+}: {
+  organizationId: string
+  projectId: string
+  service: AnyService
+}) {
+  const {
+    serviceType,
+    id: serviceId,
+    environment: { id: environmentId },
+  } = service
+
+  const { data: deploymentStatus } = useDeploymentStatus({ environmentId, serviceId })
+  const scope = match(serviceType)
+    .with('APPLICATION', () => APIVariableScopeEnum.APPLICATION)
+    .with('CONTAINER', () => APIVariableScopeEnum.CONTAINER)
+    .with('JOB', () => APIVariableScopeEnum.JOB)
+    .with('HELM', () => APIVariableScopeEnum.HELM)
+    .otherwise(() => undefined)
+
   const { openModal, closeModal } = useModal()
+  const { mutate: deployService } = useDeployService({
+    environmentId,
+    logsLink:
+      ENVIRONMENT_LOGS_URL(organizationId, projectId, service.environment.id) +
+      DEPLOYMENT_LOGS_VERSION_URL(serviceId, deploymentStatus?.execution_id),
+  })
+  const toasterCallback = () => {
+    deployService({
+      serviceId,
+      serviceType,
+    })
+  }
 
-  const { showHideAllEnvironmentVariablesValues: globalShowHideValue, setShowHideAllEnvironmentVariablesValues } =
-    useContext(ApplicationContext)
-
-  const items: TabsItem[] = [
-    {
-      icon: (
-        <StatusChip
-          status={(application?.running_status && application?.running_status.state) || RunningStatus.STOPPED}
-          appendTooltipMessage={
-            application?.running_status?.state === RunningStatus.ERROR
-              ? application.running_status.pods[0]?.state_message
-              : ''
+  return (
+    <div className="flex items-center gap-2">
+      <ShowAllVariablesToggle />
+      {scope && (
+        <VariablesActionToolbar
+          scope={scope}
+          projectId={projectId}
+          environmentId={service.environment.id}
+          serviceId={service.id}
+          onImportEnvFile={() =>
+            openModal({
+              content: (
+                <ImportEnvironmentVariableModalFeature
+                  environmentId={environmentId}
+                  closeModal={closeModal}
+                  applicationId={service.id}
+                  serviceType={serviceType}
+                />
+              ),
+              options: {
+                width: 750,
+              },
+            })
+          }
+          onCreateVariable={() =>
+            toast(
+              'SUCCESS',
+              'Creation success',
+              'You need to redeploy your service for your changes to be applied.',
+              toasterCallback,
+              undefined,
+              'Redeploy'
+            )
           }
         />
-      ),
-      name: 'Overview',
-      active:
-        location.pathname ===
-        APPLICATION_URL(organizationId, projectId, environmentId, applicationId) + APPLICATION_GENERAL_URL,
-      link: APPLICATION_URL(organizationId, projectId, environmentId, applicationId) + APPLICATION_GENERAL_URL,
-    },
-    {
-      icon: (
-        <Skeleton show={application?.status?.state === StateEnum.STOPPING} width={16} height={16} rounded={true}>
-          <StatusChip
-            mustRenameStatus
-            status={(application?.status && application?.status.state) || StateEnum.STOPPED}
-            appendTooltipMessage={application?.status && application.status.message ? application.status.message : ''}
-          />
-        </Skeleton>
-      ),
-      name: 'Deployments',
-      active:
-        location.pathname ===
-        APPLICATION_URL(organizationId, projectId, environmentId, applicationId) + APPLICATION_DEPLOYMENTS_URL,
-      link: APPLICATION_URL(organizationId, projectId, environmentId, applicationId) + APPLICATION_DEPLOYMENTS_URL,
-    },
-    {
-      icon: <Icon name="icon-solid-key" />,
-      name: 'Variables',
-      active:
-        location.pathname ===
-        APPLICATION_URL(organizationId, projectId, environmentId, applicationId) + APPLICATION_VARIABLES_URL,
-      link: APPLICATION_URL(organizationId, projectId, environmentId, applicationId) + APPLICATION_VARIABLES_URL,
-    },
-    {
-      icon: <Icon name="icon-solid-wheel" />,
-      name: 'Settings',
-      active: location.pathname.includes(
-        APPLICATION_URL(organizationId, projectId, environmentId, applicationId) + APPLICATION_SETTINGS_URL
-      ),
-      link: APPLICATION_URL(organizationId, projectId, environmentId, applicationId) + APPLICATION_SETTINGS_URL,
-    },
-  ]
+      )}
+    </div>
+  )
+}
+
+interface TabsFeatureProps {
+  items: TabsItem[]
+}
+
+export function TabsFeature({ items }: TabsFeatureProps) {
+  const { organizationId = '', projectId = '', environmentId = '', applicationId = '' } = useParams()
+  const { data: service } = useService({ environmentId, serviceId: applicationId })
+  const { closeModal, openModal } = useModal()
+  const location = useLocation()
 
   const matchEnvVariableRoute = matchPath(
     location.pathname || '',
     APPLICATION_URL(organizationId, projectId, environmentId, applicationId) + APPLICATION_VARIABLES_URL
   )
 
-  let menuForContentRight: {
-    items: MenuItemProps[]
-    title?: string
-    button?: string
-    buttonLink?: string
-    search?: boolean
-  }[] = []
-
-  if (matchEnvVariableRoute) {
-    menuForContentRight = [
-      {
-        items: [
-          {
-            name: 'Import variables',
-            onClick: (e: ClickEvent) => {
-              openModal({
-                content: (
-                  <ImportEnvironmentVariableModalFeature
-                    closeModal={closeModal}
-                    applicationId={applicationId}
-                    serviceType={application && getServiceType(application)}
-                  />
-                ),
-                options: {
-                  width: 750,
-                },
-              })
-            },
-            contentLeft: <Icon name="icon-solid-cloud-arrow-up" className="text-sm text-brand-400" />,
-          },
-        ],
-      },
-    ]
-  }
-
-  const contentRight: ReactNode = matchEnvVariableRoute && (
-    <>
-      <Button
-        className="mr-2"
-        style={ButtonStyle.FLAT}
-        iconLeft={!globalShowHideValue ? IconAwesomeEnum.EYE : IconAwesomeEnum.EYE_SLASH}
-        onClick={() => {
-          setShowHideAllEnvironmentVariablesValues(!globalShowHideValue)
-        }}
-      >
-        {globalShowHideValue ? 'Hide all' : 'Show all'}
-      </Button>
-      <ButtonAction
-        onClick={() => {
-          openModal({
-            content: (
-              <CrudEnvironmentVariableModalFeature
-                closeModal={closeModal}
-                type={EnvironmentVariableType.NORMAL}
-                mode={EnvironmentVariableCrudMode.CREATION}
-                applicationId={applicationId}
-                environmentId={environmentId}
+  return (
+    <Tabs
+      items={items}
+      contentRight={
+        <div className="px-5">
+          {matchEnvVariableRoute && service ? (
+            <ContentRightEnvVariable service={service} organizationId={organizationId} projectId={projectId} />
+          ) : (
+            <div className="flex gap-3">
+              <ServiceLinksPopover
+                organizationId={organizationId}
                 projectId={projectId}
-                serviceType={application && getServiceType(application)}
-              />
-            ),
-          })
-        }}
-        iconRight={IconAwesomeEnum.CIRCLE_PLUS}
-        menus={menuForContentRight}
-      >
-        New variable
-      </ButtonAction>
-    </>
+                environmentId={environmentId}
+                serviceId={applicationId}
+              >
+                <Button className="gap-2" size="md" color="neutral" variant="surface">
+                  Links
+                  <Icon iconName="link" iconStyle="regular" />
+                </Button>
+              </ServiceLinksPopover>
+              {match(service)
+                .with({ serviceType: 'APPLICATION' }, { serviceType: 'CONTAINER' }, (s) => (
+                  <Button
+                    className="gap-2"
+                    size="md"
+                    color="neutral"
+                    variant="surface"
+                    onClick={() =>
+                      openModal({
+                        content: (
+                          <ServiceAccessModal
+                            organizationId={organizationId}
+                            projectId={projectId}
+                            service={s}
+                            onClose={closeModal}
+                          />
+                        ),
+                        options: {
+                          width: 680,
+                        },
+                      })
+                    }
+                  >
+                    Access info
+                    <Icon iconName="info-circle" iconStyle="regular" />
+                  </Button>
+                ))
+                .otherwise(() => null)}
+            </div>
+          )}
+        </div>
+      }
+    />
   )
-
-  return <Tabs items={items} contentRight={<div className="px-5">{contentRight}</div>} />
 }
 
 export default TabsFeature

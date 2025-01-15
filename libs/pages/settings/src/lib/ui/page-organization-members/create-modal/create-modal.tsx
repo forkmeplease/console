@@ -1,7 +1,7 @@
-import { OrganizationAvailableRole } from 'qovery-typescript-axios'
+import { type OrganizationAvailableRole } from 'qovery-typescript-axios'
 import { Controller, useFormContext } from 'react-hook-form'
 import { InputSelect, InputText, ModalCrud } from '@qovery/shared/ui'
-import { upperCaseFirstLetter } from '@qovery/shared/utils'
+import { upperCaseFirstLetter } from '@qovery/shared/util-js'
 
 export interface CreateModalProps {
   availableRoles: OrganizationAvailableRole[]
@@ -55,11 +55,11 @@ export function CreateModal(props: CreateModalProps) {
           render={({ field, fieldState: { error } }) => (
             <InputSelect
               dataTestId="input-role"
-              className="w-full ml-3"
+              className="ml-3 w-full"
               label="Role"
               options={availableRoles.map((availableRole: OrganizationAvailableRole) => ({
-                label: upperCaseFirstLetter(availableRole.name) || '',
-                value: availableRole.id || '',
+                label: upperCaseFirstLetter(availableRole.name),
+                value: availableRole.id ?? '',
               }))}
               onChange={field.onChange}
               value={field.value}

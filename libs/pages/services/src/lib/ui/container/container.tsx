@@ -1,173 +1,131 @@
-import { StateEnum } from 'qovery-typescript-axios'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { IconEnum, RunningStatus } from '@qovery/shared/enums'
-import { EnvironmentEntity } from '@qovery/shared/interfaces'
+import { PostHogFeature } from 'posthog-js/react'
+import { type PropsWithChildren } from 'react'
+import { matchPath, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useCluster } from '@qovery/domains/clusters/feature'
 import {
+  EnvironmentActionToolbar,
+  EnvironmentAvatar,
+  EnvironmentMode,
+  EnvironmentStateChip,
+  useDeployEnvironment,
+  useDeploymentStatus,
+  useEnvironment,
+} from '@qovery/domains/environments/feature'
+import { ShowAllVariablesToggle, VariablesActionToolbar, VariablesProvider } from '@qovery/domains/variables/feature'
+import { IconEnum } from '@qovery/shared/enums'
+import {
+  CLUSTER_URL,
+  ENVIRONMENT_LOGS_URL,
+  ENVIRONMENT_STAGES_URL,
   SERVICES_APPLICATION_CREATION_URL,
+  SERVICES_CRONJOB_CREATION_URL,
   SERVICES_DATABASE_CREATION_URL,
   SERVICES_DEPLOYMENTS_URL,
   SERVICES_GENERAL_URL,
+  SERVICES_HELM_CREATION_URL,
+  SERVICES_LIFECYCLE_CREATION_URL,
+  SERVICES_NEW_URL,
   SERVICES_SETTINGS_URL,
   SERVICES_URL,
-} from '@qovery/shared/router'
+  SERVICES_VARIABLES_URL,
+} from '@qovery/shared/routes'
 import {
+  Banner,
   Button,
-  ButtonIconAction,
-  ButtonSize,
+  ErrorBoundary,
   Header,
   Icon,
-  IconAwesomeEnum,
+  Link,
   Menu,
   MenuAlign,
-  MenuData,
+  type MenuData,
+  Section,
   Skeleton,
-  StatusChip,
-  StatusMenuActions,
   Tabs,
-  Tag,
-  TagMode,
-  TagSize,
+  Tooltip,
+  toast,
 } from '@qovery/shared/ui'
-import { copyToClipboard } from '@qovery/shared/utils'
 
-export interface ContainerProps {
-  statusActions: StatusMenuActions[]
-  environment?: EnvironmentEntity
-  children?: React.ReactNode
-  removeEnvironment?: () => void
-  servicesLength?: number
-}
+export function Container({ children }: PropsWithChildren) {
+  const { organizationId = '', projectId = '', environmentId = '' } = useParams()
+  const { data: environment } = useEnvironment({ environmentId })
 
-export function Container(props: ContainerProps) {
-  const { environment, children, statusActions, removeEnvironment, servicesLength } = props
-  const { organizationId, projectId, environmentId } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
 
-  const copyContent = `Organization ID: ${organizationId}\nProject ID: ${projectId}\nEnvironment ID: ${environmentId}`
+  const { isLoading: isLoadingDeploymentStatus, data: deploymentStatus } = useDeploymentStatus({
+    environmentId: environment?.id,
+  })
 
-  const buttonActionsDefault = [
-    {
-      ...(servicesLength &&
-        servicesLength > 0 && {
-          iconLeft: <Icon name="icon-solid-play" className="px-0.5" />,
-          iconRight: <Icon name="icon-solid-angle-down" className="px-0.5" />,
-          menusClassName: 'border-r border-r-element-light-lighter-500',
-          statusActions: {
-            status: environment?.status && environment?.status.state,
-            actions: statusActions,
-          },
-        }),
-    },
-    {
-      iconLeft: <Icon name="icon-solid-scroll" className="px-0.5" />,
-      onClick: () =>
-        window.open(
-          `https://console.qovery.com/platform/organization/${organizationId}/projects/${projectId}/environments/${environmentId}/applications?fullscreenLogs=true`,
-          '_blank'
-        ),
-    },
-    {
-      ...(removeEnvironment && {
-        iconLeft: <Icon name="icon-solid-ellipsis-vertical" />,
-        menus: [
-          {
-            items: [
-              {
-                name: 'Remove',
-                contentLeft: <Icon name="icon-solid-trash" className="text-sm text-brand-400" />,
-                onClick: () => removeEnvironment(),
-              },
-              {
-                name: 'Copy identifiers',
-                contentLeft: <Icon name="icon-solid-copy" className="text-sm text-brand-400" />,
-                onClick: () => copyToClipboard(copyContent),
-              },
-            ],
-          },
-        ],
-      }),
-    },
-  ]
+  const { data: cluster } = useCluster({ organizationId, clusterId: environment?.cluster_id ?? '' })
+  const { mutate: deployEnvironment } = useDeployEnvironment({
+    projectId,
+    logsLink: ENVIRONMENT_LOGS_URL(organizationId, projectId, environmentId) + ENVIRONMENT_STAGES_URL(),
+  })
 
-  const headerButtons = (
-    <div>
-      {/* <ButtonIcon
-        icon="icon-solid-scroll"
-        style={ButtonIconStyle.STROKED}
-        link={`https://console.qovery.com/platform/organization/${organizationId}/projects/${projectId}/environments/${environmentId}/applications?fullscreenLogs=true`}
-        external
-      />
-      <ButtonIcon icon="icon-solid-terminal" style={ButtonIconStyle.STROKED} /> 
-      <ButtonIcon icon="icon-solid-clock-rotate-left" style={ButtonIconStyle.STROKED} /> */}
-    </div>
+  const matchSettingsRoute = location.pathname.includes(
+    SERVICES_URL(organizationId, projectId, environmentId) + SERVICES_SETTINGS_URL
   )
 
   const headerActions = (
-    <>
-      <Skeleton width={150} height={24} show={!environment?.status}>
-        {environment?.status ? (
-          <>
-            <ButtonIconAction
-              className="!h-8"
-              actions={buttonActionsDefault}
-              statusInformation={{
-                id: environment?.id,
-                name: environment?.name,
-                mode: environment?.mode,
-              }}
-            />
-            <span className="ml-4 mr-1 mt-2 h-4 w-[1px] bg-element-light-lighter-400"></span>
-          </>
-        ) : (
-          <div />
+    <div className="flex flex-row items-center gap-4">
+      <Skeleton width={150} height={32} show={!environment}>
+        {environment ? <EnvironmentActionToolbar environment={environment} /> : <div />}
+      </Skeleton>
+      <div className="h-4 w-px bg-neutral-250" />
+      <div className="flex flex-row items-center gap-2">
+        {environment && (
+          <Skeleton width={80} height={22} show={!environment?.mode}>
+            <EnvironmentMode mode={environment.mode} />
+          </Skeleton>
         )}
-      </Skeleton>
-      {environment && (
-        <Skeleton width={80} height={24} show={!environment?.mode}>
-          <TagMode size={TagSize.BIG} status={environment?.mode} />
+        <Skeleton width={120} height={22} show={!cluster}>
+          <Tooltip content={cluster?.name ?? ''}>
+            <Link
+              as="button"
+              color="neutral"
+              variant="surface"
+              size="xs"
+              to={CLUSTER_URL(environment?.organization.id, environment?.cluster_id)}
+            >
+              <Icon
+                name={
+                  cluster?.kubernetes === 'SELF_MANAGED'
+                    ? IconEnum.KUBERNETES
+                    : (environment?.cloud_provider.provider as IconEnum)
+                }
+                width="16"
+              />
+              <p className="ml-1.5 max-w-[200px] truncate">{cluster?.name}</p>
+            </Link>
+          </Tooltip>
         </Skeleton>
-      )}
-      <Skeleton width={100} height={24} show={!environment?.cloud_provider}>
-        <div className="border border-element-light-lighter-400 bg-white h-8 px-3 rounded text-xs items-center inline-flex font-medium gap-2">
-          <Icon name={environment?.cloud_provider.provider as IconEnum} width="16" />
-          <p className="max-w-[54px] truncate">{environment?.cloud_provider.cluster}</p>
-        </div>
-      </Skeleton>
-      <Tag className="bg-element-light-lighter-300 gap-2 hidden">
-        <span className="w-2 h-2 rounded-lg bg-progressing-300"></span>
-        <span className="w-2 h-2 rounded-lg bg-accent3-500"></span>
-      </Tag>
-    </>
+      </div>
+    </div>
   )
 
   const tabsItems = [
     {
-      icon: (
-        <StatusChip
-          status={(environment?.running_status && environment?.running_status.state) || RunningStatus.STOPPED}
-        />
-      ),
+      icon: <EnvironmentStateChip mode="running" environmentId={environmentId} />,
       name: 'Services',
       active: location.pathname === `${SERVICES_URL(organizationId, projectId, environmentId)}${SERVICES_GENERAL_URL}`,
       link: `${SERVICES_URL(organizationId, projectId, environmentId)}${SERVICES_GENERAL_URL}`,
     },
     {
-      icon: (
-        <Skeleton show={environment?.status?.state === StateEnum.STOPPING} width={16} height={16} rounded={true}>
-          <StatusChip
-            mustRenameStatus
-            status={(environment?.status && environment?.status.state) || StateEnum.STOPPED}
-          />
-        </Skeleton>
-      ),
-      name: 'Deployments',
+      icon: <EnvironmentStateChip mode="last-deployment" environmentId={environmentId} />,
+      name: 'Deployments History',
       active:
         location.pathname === `${SERVICES_URL(organizationId, projectId, environmentId)}${SERVICES_DEPLOYMENTS_URL}`,
       link: `${SERVICES_URL(organizationId, projectId, environmentId)}${SERVICES_DEPLOYMENTS_URL}`,
     },
     {
-      icon: <Icon name="icon-solid-wheel" />,
+      icon: <Icon iconName="key" iconStyle="regular" />,
+      name: 'Variables',
+      active: location.pathname === SERVICES_URL(organizationId, projectId, environmentId) + SERVICES_VARIABLES_URL,
+      link: SERVICES_URL(organizationId, projectId, environmentId) + SERVICES_VARIABLES_URL,
+    },
+    {
+      icon: <Icon iconName="gear" iconStyle="regular" />,
       name: 'Settings',
       active: location.pathname.includes(
         `${SERVICES_URL(organizationId, projectId, environmentId)}${SERVICES_SETTINGS_URL}`
@@ -181,48 +139,128 @@ export function Container(props: ContainerProps) {
       items: [
         {
           name: 'Create application',
-          contentLeft: <Icon name={IconAwesomeEnum.LAYER_GROUP} className="text-brand-500 text-sm" />,
+          contentLeft: <Icon iconName="layer-group" className="text-sm text-brand-500" />,
           onClick: () => {
             navigate(`${SERVICES_URL(organizationId, projectId, environmentId)}${SERVICES_APPLICATION_CREATION_URL}`)
           },
         },
         {
           name: 'Create database',
-          contentLeft: <Icon name={IconAwesomeEnum.DATABASE} className="text-brand-500 text-sm" />,
+          contentLeft: <Icon iconName="database" className="text-sm text-brand-500" />,
           onClick: () => {
             navigate(`${SERVICES_URL(organizationId, projectId, environmentId)}${SERVICES_DATABASE_CREATION_URL}`)
+          },
+        },
+        {
+          name: 'Create lifecycle job',
+          contentLeft: (
+            <Icon name={IconEnum.LIFECYCLE_JOB_STROKE} width="14" height="16" className="text-sm text-brand-500" />
+          ),
+          onClick: () => {
+            navigate(`${SERVICES_URL(organizationId, projectId, environmentId)}${SERVICES_LIFECYCLE_CREATION_URL}`)
+          },
+        },
+        {
+          name: 'Create cronjob',
+          contentLeft: (
+            <Icon name={IconEnum.CRON_JOB_STROKE} width="14" height="16" className="text-sm text-brand-500" />
+          ),
+          onClick: () => {
+            navigate(`${SERVICES_URL(organizationId, projectId, environmentId)}${SERVICES_CRONJOB_CREATION_URL}`)
+          },
+        },
+        {
+          name: 'Create helm',
+          contentLeft: <Icon name={IconEnum.HELM_OFFICIAL} width="14" height="16" className="text-sm text-brand-500" />,
+          onClick: () => {
+            navigate(`${SERVICES_URL(organizationId, projectId, environmentId)}${SERVICES_HELM_CREATION_URL}`)
           },
         },
       ],
     },
   ]
 
-  const contentTabs = (
-    <div className="flex justify-center items-center px-5 border-l h-14 border-element-light-lighter-400">
-      <Skeleton width={154} height={40} show={!environment?.status}>
-        {environment?.status ? (
-          <Menu
-            trigger={
-              <Button size={ButtonSize.LARGE} iconRight={IconAwesomeEnum.CIRCLE_PLUS}>
-                New service
-              </Button>
+  const matchEnvVariableRoute = matchPath(
+    location.pathname || '',
+    SERVICES_URL(organizationId, projectId, environmentId) + SERVICES_VARIABLES_URL
+  )
+
+  const toasterCallback = () => {
+    deployEnvironment({ environmentId })
+  }
+
+  const contentTabs = !matchSettingsRoute && (
+    <div className="flex h-14 items-center justify-center px-5">
+      {matchEnvVariableRoute ? (
+        <>
+          <ShowAllVariablesToggle className="mr-2" />
+          <VariablesActionToolbar
+            scope="ENVIRONMENT"
+            projectId={projectId}
+            environmentId={environmentId}
+            onCreateVariable={() =>
+              toast(
+                'SUCCESS',
+                'Creation success',
+                'You need to redeploy your environment for your changes to be applied.',
+                toasterCallback,
+                undefined,
+                'Redeploy'
+              )
             }
-            menus={newServicesMenu}
-            arrowAlign={MenuAlign.START}
           />
-        ) : (
-          <div />
-        )}
-      </Skeleton>
+        </>
+      ) : (
+        <Skeleton width={154} height={40} show={isLoadingDeploymentStatus}>
+          <PostHogFeature
+            flag="service-dropdown-list"
+            match={true}
+            fallback={
+              <Link
+                as="button"
+                size="md"
+                id="service-list"
+                className="gap-2"
+                to={`${SERVICES_URL(organizationId, projectId, environmentId)}${SERVICES_NEW_URL}`}
+              >
+                New service
+                <Icon iconName="circle-plus" iconStyle="regular" />
+              </Link>
+            }
+          >
+            <Menu
+              trigger={
+                <Button id="service-dropdown" size="md" className="gap-2">
+                  New service
+                  <Icon iconName="circle-plus" iconStyle="regular" />
+                </Button>
+              }
+              menus={newServicesMenu}
+              arrowAlign={MenuAlign.START}
+            />
+          </PostHogFeature>
+        </Skeleton>
+      )}
     </div>
   )
 
+  const cancelOnGoing = deploymentStatus?.state === 'CANCELING'
+
   return (
-    <>
-      <Header title={environment?.name} icon={IconEnum.APPLICATION} buttons={headerButtons} actions={headerActions} />
-      <Tabs items={tabsItems} contentRight={contentTabs} />
-      {children}
-    </>
+    <VariablesProvider>
+      <ErrorBoundary>
+        <Section className="flex-1">
+          <Header title={environment?.name} actions={headerActions}>
+            {environment && <EnvironmentAvatar environment={environment} />}
+          </Header>
+          <Tabs items={tabsItems} contentRight={contentTabs} />
+          {cancelOnGoing && <Banner color="yellow">Deployment cancel ongoing...</Banner>}
+          <div className="mt-2 flex min-h-0 flex-grow flex-col items-stretch rounded-b-none rounded-t-sm bg-white">
+            <ErrorBoundary key={tabsItems.find(({ active }) => active)?.link}>{children}</ErrorBoundary>
+          </div>
+        </Section>
+      </ErrorBoundary>
+    </VariablesProvider>
   )
 }
 

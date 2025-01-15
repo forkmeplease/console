@@ -1,16 +1,18 @@
-import { Cluster } from 'qovery-typescript-axios'
+import { type Cluster } from 'qovery-typescript-axios'
 import { Controller, useFormContext } from 'react-hook-form'
-import { Value } from '@qovery/shared/interfaces'
-import { BlockContent, Button, ButtonSize, ButtonStyle, HelpSection, InputSelect, InputText } from '@qovery/shared/ui'
-import { environmentModeValues } from '@qovery/shared/utils'
+import { SettingsHeading } from '@qovery/shared/console-shared'
+import { environmentModeValues } from '@qovery/shared/enums'
+import { type Value } from '@qovery/shared/interfaces'
+import { BlockContent, Button, InputSelect, InputText, Section } from '@qovery/shared/ui'
 
 export interface PageSettingsGeneralProps {
   onSubmit: () => void
   clusters: Cluster[]
+  loading: boolean
 }
 
 export function PageSettingsGeneral(props: PageSettingsGeneralProps) {
-  const { clusters, onSubmit } = props
+  const { clusters, onSubmit, loading } = props
   const { control, formState } = useFormContext()
 
   const clustersList: Value[] = clusters
@@ -24,15 +26,11 @@ export function PageSettingsGeneral(props: PageSettingsGeneralProps) {
     : []
 
   return (
-    <div className="flex flex-col justify-between w-full">
-      <div className="p-8  max-w-content-with-navigation-left">
-        <div className="flex justify-between mb-8">
-          <div>
-            <h2 className="h5 text-text-700 mb-2">General</h2>
-          </div>
-        </div>
+    <div className="flex w-full flex-col justify-between">
+      <Section className="max-w-content-with-navigation-left p-8">
+        <SettingsHeading title="General" />
         <form onSubmit={onSubmit}>
-          <BlockContent title="General informations">
+          <BlockContent title="General information">
             <Controller
               name="name"
               control={control}
@@ -74,36 +72,19 @@ export function PageSettingsGeneral(props: PageSettingsGeneralProps) {
                   onChange={field.onChange}
                   value={field.value}
                   error={error?.message}
-                  className="mb-1"
+                  hint="Cluster cannot be changed. Clone the environment to deploy the same applications on another cluster."
                   disabled
                 />
               )}
             />
-            <p className="text-xs text-text-400 ml-4">Clusters cannot be changed at this time.</p>
           </BlockContent>
           <div className="flex justify-end">
-            <Button
-              className="mb-6 btn--no-min-w"
-              disabled={!formState.isValid}
-              size={ButtonSize.LARGE}
-              style={ButtonStyle.BASIC}
-              type="submit"
-            >
+            <Button type="submit" size="lg" disabled={!formState.isValid} loading={loading}>
               Save
             </Button>
           </div>
         </form>
-      </div>
-      <HelpSection
-        description="Need help? You may find these links useful"
-        links={[
-          {
-            link: 'https://hub.qovery.com/docs/using-qovery/configuration/environment/',
-            linkLabel: 'How to configure my environment',
-            external: true,
-          },
-        ]}
-      />
+      </Section>
     </div>
   )
 }

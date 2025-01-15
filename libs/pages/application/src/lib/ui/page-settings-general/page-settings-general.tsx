@@ -1,145 +1,225 @@
-import { BuildModeEnum, BuildPackLanguageEnum } from 'qovery-typescript-axios'
-import { FormEventHandler } from 'react'
+import { BuildModeEnum, type Organization } from 'qovery-typescript-axios'
+import { type FormEventHandler } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
-import { GeneralContainerSettings } from '@qovery/shared/console-shared'
-import { ServiceTypeEnum } from '@qovery/shared/enums'
-import { OrganizationEntity } from '@qovery/shared/interfaces'
-import { BlockContent, Button, ButtonSize, ButtonStyle, HelpSection, InputSelect, InputText } from '@qovery/shared/ui'
-import { upperCaseFirstLetter } from '@qovery/shared/utils'
-import GitRepositorySettingsFeature from '../../feature/git-repository-settings-feature/git-repository-settings-feature'
+import { match } from 'ts-pattern'
+import { AnnotationSetting, LabelSetting } from '@qovery/domains/organizations/feature'
+import { DeploymentSetting, SourceSetting } from '@qovery/domains/service-helm/feature'
+import { type AnyService } from '@qovery/domains/services/data-access'
+import { AutoDeploySetting, GeneralSetting } from '@qovery/domains/services/feature'
+import {
+  EditGitRepositorySettingsFeature,
+  EntrypointCmdInputs,
+  GeneralContainerSettings,
+  JobGeneralSettings,
+  SettingsHeading,
+} from '@qovery/shared/console-shared'
+import { ServiceTypeEnum, isJobGitSource } from '@qovery/shared/enums'
+import { Button, Callout, Heading, Icon, InputSelect, InputText, Section } from '@qovery/shared/ui'
+import { upperCaseFirstLetter } from '@qovery/shared/util-js'
 
 export interface PageSettingsGeneralProps {
+  service: AnyService
+  isLoadingEditService?: boolean
   onSubmit: FormEventHandler<HTMLFormElement>
-  watchBuildMode: BuildModeEnum
-  type?: ServiceTypeEnum
-  loading?: boolean
-  organization?: OrganizationEntity
+  organization?: Organization
 }
 
 const buildModeItems = Object.values(BuildModeEnum).map((value) => ({
-  label: upperCaseFirstLetter(value) || '',
+  label: upperCaseFirstLetter(value),
   value: value,
 }))
 
-const languageItems = Object.values(BuildPackLanguageEnum).map((value) => ({
-  label: upperCaseFirstLetter(value) || '',
-  value: value,
-}))
+export function PageSettingsGeneral({
+  onSubmit,
+  service,
+  isLoadingEditService,
+  organization,
+}: PageSettingsGeneralProps) {
+  const { control, formState, watch } = useFormContext()
+  const watchBuildMode = watch('build_mode')
+  const watchFieldProvider = watch('source_provider')
+  const isLifecycleJob = service?.serviceType === 'JOB' && service.job_type === 'LIFECYCLE'
 
-export function PageSettingsGeneral(props: PageSettingsGeneralProps) {
-  const { onSubmit, watchBuildMode, type, loading } = props
-  const { control, formState } = useFormContext()
+  const blockContentBuildDeploy = (
+    <>
+      {!isLifecycleJob && (
+        <Controller
+          name="build_mode"
+          control={control}
+          render={({ field, fieldState: { error } }) => (
+            <InputSelect
+              dataTestId="input-select-mode"
+              label="Mode"
+              options={buildModeItems}
+              onChange={field.onChange}
+              value={field.value}
+              error={error?.message}
+              disabled={service?.serviceType === 'JOB'}
+            />
+          )}
+        />
+      )}
+
+      {!isLifecycleJob && (
+        <Controller
+          name="dockerfile_path"
+          control={control}
+          render={({ field, fieldState: { error } }) => (
+            <InputText
+              dataTestId="input-text-dockerfile"
+              name={field.name}
+              onChange={field.onChange}
+              value={field.value}
+              label="Dockerfile path"
+              error={error?.message}
+            />
+          )}
+        />
+      )}
+    </>
+  )
 
   return (
-    <div className="flex flex-col justify-between w-full">
-      <div className="p-8 max-w-content-with-navigation-left">
-        <h2 className="h5 mb-8 text-text-700">General settings</h2>
-        <form onSubmit={onSubmit}>
-          <BlockContent title="General informations">
-            <Controller
-              name="name"
-              control={control}
-              rules={{ required: 'Please enter a name.' }}
-              render={({ field, fieldState: { error } }) => (
-                <InputText
-                  dataTestId="input-name"
-                  name={field.name}
-                  onChange={field.onChange}
-                  value={field.value}
-                  label="Application name"
-                  error={error?.message}
-                />
-              )}
-            />
-          </BlockContent>
-          {type === ServiceTypeEnum.CONTAINER && (
-            <BlockContent title="Container settings">
-              <GeneralContainerSettings organization={props.organization} />
-            </BlockContent>
+    <div className="flex w-full flex-col justify-between">
+      <Section className="max-w-content-with-navigation-left p-8">
+        <SettingsHeading
+          title="General settings"
+          description="These general settings allow you to set up the service name, its source and deployment parameters."
+        />
+        <form onSubmit={onSubmit} className="space-y-10">
+          {service?.serviceType !== 'JOB' && (
+            <Section className="gap-4">
+              <Heading>General</Heading>
+              <GeneralSetting label="Service name" service={service} />
+            </Section>
           )}
-          {type === ServiceTypeEnum.APPLICATION && (
-            <>
-              <GitRepositorySettingsFeature />
-              <BlockContent title="Build mode">
-                <Controller
-                  name="build_mode"
-                  control={control}
-                  render={({ field, fieldState: { error } }) => (
-                    <InputSelect
-                      dataTestId="input-select-mode"
-                      label="Mode"
-                      className="mb-3"
-                      options={buildModeItems}
-                      onChange={field.onChange}
-                      value={field.value}
-                      error={error?.message}
+          {match(service)
+            .with({ serviceType: 'JOB' }, (job) => (
+              <>
+                <Section className="gap-4">
+                  <Heading>General</Heading>
+                  <GeneralSetting label="Service name" service={service} />
+                </Section>
+                <JobGeneralSettings
+                  isEdition={true}
+                  jobType={job.job_type === 'CRON' ? ServiceTypeEnum.CRON_JOB : ServiceTypeEnum.LIFECYCLE_JOB}
+                  organization={organization}
+                />
+                <Section className="gap-4">
+                  <Heading>Source</Heading>
+                  {isJobGitSource(job.source) ? (
+                    <EditGitRepositorySettingsFeature
+                      rootPathLabel={match(job.job_type === 'LIFECYCLE' ? job.schedule.lifecycle_type : undefined)
+                        .with('CLOUDFORMATION', () => 'Template folder path')
+                        .with('TERRAFORM', () => 'Manifest folder path')
+                        .with('GENERIC', undefined, () => undefined)
+                        .exhaustive()}
+                      rootPathHint={match(job.job_type === 'LIFECYCLE' ? job.schedule.lifecycle_type : undefined)
+                        .with(
+                          'CLOUDFORMATION',
+                          () => 'Provide the folder path in the repository where the template is located'
+                        )
+                        .with(
+                          'TERRAFORM',
+                          () => 'Provide the folder path in the repository where the manifest is located'
+                        )
+                        .with('GENERIC', undefined, () => undefined)
+                        .exhaustive()}
                     />
+                  ) : (
+                    <GeneralContainerSettings organization={organization} isSetting />
                   )}
-                />
-                {watchBuildMode === BuildModeEnum.BUILDPACKS ? (
-                  <Controller
-                    key="buildpack_language"
-                    name="buildpack_language"
-                    control={control}
-                    rules={{
-                      required: 'Please enter your buildpack language.',
-                    }}
-                    render={({ field, fieldState: { error } }) => (
-                      <InputSelect
-                        dataTestId="input-select-language"
-                        label="Language framework"
-                        options={languageItems}
-                        onChange={field.onChange}
-                        value={field.value}
-                        error={error?.message}
-                      />
-                    )}
-                  />
-                ) : (
-                  <Controller
-                    key="dockerfile_path"
-                    name="dockerfile_path"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <InputText
-                        dataTestId="input-text-dockerfile"
-                        name={field.name}
-                        onChange={field.onChange}
-                        value={field.value}
-                        label="Dockerfile path"
-                        error={error?.message}
-                      />
-                    )}
-                  />
-                )}
-              </BlockContent>
-            </>
-          )}
-          <div className="flex justify-end">
-            <Button
-              dataTestId="submit-button"
-              className="btn--no-min-w"
-              size={ButtonSize.LARGE}
-              style={ButtonStyle.BASIC}
-              type="submit"
-              disabled={!formState.isValid}
-              loading={loading}
-            >
+                </Section>
+                <Section className="gap-4">
+                  <Heading>{isJobGitSource(job.source) ? 'Build and deploy' : 'Deploy'}</Heading>
+                  {isJobGitSource(job.source) && blockContentBuildDeploy}
+                  {job.job_type === 'CRON' && <EntrypointCmdInputs />}
+                  <AutoDeploySetting source={isJobGitSource(job.source) ? 'GIT' : 'CONTAINER_REGISTRY'} />
+                </Section>
+                <Section className="gap-4">
+                  <Heading>Extra labels/annotations</Heading>
+                  <LabelSetting />
+                  <AnnotationSetting />
+                </Section>
+              </>
+            ))
+            .with({ serviceType: 'APPLICATION' }, () => (
+              <>
+                <Section className="gap-4">
+                  <Heading>Source</Heading>
+                  <EditGitRepositorySettingsFeature />
+                </Section>
+                <Section className="gap-4">
+                  <Heading>Build and deploy</Heading>
+                  {blockContentBuildDeploy}
+                  {watchBuildMode === BuildModeEnum.DOCKER && <EntrypointCmdInputs />}
+                  <AutoDeploySetting source="GIT" />
+                </Section>
+                <Section className="gap-4">
+                  <Heading>Extra labels/annotations</Heading>
+                  <LabelSetting />
+                  <AnnotationSetting />
+                </Section>
+              </>
+            ))
+            .with({ serviceType: 'CONTAINER' }, () => (
+              <>
+                <Section className="gap-4">
+                  <Heading>Source</Heading>
+                  <GeneralContainerSettings organization={organization} isSetting />
+                </Section>
+                <Section className="gap-4">
+                  <Heading>Deploy</Heading>
+                  <EntrypointCmdInputs />
+                  <AutoDeploySetting source="CONTAINER_REGISTRY" />
+                </Section>
+                <Section className="gap-4">
+                  <Heading>Extra labels/annotations</Heading>
+                  <LabelSetting />
+                  <AnnotationSetting />
+                </Section>
+              </>
+            ))
+            .with({ serviceType: 'HELM' }, () => (
+              <>
+                <Section className="gap-4">
+                  <Heading>Source</Heading>
+                  <SourceSetting disabled />
+                  {watchFieldProvider === 'GIT' && (
+                    <div className="mt-3">
+                      <EditGitRepositorySettingsFeature />
+                    </div>
+                  )}
+                </Section>
+                <Section className="gap-4">
+                  <Heading>Deploy</Heading>
+                  <DeploymentSetting />
+                  {watchFieldProvider === 'GIT' && <AutoDeploySetting source="GIT" />}
+                  {watchFieldProvider === 'HELM_REPOSITORY' && (
+                    <Callout.Root color="sky" className="mt-5 items-center">
+                      <Callout.Icon>
+                        <Icon iconName="circle-info" iconStyle="regular" />
+                      </Callout.Icon>
+                      <Callout.Text>
+                        <Callout.TextHeading>
+                          Git automations are disabled when using Helm repositories (auto-deploy, automatic preview
+                          environments)
+                        </Callout.TextHeading>
+                      </Callout.Text>
+                    </Callout.Root>
+                  )}
+                </Section>
+              </>
+            ))
+            .otherwise(() => null)}
+
+          <div className="mt-10 flex justify-end">
+            <Button type="submit" size="lg" loading={isLoadingEditService} disabled={!formState.isValid}>
               Save
             </Button>
           </div>
         </form>
-      </div>
-      <HelpSection
-        description="Need help? You may find these links useful"
-        links={[
-          {
-            link: 'https://hub.qovery.com/docs/using-qovery/configuration/application',
-            linkLabel: 'How to configure my application',
-            external: true,
-          },
-        ]}
-      />
+      </Section>
     </div>
   )
 }

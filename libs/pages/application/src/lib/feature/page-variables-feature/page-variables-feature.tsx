@@ -1,153 +1,91 @@
-import { useContext, useEffect, useMemo, useState } from 'react'
-import { shallowEqual, useDispatch, useSelector } from 'react-redux'
+import { APIVariableScopeEnum } from 'qovery-typescript-axios'
 import { useParams } from 'react-router-dom'
-import { selectApplicationById } from '@qovery/domains/application'
-import {
-  environmentVariableFactoryMock,
-  fetchEnvironmentVariables,
-  fetchSecretEnvironmentVariables,
-  getEnvironmentVariablesState,
-  getSecretEnvironmentVariablesState,
-  selectEnvironmentVariablesByApplicationId,
-  selectSecretEnvironmentVariablesByApplicationId,
-} from '@qovery/domains/environment-variable'
-import { ServiceTypeEnum, getServiceType } from '@qovery/shared/enums'
-import {
-  ApplicationEntity,
-  EnvironmentVariableEntity,
-  EnvironmentVariableSecretOrPublic,
-  LoadingStatus,
-  SecretEnvironmentVariableEntity,
-} from '@qovery/shared/interfaces'
-import { TableHeadProps } from '@qovery/shared/ui'
-import { useDocumentTitle } from '@qovery/shared/utils'
-import { AppDispatch, RootState } from '@qovery/store'
-import { ApplicationContext } from '../../ui/container/container'
-import PageVariables from '../../ui/page-variables/page-variables'
-import { sortVariable } from './utils/sort-variable'
+import { match } from 'ts-pattern'
+import { useDeployService, useDeploymentStatus, useService } from '@qovery/domains/services/feature'
+import { VariableList } from '@qovery/domains/variables/feature'
+import { DEPLOYMENT_LOGS_VERSION_URL, ENVIRONMENT_LOGS_URL } from '@qovery/shared/routes'
+import { toast } from '@qovery/shared/ui'
+import { useDocumentTitle } from '@qovery/shared/util-hooks'
 
 export function PageVariablesFeature() {
   useDocumentTitle('Environment Variables – Qovery')
-  const dispatch = useDispatch<AppDispatch>()
-  const { applicationId = '' } = useParams()
-  const [placeholder] = useState(environmentVariableFactoryMock(5))
+  const { organizationId = '', projectId = '', environmentId = '', applicationId = '' } = useParams()
 
-  const application = useSelector<RootState, ApplicationEntity | undefined>((state) =>
-    selectApplicationById(state, applicationId)
-  )
+  const { data: service } = useService({
+    environmentId,
+    serviceId: applicationId,
+  })
+  const { data: deploymentStatus } = useDeploymentStatus({ environmentId, serviceId: applicationId })
 
-  const serviceType: ServiceTypeEnum | undefined = application && getServiceType(application)
+  const scope = match(service?.serviceType)
+    .with('APPLICATION', () => APIVariableScopeEnum.APPLICATION)
+    .with('CONTAINER', () => APIVariableScopeEnum.CONTAINER)
+    .with('JOB', () => APIVariableScopeEnum.JOB)
+    .with('HELM', () => APIVariableScopeEnum.HELM)
+    .otherwise(() => undefined)
 
-  const environmentVariables = useSelector<RootState, EnvironmentVariableEntity[]>(
-    (state) => selectEnvironmentVariablesByApplicationId(state, applicationId),
-    shallowEqual
-  )
-  const secretEnvironmentVariables = useSelector<RootState, SecretEnvironmentVariableEntity[]>(
-    (state) => selectSecretEnvironmentVariablesByApplicationId(state, applicationId),
-    shallowEqual
-  )
+  const { mutate: deployService } = useDeployService({
+    environmentId,
+    logsLink:
+      ENVIRONMENT_LOGS_URL(organizationId, projectId, environmentId) +
+      DEPLOYMENT_LOGS_VERSION_URL(service?.id, deploymentStatus?.execution_id),
+  })
 
-  const environmentVariablesLoadingStatus = useSelector<RootState, LoadingStatus>(
-    (state) => getEnvironmentVariablesState(state).loadingStatus
-  )
-
-  const sortVariableMemo = useMemo(
-    () => sortVariable(environmentVariables, secretEnvironmentVariables),
-    [environmentVariables, secretEnvironmentVariables]
-  )
-
-  const isPublicEnvVariableLoading = useSelector<RootState, LoadingStatus>(
-    (state) => getEnvironmentVariablesState(state).loadingStatus
-  )
-  const isSecretEnvVariableLoading = useSelector<RootState, LoadingStatus>(
-    (state) => getSecretEnvironmentVariablesState(state).loadingStatus
-  )
-
-  const [data, setData] = useState<EnvironmentVariableSecretOrPublic[]>(sortVariableMemo || placeholder)
-  const [isLoading, setLoading] = useState(false)
-
-  const { setShowHideAllEnvironmentVariablesValues } = useContext(ApplicationContext)
-
-  useEffect(() => {
-    setShowHideAllEnvironmentVariablesValues(false)
-
-    if (serviceType) {
-      dispatch(fetchEnvironmentVariables({ applicationId, serviceType }))
-      dispatch(fetchSecretEnvironmentVariables({ applicationId, serviceType }))
+  const toasterCallback = () => {
+    if (!service) {
+      return
     }
-  }, [dispatch, applicationId, serviceType])
-
-  useEffect(() => {
-    setLoading(
-      !(isPublicEnvVariableLoading === 'loaded' || isSecretEnvVariableLoading === 'loaded') &&
-        !environmentVariables.length &&
-        !secretEnvironmentVariables.length
-    )
-  }, [isPublicEnvVariableLoading, isSecretEnvVariableLoading])
-
-  useEffect(() => {
-    if (isLoading) {
-      setData(placeholder)
-    } else {
-      setData(sortVariableMemo)
-    }
-  }, [
-    environmentVariables,
-    secretEnvironmentVariables,
-    sortVariableMemo,
-    placeholder,
-    isLoading,
-    environmentVariablesLoadingStatus,
-  ])
-
-  const tableHead: TableHeadProps[] = [
-    {
-      title: `${data.length} variable${data.length > 1 ? 's' : ''}`,
-      className: 'px-4 py-2',
-    },
-    {
-      title: 'Update',
-      className: 'pl-4 pr-12 text-end',
-    },
-    {
-      title: 'Value',
-      className: 'px-4 py-2 border-b-element-light-lighter-400 border-l h-full',
-      filter: [
-        {
-          title: 'Sort by privacy',
-          key: 'variable_type',
-        },
-      ],
-    },
-    {
-      title: 'Service link',
-      filter: [
-        {
-          title: 'Sort by service',
-          key: 'service_name',
-        },
-      ],
-    },
-    {
-      title: 'Scope',
-      filter: [
-        {
-          title: 'Sort by scope',
-          key: 'scope',
-        },
-      ],
-    },
-  ]
+    deployService({
+      serviceId: applicationId,
+      serviceType: service.serviceType,
+    })
+  }
 
   return (
-    <PageVariables
-      tableHead={tableHead}
-      variables={!isLoading ? sortVariableMemo : placeholder}
-      setFilterData={setData}
-      filterData={data}
-      isLoading={isLoading}
-      serviceType={serviceType}
-    />
+    scope && (
+      <VariableList
+        className="border-b border-b-neutral-200"
+        scope={scope}
+        serviceId={applicationId}
+        organizationId={organizationId}
+        projectId={projectId}
+        environmentId={environmentId}
+        onCreateVariable={() => {
+          toast(
+            'SUCCESS',
+            'Creation success',
+            'You need to redeploy your service for your changes to be applied.',
+            toasterCallback,
+            undefined,
+            'Redeploy'
+          )
+        }}
+        onEditVariable={() => {
+          toast(
+            'SUCCESS',
+            'Edition success',
+            'You need to redeploy your service for your changes to be applied.',
+            toasterCallback,
+            undefined,
+            'Redeploy'
+          )
+        }}
+        onDeleteVariable={(variable) => {
+          let name = variable.key
+          if (name && name.length > 30) {
+            name = name.substring(0, 30) + '...'
+          }
+          toast(
+            'SUCCESS',
+            'Deletion success',
+            `${name} has been deleted. You need to redeploy your service for your changes to be applied.`,
+            toasterCallback,
+            undefined,
+            'Redeploy'
+          )
+        }}
+      />
+    )
   )
 }
 

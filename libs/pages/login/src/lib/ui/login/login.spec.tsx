@@ -1,19 +1,22 @@
-import { render } from '__tests__/utils/setup-jest'
-import { AuthEnum } from '@qovery/shared/auth'
-import Login, { ILoginProps } from './login'
+import { renderWithProviders, screen } from '@qovery/shared/util-tests'
+import Login, { type ILoginProps } from './login'
 
 describe('Login', () => {
   const props: ILoginProps = {
     onClickAuthLogin: (provider: string) => {
       return
     },
-    githubType: AuthEnum.GITHUB,
-    gitlabType: AuthEnum.GITLAB,
-    bitbucketType: AuthEnum.BITBUCKET,
   }
 
   it('should render successfully', () => {
-    const { baseElement } = render(<Login {...props} />)
+    const { baseElement } = renderWithProviders(<Login {...props} />)
     expect(baseElement).toBeTruthy()
+  })
+
+  it('should call invitation detail if token are in the localStorage', async () => {
+    localStorage.setItem('inviteToken', 'token')
+    renderWithProviders(<Login {...props} />)
+
+    expect(screen.queryByText('Connect to Qovery')).not.toBeInTheDocument()
   })
 })

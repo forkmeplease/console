@@ -1,4 +1,5 @@
-import { EnvironmentVariableEntity } from '../domain/environment-variable.entity'
-import { SecretEnvironmentVariableEntity } from '../domain/secret-environment-variable.entity'
+import { type VariableResponse } from 'qovery-typescript-axios'
+import { type DetectNewRowInterface } from '../common/detect-new-row.interface'
 
-export type EnvironmentVariableSecretOrPublic = EnvironmentVariableEntity | SecretEnvironmentVariableEntity
+// TODO: Remove this when moving to Tanstack table
+export interface EnvironmentVariableSecretOrPublic extends VariableResponse, Partial<DetectNewRowInterface> {}

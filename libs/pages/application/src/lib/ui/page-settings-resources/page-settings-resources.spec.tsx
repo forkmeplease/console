@@ -1,20 +1,15 @@
-import ResizeObserver from '__tests__/utils/resize-observer'
-import { act, render, screen, waitFor } from '__tests__/utils/setup-jest'
 import { wrapWithReactHookForm } from '__tests__/utils/wrap-with-react-hook-form'
-import { applicationFactoryMock } from '@qovery/domains/application'
-import { MemorySizeEnum } from '@qovery/shared/enums'
-import { IconAwesomeEnum } from '@qovery/shared/ui'
-import { ResourcesData } from '../../../../../services/src/lib/feature/page-application-create-feature/application-creation-flow.interface'
-import PageSettingsResources, { PageSettingsResourcesProps } from './page-settings-resources'
+import { applicationFactoryMock } from '@qovery/shared/factories'
+import { type ApplicationResourcesData } from '@qovery/shared/interfaces'
+import { renderWithProviders, screen } from '@qovery/shared/util-tests'
+import PageSettingsResources, { type PageSettingsResourcesProps } from './page-settings-resources'
 
 const application = applicationFactoryMock(1)[0]
 
 const props: PageSettingsResourcesProps = {
   loading: false,
   onSubmit: () => jest.fn(),
-  getMemoryUnit: jest.fn(),
-  memorySize: MemorySizeEnum.MB,
-  application: application,
+  service: application,
   displayWarningCpu: true,
 }
 
@@ -29,53 +24,54 @@ jest.mock('react-hook-form', () => ({
 }))
 
 describe('PageSettingsResources', () => {
-  window.ResizeObserver = ResizeObserver
-  let defaultValues: ResourcesData
+  let defaultValues: ApplicationResourcesData
 
   beforeEach(() => {
     defaultValues = {
-      instances: [1, 18],
-      cpu: [3],
+      min_running_instances: 1,
+      max_running_instances: 18,
+      cpu: 3,
       memory: 1024,
-      memory_unit: MemorySizeEnum.MB,
     }
   })
 
   it('should render successfully', async () => {
-    const { baseElement } = render(wrapWithReactHookForm(<PageSettingsResources {...props} />, { defaultValues }))
+    const { baseElement } = renderWithProviders(
+      wrapWithReactHookForm(<PageSettingsResources {...props} />, { defaultValues })
+    )
     expect(baseElement).toBeTruthy()
   })
 
   it('should render the form', async () => {
-    const { getByDisplayValue } = render(
+    renderWithProviders(
       wrapWithReactHookForm(<PageSettingsResources {...props} />, {
         defaultValues,
       })
     )
 
-    const inputs = screen.getAllByRole('slider') as HTMLSpanElement[]
+    const submitButton = await screen.findByRole('button', { name: /save/i })
+    // https://react-hook-form.com/advanced-usage#TransformandParse
+    expect(submitButton).toBeInTheDocument()
 
-    await act(() => {
-      getByDisplayValue(1024)
-      expect(inputs[0].getAttribute('aria-valuenow')).toBe('3')
-      expect(inputs[1].getAttribute('aria-valuenow')).toBe('1')
-      expect(inputs[2].getAttribute('aria-valuenow')).toBe('18')
-    })
+    screen.getByDisplayValue(1024)
+    expect(screen.getByLabelText('Instances min')).toHaveValue(1)
+    expect(screen.getByLabelText('Instances max')).toHaveValue(18)
   })
 
-  it('should render warning box and icon for cpu', () => {
+  it('should render warning box and icon for cpu', async () => {
     props.displayWarningCpu = true
 
-    const { getByTestId, getAllByRole } = render(
+    const { container } = renderWithProviders(
       wrapWithReactHookForm(<PageSettingsResources {...props} />, {
-        defaultValues: { cpu: [10], instances: [1, 1], memory: 323, memory_unit: MemorySizeEnum.MB },
+        defaultValues: { cpu: 10, min_running_instances: 1, max_running_instances: 1, memory: 323 },
       })
     )
 
-    const img = getAllByRole('img')[0]
+    const submitButton = await screen.findByRole('button', { name: /save/i })
+    // https://react-hook-form.com/advanced-usage#TransformandParse
+    expect(submitButton).toBeInTheDocument()
 
-    getByTestId('warning-box')
-    expect(img.classList.contains(IconAwesomeEnum.TRIANGLE_EXCLAMATION)).toBe(true)
+    expect(container).toMatchSnapshot()
   })
 
   it('should submit the form', async () => {
@@ -83,18 +79,18 @@ describe('PageSettingsResources', () => {
     props.onSubmit = spy
     props.loading = false
 
-    render(
+    const { userEvent } = renderWithProviders(
       wrapWithReactHookForm(<PageSettingsResources {...props} />, {
         defaultValues,
       })
     )
 
-    const button = screen.getByTestId('submit-button')
+    const submitButton = await screen.findByRole('button', { name: /save/i })
+    // https://react-hook-form.com/advanced-usage#TransformandParse
+    expect(submitButton).toBeInTheDocument()
 
-    await waitFor(() => {
-      button.click()
-      expect(button).not.toBeDisabled()
-      expect(spy).toHaveBeenCalled()
-    })
+    await userEvent.click(submitButton)
+    expect(submitButton).toBeEnabled()
+    expect(spy).toHaveBeenCalled()
   })
 })

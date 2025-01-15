@@ -1,122 +1,107 @@
-import { ProjectDeploymentRule } from 'qovery-typescript-axios'
+import { Reorder } from 'framer-motion'
+import { type Cluster, type ProjectDeploymentRule } from 'qovery-typescript-axios'
 import { useEffect, useState } from 'react'
-import {
-  DragDropContext,
-  Draggable,
-  DraggableProvided,
-  DropResult,
-  Droppable,
-  DroppableProvided,
-} from 'react-beautiful-dnd'
-import { BaseLink, Button, ButtonSize, HelpSection } from '@qovery/shared/ui'
+import { useNavigate } from 'react-router-dom'
+import { SettingsHeading } from '@qovery/shared/console-shared'
+import { Button, Icon, Section } from '@qovery/shared/ui'
 import DeploymentRuleItem from '../deployment-rule-item/deployment-rule-item'
 import PlaceholderNoRules from '../placeholder-no-rules/placeholder-no-rules'
 
 export interface PageDeploymentRulesProps {
-  listHelpfulLinks: BaseLink[]
+  organizationId: string
+  clusters: Cluster[]
   deploymentRules: ProjectDeploymentRule[]
   updateDeploymentRulesOrder: (list: ProjectDeploymentRule[]) => void
   deleteDeploymentRule: (rule: string) => void
   linkNewRule?: string
-  isLoading?: string
+  isLoading?: boolean
 }
 
-export function PageDeploymentRules(props: PageDeploymentRulesProps) {
-  const {
-    listHelpfulLinks,
-    deploymentRules,
-    updateDeploymentRulesOrder,
-    isLoading = false,
-    deleteDeploymentRule,
-    linkNewRule = '',
-  } = props
+export function PageDeploymentRules({
+  organizationId,
+  clusters,
+  deploymentRules,
+  updateDeploymentRulesOrder,
+  isLoading = false,
+  deleteDeploymentRule,
+  linkNewRule = '',
+}: PageDeploymentRulesProps) {
+  const navigate = useNavigate()
   const [listRules, setListRules] = useState<ProjectDeploymentRule[]>(deploymentRules || [])
 
-  const onDragEnd = (result: DropResult) => {
-    const { destination, source } = result
-
-    if (!destination) return
-
-    if (destination.droppableId === source.droppableId && destination.index === source.index) return
-
-    const currentList = [...listRules]
-    const ruleToMove = currentList[source.index]
-    currentList.splice(source.index, 1)
-    currentList.splice(destination.index, 0, ruleToMove)
-    setListRules(currentList)
-
-    updateDeploymentRulesOrder(currentList)
+  const handleReorder = (deploymentRules: ProjectDeploymentRule[]) => {
+    setListRules(deploymentRules)
+    updateDeploymentRulesOrder(deploymentRules)
   }
 
   useEffect(() => {
-    if (isLoading === 'loaded') setListRules(deploymentRules)
+    if (!isLoading) setListRules(deploymentRules)
   }, [deploymentRules, isLoading])
 
   return (
-    <div className="mt-2 bg-white rounded flex flex-col flex-grow">
-      {isLoading === 'loading' && <div date-testid="screen-loading" className="h-full" />}
-      {listRules.length === 0 && isLoading === 'loaded' && <PlaceholderNoRules linkNewRule={linkNewRule} />}
-      {listRules.length >= 1 && isLoading === 'loaded' && (
-        <div className="py-7 px-10 flex-grow overflow-y-auto min-h-0">
-          <div className="flex justify-between items-center mb-8 w-[640px]">
-            <p className="text-text-500 text-xs">
-              Configure your default deployment rules. Drag & drop rules to prioritize them.
-            </p>
-
-            <Button
-              size={ButtonSize.REGULAR}
-              className="leading-none"
-              link={linkNewRule}
-              iconRight="icon-solid-circle-plus"
-            >
-              Add rule
-            </Button>
-          </div>
-
-          <div className={`w-[640px] bg-element-light-lighter-200 rounded ${listRules?.length === 0 ? 'hidden' : ''}`}>
-            <div className="border-t border-l border-r rounded-t border-element-light-lighter-500">
-              <h2 className="text-sm text-text-500 font-medium py-2 px-4 border-b border-element-light-lighter-500 bg-element-light-lighter-200 rounded-t">
-                Deployment Rules
-              </h2>
+    <>
+      {isLoading && <div className="h-full" />}
+      {listRules.length === 0 && !isLoading && (
+        <PlaceholderNoRules
+          organizationId={organizationId}
+          clusterAvailable={clusters.length > 0}
+          linkNewRule={linkNewRule}
+        />
+      )}
+      {listRules.length >= 1 && !isLoading && (
+        <div className="flex w-full flex-col justify-between">
+          <Section className="max-w-content-with-navigation-left p-8">
+            <div className="flex justify-between gap-2">
+              <SettingsHeading
+                title=" Deployment rules"
+                description="Configure your default deployment rules. Drag & drop rules to prioritize them."
+              />
+              <Button size="md" onClick={() => navigate(linkNewRule)}>
+                Add rule <Icon className="ml-2" iconName="circle-plus" iconStyle="regular" />
+              </Button>
             </div>
-            <DragDropContext onDragEnd={onDragEnd}>
-              <Droppable droppableId="rules-list">
-                {(provided: DroppableProvided) => (
-                  <div {...provided.droppableProps} ref={provided.innerRef}>
-                    {listRules?.map((rule: ProjectDeploymentRule, index) => (
-                      <Draggable draggableId={index.toString()} key={index} index={index}>
-                        {(providedDraggble: DraggableProvided) => (
-                          <div
-                            {...providedDraggble.draggableProps}
-                            {...providedDraggble.dragHandleProps}
-                            ref={providedDraggble.innerRef}
-                          >
-                            <DeploymentRuleItem
-                              id={rule.id}
-                              name={rule.name}
-                              startTime={rule.start_time}
-                              stopTime={rule.stop_time}
-                              weekDays={rule.weekdays}
-                              isLast={index === listRules.length - 1 ? true : false}
-                              isLoading={isLoading !== 'loaded'}
-                              removeDeploymentRule={deleteDeploymentRule}
-                            />
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </DragDropContext>
-          </div>
+
+            <div className={`w-[640px] rounded bg-neutral-100 ${listRules?.length === 0 ? 'hidden' : ''}`}>
+              <div className="rounded-t border-l border-r border-t border-neutral-250">
+                <h2 className="rounded-t border-b border-neutral-250 bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-400">
+                  Configured rules
+                </h2>
+              </div>
+              <Reorder.Group axis="y" values={listRules} onReorder={handleReorder}>
+                {listRules.length > 1 ? (
+                  listRules.map((rule, index) => (
+                    <Reorder.Item key={rule.id} value={rule}>
+                      <DeploymentRuleItem
+                        id={rule.id}
+                        name={rule.name}
+                        startTime={rule.start_time}
+                        stopTime={rule.stop_time}
+                        weekDays={rule.weekdays}
+                        isLast={index === listRules.length - 1 ? true : false}
+                        isLoading={isLoading}
+                        removeDeploymentRule={deleteDeploymentRule}
+                      />
+                    </Reorder.Item>
+                  ))
+                ) : listRules[0] ? (
+                  <DeploymentRuleItem
+                    id={listRules[0].id}
+                    name={listRules[0].name}
+                    startTime={listRules[0].start_time}
+                    stopTime={listRules[0].stop_time}
+                    weekDays={listRules[0].weekdays}
+                    isLast={true}
+                    isLoading={isLoading}
+                    removeDeploymentRule={deleteDeploymentRule}
+                    noDragDrop
+                  />
+                ) : null}
+              </Reorder.Group>
+            </div>
+          </Section>
         </div>
       )}
-      <div className="bg-white rounded-b">
-        <HelpSection description="Need help? You may find these links useful" links={listHelpfulLinks} />
-      </div>
-    </div>
+    </>
   )
 }
 

@@ -4,8 +4,8 @@ import {
   ONBOARDING_PRICING_URL,
   ONBOARDING_PROJECT_URL,
   ONBOARDING_THANKS_URL,
-  Route,
-} from '@qovery/shared/router'
+  type Route,
+} from '@qovery/shared/routes'
 import { OnboardingMore } from '../feature/onboarding-more/onboarding-more'
 import { OnboardingPersonalize } from '../feature/onboarding-personalize/onboarding-personalize'
 import { OnboardingPricing } from '../feature/onboarding-pricing/onboarding-pricing'
@@ -33,7 +33,7 @@ export const ROUTER_ONBOARDING_STEP_2: Route[] = [
     component: <OnboardingProject />,
   },
   {
-    path: `${ONBOARDING_PRICING_URL}/:plan`,
+    path: ONBOARDING_PRICING_URL,
     component: <OnboardingPricing />,
   },
 ]

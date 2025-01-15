@@ -1,35 +1,29 @@
-import { IconEnum } from '@qovery/shared/enums'
-import { Skeleton, Truncate } from '@qovery/shared/ui'
-import Icon from '../icon/icon'
+import { type PropsWithChildren, type ReactNode } from 'react'
+import { Heading } from '../heading/heading'
+import Skeleton from '../skeleton/skeleton'
+import Truncate from '../truncate/truncate'
 
-export interface HeaderProps {
+export interface HeaderProps extends PropsWithChildren {
   title?: string
-  icon?: IconEnum | string
-  buttons?: React.ReactNode
-  copyTitle?: boolean
-  copyContent?: string
-  actions?: React.ReactNode
+  buttons?: ReactNode
+  actions?: ReactNode
 }
 
-export function Header(props: HeaderProps) {
-  const { title, icon, buttons, actions } = props
-
+export function Header({ title, buttons, actions, children }: HeaderProps) {
   return (
-    <div className="flex h-32 border-b border-element-light-lighter-400 items-center justify-between bg-white rounded-t p-5 shrink-0">
-      <div className="flex gap-4 ml-2 items-center">
-        {icon && <Icon name={icon} width="64" />}
+    <div className="flex min-h-[125px] shrink-0 items-center justify-between rounded-t border-b border-neutral-200 bg-white px-5 py-6">
+      <div className="ml-4 flex items-center gap-5">
+        {children}
         <div className="flex flex-col gap-3">
-          <div className="flex gap-2 items-center max-w-3xl">
-            <Skeleton height={36} width={150} show={title ? false : true}>
-              <h1 className="font-bold text-text-700 text-3xl max-w-3xl truncate">
-                {title && <Truncate text={title} truncateLimit={50} />}
-              </h1>
+          <div className="flex max-w-3xl items-center gap-2">
+            <Skeleton height={28} width={150} show={!title}>
+              <Heading>{title && <Truncate text={title} truncateLimit={50} />}</Heading>
             </Skeleton>
           </div>
-          {actions && <div className="flex gap-3 items-start">{actions}</div>}
+          {actions && <div className="flex items-start gap-3">{actions}</div>}
         </div>
       </div>
-      {buttons && <div className="flex self-end gap-2">{buttons}</div>}
+      {buttons && <div className="flex gap-2 self-end">{buttons}</div>}
     </div>
   )
 }

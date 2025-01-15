@@ -1,0 +1,20 @@
+{
+  "name": "shared-iam-feature",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/iam/feature/src",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:feature"],
+  "targets": {
+    "test": {
+      "options": {
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "coverage": true
+        }
+      }
+    }
+  }
+}

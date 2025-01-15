@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { FieldError } from 'react-hook-form'
+import { type FieldError } from 'react-hook-form'
 import { MemorySizeEnum } from '@qovery/shared/enums'
-import { convertMemory } from '@qovery/shared/utils'
+import { convertMemory } from '@qovery/shared/util-js'
 import InputSelect from '../input-select/input-select'
 import InputText from '../input-text/input-text'
 
@@ -13,7 +13,7 @@ export interface InputSizeUnitProps {
   minSize?: number
   currentSize?: number
   getUnit?: (value: string | MemorySizeEnum) => void
-  onChange?: (...event: any[]) => void
+  onChange?: (size: string) => void
   error?: FieldError
   showConsumption?: boolean
 }
@@ -37,7 +37,7 @@ export function InputSizeUnit(props: InputSizeUnitProps) {
 
     if (size !== memorySize) {
       const currentSizeByUnit = getSizeUnit(size, value)
-      onChange && onChange(currentSizeByUnit)
+      onChange && onChange(`${currentSizeByUnit}`)
     }
   }
 
@@ -48,26 +48,26 @@ export function InputSizeUnit(props: InputSizeUnitProps) {
           type="number"
           dataTestId={`input-memory-${name}`}
           name={name}
-          onChange={onChange}
+          onChange={(e) => onChange && onChange(e.target.value)}
           value={value}
           label="Size"
           error={
             error?.type === 'required'
               ? 'Please enter a size.'
               : error?.type === 'max'
-              ? `Maximum allowed ${name} is: ${maxSize} ${memorySize}.`
-              : undefined
+                ? `Maximum allowed ${name} is: ${maxSize} ${memorySize}.`
+                : undefined
           }
         />
         {showConsumption && (
-          <p data-testid="current-consumption" className="text-text-400 text-xs mt-1 ml-4">
+          <p data-testid="current-consumption" className="ml-4 mt-1 text-xs text-neutral-350">
             Current consumption:{' '}
             {currentSize < 1024 ? currentSize + ` ${MemorySizeEnum.MB}` : currentSize / 1024 + ` ${MemorySizeEnum.GB}`}
           </p>
         )}
       </div>
       <InputSelect
-        className="w-full h-full"
+        className="h-full w-full"
         onChange={(e) => {
           handleChangeMemoryUnit(e as string)
         }}

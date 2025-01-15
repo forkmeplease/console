@@ -1,11 +1,9 @@
-import { Organization } from 'qovery-typescript-axios'
-import { useEffect, useState } from 'react'
-import { FieldValues, FormProvider, useForm } from 'react-hook-form'
-import { useDispatch, useSelector } from 'react-redux'
+import { type Organization } from 'qovery-typescript-axios'
+import { useEffect } from 'react'
+import { type FieldValues, FormProvider, useForm } from 'react-hook-form'
 import { useParams } from 'react-router-dom'
-import { editOrganization, selectOrganizationById } from '@qovery/domains/organization'
-import { useDocumentTitle } from '@qovery/shared/utils'
-import { AppDispatch, RootState } from '@qovery/store'
+import { useEditOrganization, useOrganization } from '@qovery/domains/organizations/feature'
+import { useDocumentTitle } from '@qovery/shared/util-hooks'
 import PageOrganizationGeneral from '../../ui/page-organization-general/page-organization-general'
 
 export const handleSubmit = (data: FieldValues, organization: Organization) => {
@@ -14,7 +12,7 @@ export const handleSubmit = (data: FieldValues, organization: Organization) => {
     logo_url: data['logo_url'],
     name: data['name'],
     description: data['description'],
-    website_url: data['website_url'],
+    website_url: data['website_url'] === '' ? undefined : data['website_url'],
     admin_emails: data['admin_emails'],
   }
 }
@@ -23,10 +21,8 @@ export function PageOrganizationGeneralFeature() {
   const { organizationId = '' } = useParams()
   useDocumentTitle('General - Organization settings')
 
-  const organization = useSelector((state: RootState) => selectOrganizationById(state, organizationId))
-
-  const [loading, setLoading] = useState(false)
-  const dispatch = useDispatch<AppDispatch>()
+  const { data: organization } = useOrganization({ organizationId })
+  const { mutateAsync: editOrganization, isLoading: isLoadingEditOrganization } = useEditOrganization()
 
   const methods = useForm({
     mode: 'onChange',
@@ -34,11 +30,11 @@ export function PageOrganizationGeneralFeature() {
 
   useEffect(() => {
     methods.reset({
-      logo_url: organization?.logo_url || '',
       name: organization?.name || '',
+      logo_url: organization?.logo_url || '',
       description: organization?.description || '',
       website_url: organization?.website_url || '',
-      admin_emails: organization?.admin_emails,
+      admin_emails: organization?.admin_emails || '',
     })
   }, [
     methods,
@@ -49,26 +45,30 @@ export function PageOrganizationGeneralFeature() {
     organization?.admin_emails,
   ])
 
-  const onSubmit = methods.handleSubmit((data) => {
+  const onSubmit = methods.handleSubmit(async (data) => {
     if (data && organization) {
-      setLoading(true)
       const cloneOrganization = handleSubmit(data, organization)
 
-      dispatch(
-        editOrganization({
+      try {
+        await editOrganization({
           organizationId,
-          data: cloneOrganization,
+          organizationRequest: cloneOrganization,
         })
-      )
-        .unwrap()
-        .then(() => setLoading(false))
-        .catch(() => setLoading(false))
+      } catch (error) {
+        console.error(error)
+      }
     }
   })
 
+  if (!organization) return null
+
   return (
     <FormProvider {...methods}>
-      <PageOrganizationGeneral onSubmit={onSubmit} loading={loading} created_at={organization?.created_at || ''} />
+      <PageOrganizationGeneral
+        onSubmit={onSubmit}
+        loading={isLoadingEditOrganization}
+        created_at={organization?.created_at || ''}
+      />
     </FormProvider>
   )
 }

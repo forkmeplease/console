@@ -1,23 +1,35 @@
+import { type PropsWithChildren, type ReactNode } from 'react'
+
 export interface FunnelFlowBodyProps {
-  children: React.ReactNode
-  helpSection?: React.ReactNode
+  helpSectionClassName?: string
+  helpSection?: ReactNode
+  customContentWidth?: string
 }
 
-export function FunnelFlowBody(props: FunnelFlowBodyProps) {
+export function FunnelFlowBody(props: PropsWithChildren<FunnelFlowBodyProps>) {
   return (
     <>
-      <div className="absolute h-full bg-white w-full pointer-events-none" style={{ left: '-30%' }}></div>
+      {props.helpSection && (
+        <div className="pointer-events-none absolute h-full w-full bg-white" style={{ left: '-30%' }}></div>
+      )}
       <div className="flex w-full overflow-auto">
-        <section className="w-[70%] bg-white pt-14">
-          <div data-testid="funnel-body-content" className="max-w-[32rem] mx-auto relative px-4 pb-14">
+        <section className={`w-full bg-white pt-14 ${props.helpSection ? 'lg:w-[70%]' : 'overflow-auto'}`}>
+          <div
+            data-testid="funnel-body-content"
+            className={`relative mx-auto px-8 pb-14 ${
+              props.customContentWidth || 'max-w-content-with-navigation-left'
+            }`}
+          >
             {props.children}
           </div>
         </section>
         {props.helpSection && (
-          <aside className="w-[30%] sticky top-0 pt-14 pl-10">
+          <aside className="sticky top-0 hidden w-[30%] pl-10 pt-14 lg:block">
             <div
               data-testid="funnel-body-help"
-              className="bg-element-light-lighter-100 p-8 border-element-light-lighter-400 border-b border-l max-w-[22.5rem]"
+              className={`max-w-[22.5rem] rounded border-b border-l border-neutral-200 bg-neutral-50 p-8 ${
+                props.helpSectionClassName || ''
+              }`}
             >
               {props.helpSection}
             </div>

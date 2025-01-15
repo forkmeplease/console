@@ -1,96 +1,24 @@
-import { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
 import { useParams } from 'react-router-dom'
-import {
-  environmentFactoryMock,
-  environmentsLoadingEnvironmentDeployments,
-  fetchEnvironmentDeploymentHistory,
-  selectEnvironmentById,
-} from '@qovery/domains/environment'
-import { ServiceTypeEnum } from '@qovery/shared/enums'
-import { DeploymentService, EnvironmentEntity } from '@qovery/shared/interfaces'
-import { BaseLink } from '@qovery/shared/ui'
-import { AppDispatch, RootState } from '@qovery/store'
+import { useDeploymentHistoryLegacy } from '@qovery/domains/environments/feature'
+import { deploymentMock } from '@qovery/shared/factories'
+import { mergeDeploymentServicesLegacy } from '@qovery/shared/util-js'
 import PageDeployments from '../../ui/page-deployments/page-deployments'
 
 export function PageDeploymentsFeature() {
-  const { environmentId = '', projectId = '' } = useParams()
-  const dispatch = useDispatch<AppDispatch>()
+  const { environmentId = '' } = useParams()
 
-  const environment = useSelector<RootState, EnvironmentEntity | undefined>((state) =>
-    selectEnvironmentById(state, environmentId)
-  )
-
-  const loadingStatusDeployments = useSelector<RootState>((state) => environmentsLoadingEnvironmentDeployments(state))
-  const loadingEnvironment = environmentFactoryMock(1, false, false)
-
-  const listHelpfulLinks: BaseLink[] = [
-    {
-      link: 'https://hub.qovery.com/docs/using-qovery/configuration/environment',
-      linkLabel: 'How to manage my environment',
-      external: true,
-    },
-  ]
-
-  const mergeDeploymentServices = (env: EnvironmentEntity) => {
-    const merged: DeploymentService[] = []
-    env.deployments?.forEach((deployment) => {
-      deployment.applications?.forEach((app) => {
-        const a: DeploymentService = {
-          ...app,
-          execution_id: deployment.id,
-          type: ServiceTypeEnum.APPLICATION,
-        }
-        merged.push(a)
-      })
-
-      deployment.containers?.forEach((container) => {
-        const c: DeploymentService = {
-          ...container,
-          execution_id: deployment.id,
-          type: ServiceTypeEnum.CONTAINER,
-        }
-        merged.push(c)
-      })
-
-      deployment.databases?.forEach((db) => {
-        const d: DeploymentService = {
-          ...db,
-          execution_id: deployment.id,
-          type: ServiceTypeEnum.DATABASE,
-        }
-        merged.push(d)
-      })
-    })
-    return merged
-  }
-
-  const isLoading = loadingStatusDeployments !== 'loaded'
-
-  useEffect(() => {
-    const fetchEnv = () => {
-      dispatch(fetchEnvironmentDeploymentHistory({ environmentId }))
-    }
-
-    !environment?.deployments && fetchEnv()
-
-    const pullDeployments = setInterval(
-      () => dispatch(fetchEnvironmentDeploymentHistory({ environmentId, silently: true })),
-      2500
-    )
-
-    return () => clearInterval(pullDeployments)
-  }, [dispatch, environmentId, projectId, environment])
+  const { isLoading: loadingStatusDeployments, data: environmentDeploymentHistory } = useDeploymentHistoryLegacy({
+    environmentId,
+  })
 
   return (
     <PageDeployments
       deployments={
-        !isLoading
-          ? environment && (mergeDeploymentServices(environment) as DeploymentService[])
-          : (mergeDeploymentServices(loadingEnvironment[0]) as DeploymentService[])
+        !loadingStatusDeployments
+          ? environmentDeploymentHistory && mergeDeploymentServicesLegacy(environmentDeploymentHistory)
+          : mergeDeploymentServicesLegacy([deploymentMock])
       }
-      listHelpfulLinks={listHelpfulLinks}
-      isLoading={isLoading}
+      isLoading={loadingStatusDeployments}
     />
   )
 }

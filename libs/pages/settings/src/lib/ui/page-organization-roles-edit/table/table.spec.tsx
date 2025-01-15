@@ -1,5 +1,5 @@
-import { render } from '@testing-library/react'
-import Table, { TableProps } from './table'
+import { render } from '__tests__/utils/setup-jest'
+import Table, { type TableProps } from './table'
 
 const props: TableProps = {
   title: 'test',

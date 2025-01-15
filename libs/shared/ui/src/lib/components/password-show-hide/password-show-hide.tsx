@@ -1,63 +1,65 @@
-import { useEffect, useState } from 'react'
-import Icon from '../icon/icon'
-import Tooltip from '../tooltip/tooltip'
-import CopyToClipboard from '../copy-to-clipboard/copy-to-clipboard'
+import { type ComponentPropsWithoutRef, useState } from 'react'
+import { twMerge } from '@qovery/shared/util-js'
+import { CopyToClipboardButtonIcon } from '../copy-to-clipboard-button-icon/copy-to-clipboard-button-icon'
+import { Icon } from '../icon/icon'
+import { Tooltip } from '../tooltip/tooltip'
 
-export interface PasswordShowHideProps {
+export interface PasswordShowHideProps extends ComponentPropsWithoutRef<'span'> {
   value: string
-  defaultVisible: boolean
+  defaultVisible?: boolean
   isSecret?: boolean
-  className?: string
   canCopy?: boolean
 }
 
-export function PasswordShowHide(props: PasswordShowHideProps) {
-  const { value = '', isSecret = false, className = '', canCopy = false, defaultVisible = false } = props
-  const [visible, setVisible] = useState<boolean>(defaultVisible)
+export function PasswordShowHide({
+  canCopy = true,
+  className,
+  defaultVisible = false,
+  isSecret,
+  value,
+  ...props
+}: PasswordShowHideProps) {
+  const [_visible, setVisible] = useState(false)
+  const visible = defaultVisible || _visible
 
-  useEffect(() => {
-    setVisible(defaultVisible)
-  }, [defaultVisible])
-
-  return (
-    <div className={`flex items-center text-xs text-text-400 ${className}`}>
-      {isSecret ? (
-        <Icon name="icon-solid-user-secret" className="mr-3 text-text-500 text-xs" />
-      ) : (
+  return isSecret ? (
+    <span className={twMerge('flex items-center gap-2 text-sm text-neutral-300', className)} {...props}>
+      <Tooltip content="Secret variable">
+        <span>
+          <Icon className="block w-4" iconName="lock-keyhole" iconStyle="regular" />
+        </span>
+      </Tooltip>
+      <span className="pt-1.5 text-xl font-medium tracking-widest" data-testid="hide_value_secret">
+        *************
+      </span>
+    </span>
+  ) : (
+    <span className={twMerge('flex items-center gap-2 text-sm', className)} {...props}>
+      <Tooltip content={visible ? 'Hide variable' : 'View variable'}>
         <button
+          type="button"
+          className="w-4 text-brand-500"
+          onClick={() => setVisible((visible) => !visible)}
           data-testid="toggle-button"
-          className="flex items-center mr-3 text-text-500"
-          onClick={() => {
-            setVisible(!visible)
-          }}
         >
-          {visible ? (
-            <Icon className="text-xs" name="icon-solid-eye-slash" />
-          ) : (
-            <Icon className="text-xs" name="icon-solid-eye" />
-          )}
+          {visible ? <Icon iconName="eye-slash" iconStyle="regular" /> : <Icon iconName="eye" iconStyle="regular" />}
         </button>
-      )}
-      <div className="flex grow  text-ellipsis overflow-hidden">
+      </Tooltip>
+      {visible ? (
+        <>
+          <span className="truncate text-brand-500" data-testid="visible_value">
+            {value}
+          </span>
+          {canCopy && Boolean(value) && <CopyToClipboardButtonIcon content={value!} iconClassName="text-brand-500" />}
+        </>
+      ) : (
         <Tooltip content={value}>
-          {visible ? (
-            <div data-testid="visible_value" className="truncate text-text-600">
-              {value}
-            </div>
-          ) : (
-            <input
-              type={visible ? 'text' : 'password'}
-              value={'Ōtsuka Station 2019 lets go yes'}
-              className={`inline-flex bg-transparent outline-0 border-0 overflow-hidden text-ellipsis`}
-              readOnly
-              disabled={!visible}
-              data-testid="input"
-            />
-          )}
+          <span className="pt-1.5 text-xl font-medium tracking-widest text-neutral-350" data-testid="hide_value">
+            *************
+          </span>
         </Tooltip>
-        {!isSecret && canCopy && <CopyToClipboard className="ml-2" data-testid="copy" content={value} />}
-      </div>
-    </div>
+      )}
+    </span>
   )
 }
 

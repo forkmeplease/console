@@ -1,23 +1,14 @@
-import { render } from '__tests__/utils/setup-jest'
-import PageDeployments, { PageDeploymentsProps } from './page-deployments'
-
-let props: PageDeploymentsProps
-
-beforeEach(() => {
-  props = {
-    listHelpfulLinks: [
-      {
-        link: 'https://hub.qovery.com/docs/using-qovery/configuration/application',
-        linkLabel: 'How to configure my application',
-        external: true,
-      },
-    ],
-  }
-})
+import { renderWithProviders, screen } from '@qovery/shared/util-tests'
+import PageDeployments from './page-deployments'
 
 describe('DeploymentsPage', () => {
   it('should render successfully', () => {
-    const { baseElement } = render(<PageDeployments {...props} />)
+    const { baseElement } = renderWithProviders(<PageDeployments />)
     expect(baseElement).toBeTruthy()
+  })
+
+  it('should have empty state', () => {
+    renderWithProviders(<PageDeployments deployments={[]} isLoading={false} />)
+    screen.getByText('No deployment yet')
   })
 })

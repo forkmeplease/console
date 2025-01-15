@@ -1,82 +1,95 @@
-import { CustomDomain } from 'qovery-typescript-axios'
+import { type CustomDomain, type CustomDomainRequest } from 'qovery-typescript-axios'
+import { useEffect, useMemo } from 'react'
 import { FormProvider, useForm } from 'react-hook-form'
-import { useDispatch, useSelector } from 'react-redux'
-import {
-  createCustomDomain,
-  editCustomDomain,
-  getCustomDomainsState,
-  postApplicationActionsRestart,
-} from '@qovery/domains/application'
-import { getServiceType } from '@qovery/shared/enums'
-import { ApplicationEntity, LoadingStatus } from '@qovery/shared/interfaces'
-import { AppDispatch, RootState } from '@qovery/store'
+import { useCreateCustomDomain, useEditCustomDomain } from '@qovery/domains/custom-domains/feature'
+import { type Application, type Container, type Helm } from '@qovery/domains/services/data-access'
+import { useDeploymentStatus, useLinks } from '@qovery/domains/services/feature'
+import { DEPLOYMENT_LOGS_VERSION_URL, ENVIRONMENT_LOGS_URL } from '@qovery/shared/routes'
+import { useModal } from '@qovery/shared/ui'
 import CrudModal from '../../../ui/page-settings-domains/crud-modal/crud-modal'
 
 export interface CrudModalFeatureProps {
+  organizationId: string
+  projectId: string
+  service: Application | Container | Helm
   customDomain?: CustomDomain
-  application?: ApplicationEntity
   onClose: () => void
 }
 
-export function CrudModalFeature(props: CrudModalFeatureProps) {
-  const methods = useForm({
-    defaultValues: { domain: props.customDomain ? props.customDomain.domain : '' },
+export function CrudModalFeature({ organizationId, projectId, customDomain, service, onClose }: CrudModalFeatureProps) {
+  const { data: deploymentStatus } = useDeploymentStatus({
+    environmentId: service.environment.id,
+    serviceId: service.id,
+  })
+  const methods = useForm<CustomDomainRequest>({
+    defaultValues: {
+      domain: customDomain ? customDomain.domain : '',
+      generate_certificate: customDomain ? customDomain?.generate_certificate : true,
+      use_cdn: customDomain?.use_cdn ?? false,
+    },
     mode: 'onChange',
   })
-  const dispatch = useDispatch<AppDispatch>()
-  const loadingStatus = useSelector<RootState, LoadingStatus>((state) => getCustomDomainsState(state).loadingStatus)
+  const { mutateAsync: editCustomDomain, isLoading: isLoadingEditCustomDomain } = useEditCustomDomain({
+    environmentId: service.environment.id,
+    logsLink:
+      ENVIRONMENT_LOGS_URL(organizationId, projectId, service.environment.id) +
+      DEPLOYMENT_LOGS_VERSION_URL(service.id, deploymentStatus?.execution_id),
+  })
+  const { mutateAsync: createCustomDomain, isLoading: isLoadingCreateCustomDomain } = useCreateCustomDomain({
+    environmentId: service.environment.id,
+    logsLink:
+      ENVIRONMENT_LOGS_URL(organizationId, projectId, service.environment.id) +
+      DEPLOYMENT_LOGS_VERSION_URL(service.id, deploymentStatus?.execution_id),
+  })
 
-  const toasterCallback = () => {
-    if (props.application) {
-      dispatch(
-        postApplicationActionsRestart({
-          applicationId: props.application.id,
-          environmentId: props.application.environment?.id || '',
-          serviceType: getServiceType(props.application),
-        })
-      )
-    }
-  }
+  const { enableAlertClickOutside } = useModal()
 
-  const onSubmit = methods.handleSubmit((data) => {
-    if (!props.application) return
+  const { data: links = [] } = useLinks({
+    serviceId: service.id,
+    serviceType: service.serviceType,
+  })
 
-    if (props.customDomain) {
-      dispatch(
-        editCustomDomain({
-          applicationId: props.application.id,
-          customDomain: props.customDomain,
-          domain: data.domain,
-          serviceType: getServiceType(props.application),
-          toasterCallback,
+  useEffect(() => {
+    enableAlertClickOutside(methods.formState.isDirty)
+  }, [methods.formState, enableAlertClickOutside])
+
+  const onSubmit = methods.handleSubmit(async (data) => {
+    try {
+      if (customDomain) {
+        await editCustomDomain({
+          serviceId: service.id,
+          serviceType: service.serviceType,
+          customDomainId: customDomain.id,
+          payload: data,
         })
-      )
-        .unwrap()
-        .then(() => props.onClose())
-        .catch((e) => console.error(e))
-    } else {
-      dispatch(
-        createCustomDomain({
-          applicationId: props.application.id,
-          domain: data.domain,
-          serviceType: getServiceType(props.application),
-          toasterCallback,
+      } else {
+        await createCustomDomain({
+          serviceId: service.id,
+          serviceType: service.serviceType,
+          payload: data,
         })
-      )
-        .unwrap()
-        .then(() => props.onClose())
-        .catch((e) => console.error(e))
+      }
+      onClose()
+    } catch (error) {
+      console.error(error)
     }
   })
+
+  const defaultLink = useMemo(() => {
+    const defaultLinkItem = links?.find((link) => link.is_qovery_domain && link.is_default)
+
+    return defaultLinkItem?.url?.replace('https://', '') || ''
+  }, [links])
 
   return (
     <FormProvider {...methods}>
       <CrudModal
-        customDomain={props.customDomain}
+        customDomain={customDomain}
         onSubmit={onSubmit}
-        onClose={props.onClose}
-        loading={loadingStatus === 'loading'}
-        isEdit={!!props.customDomain}
+        onClose={onClose}
+        loading={isLoadingEditCustomDomain || isLoadingCreateCustomDomain}
+        isEdit={!!customDomain}
+        link={defaultLink}
       />
     </FormProvider>
   )

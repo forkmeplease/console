@@ -1,36 +1,73 @@
-import * as AccordionComponent from '@radix-ui/react-accordion'
-import Icon from '../icon/icon'
+import * as AccordionPrimitive from '@radix-ui/react-accordion'
+import { type ComponentPropsWithoutRef, type ElementRef, forwardRef } from 'react'
+import { twMerge } from '@qovery/shared/util-js'
+import { Icon } from '../icon/icon'
 
-export interface AccordionProps {
-  header: React.ReactNode
-  children: React.ReactNode
-  open?: boolean
-  disabled?: boolean
-  className?: string
-}
+interface AccordionItemProps extends ComponentPropsWithoutRef<typeof AccordionPrimitive.Item> {}
 
-export function Accordion(props: AccordionProps) {
-  const { header, children, open = false, disabled = false, className = '' } = props
-
-  return (
-    <AccordionComponent.Root
-      type="single"
-      defaultValue={open ? 'accordion' : undefined}
-      disabled={disabled}
-      collapsible
-      className={className}
+const AccordionItem = forwardRef<ElementRef<typeof AccordionPrimitive.Item>, AccordionItemProps>(
+  ({ children, className, ...props }, forwardedRef) => (
+    <AccordionPrimitive.Item
+      className={twMerge('mt-px overflow-hidden first:mt-0 first:rounded-t last:rounded-b', className)}
+      {...props}
+      ref={forwardedRef}
     >
-      <AccordionComponent.Item value="accordion" className="accordion rounded border border-element-light-lighter-400">
-        <AccordionComponent.Header className="accordion__header">
-          <AccordionComponent.Trigger className="w-full h-full flex justify-between items-center px-4 gap-4">
-            {header}
-            <Icon name="icon-solid-caret-down" className="accordion__arrow" />
-          </AccordionComponent.Trigger>
-        </AccordionComponent.Header>
-        <AccordionComponent.Content className="accordion__content !block">{children}</AccordionComponent.Content>
-      </AccordionComponent.Item>
-    </AccordionComponent.Root>
+      {children}
+    </AccordionPrimitive.Item>
   )
-}
+)
 
-export default Accordion
+interface AccordionTriggerProps extends ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger> {}
+
+const AccordionTrigger = forwardRef<ElementRef<typeof AccordionPrimitive.Trigger>, AccordionTriggerProps>(
+  ({ children, className, ...props }, forwardedRef) => (
+    <AccordionPrimitive.Trigger
+      className={twMerge(
+        'group flex min-h-14 cursor-default items-center gap-5 bg-white px-5 text-sm outline-none',
+        className
+      )}
+      {...props}
+      ref={forwardedRef}
+    >
+      <Icon
+        iconName="chevron-down"
+        className="text-neutral-350 transition-transform duration-200 ease-[cubic-bezier(0.87,_0,_0.13,_1)] group-data-[state=open]:rotate-180"
+        aria-hidden
+      />
+      {children}
+    </AccordionPrimitive.Trigger>
+  )
+)
+
+interface AccordionContentProps extends ComponentPropsWithoutRef<typeof AccordionPrimitive.Content> {}
+
+const AccordionContent = forwardRef<ElementRef<typeof AccordionPrimitive.Content>, AccordionContentProps>(
+  ({ children, className, ...props }, forwardedRef) => (
+    <AccordionPrimitive.Content
+      className={twMerge(
+        'data-[state=closed]:slidein-up-sm-faded overflow-hidden data-[state=open]:animate-slidein-down-sm-faded',
+        className
+      )}
+      {...props}
+      ref={forwardedRef}
+    >
+      {children}
+    </AccordionPrimitive.Content>
+  )
+)
+
+const Accordion = Object.assign(
+  {},
+  {
+    Root: AccordionPrimitive.Root,
+    Item: AccordionItem,
+    Trigger: AccordionTrigger,
+    Content: AccordionContent,
+  }
+)
+
+const AccordionRoot = AccordionPrimitive.Root
+
+export { Accordion, AccordionRoot, AccordionItem, AccordionTrigger, AccordionContent }
+
+export type { AccordionItemProps, AccordionTriggerProps, AccordionContentProps }

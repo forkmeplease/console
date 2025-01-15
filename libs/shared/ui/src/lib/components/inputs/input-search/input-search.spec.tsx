@@ -1,7 +1,5 @@
-import { render } from '__tests__/utils/setup-jest'
-import { fireEvent, screen } from '@testing-library/react'
-
-import InputSearch, { InputSearchProps } from './input-search'
+import { fireEvent, render, screen } from '__tests__/utils/setup-jest'
+import InputSearch, { type InputSearchProps } from './input-search'
 
 let props: InputSearchProps
 
@@ -18,6 +16,6 @@ describe('InputSearch', () => {
 
     fireEvent.change(input, { target: { value: 'some new text value' } })
 
-    expect((input as HTMLInputElement).value).toBe('some new text value')
+    expect(input as HTMLInputElement).toHaveValue('some new text value')
   })
 })

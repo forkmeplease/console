@@ -1,0 +1,53 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`EnvironmentMode should render as development mode 1`] = `
+<body>
+  <div>
+    <span
+      class="inline-flex items-center shrink-0 font-medium text-xs h-6 px-2 border rounded border-neutral-250 text-neutral-350 dark:border-neutral-350 dark:text-neutral-300"
+      data-accent-color="neutral"
+    >
+      Development
+    </span>
+  </div>
+</body>
+`;
+
+exports[`EnvironmentMode should render as preview mode 1`] = `
+<body>
+  <div>
+    <span
+      class="inline-flex items-center shrink-0 font-medium text-xs h-6 px-2 text-purple-500 border rounded border-purple-500"
+      data-accent-color="purple"
+    >
+      Preview
+    </span>
+  </div>
+</body>
+`;
+
+exports[`EnvironmentMode should render as production mode 1`] = `
+<body>
+  <div>
+    <span
+      class="inline-flex items-center shrink-0 font-medium text-xs h-6 px-2 text-red-500 border rounded border-red-500"
+      data-accent-color="red"
+    >
+      Production
+    </span>
+  </div>
+</body>
+`;
+
+exports[`EnvironmentMode should render as staging mode 1`] = `
+<body>
+  <div>
+    <span
+      class="inline-flex items-center shrink-0 font-medium text-xs h-6 px-2 border rounded border-neutral-250 text-neutral-350 dark:border-neutral-350 dark:text-neutral-300"
+      data-accent-color="neutral"
+    >
+      Staging
+    </span>
+  </div>
+</body>
+`;

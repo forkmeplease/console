@@ -1,8 +1,5 @@
-import { render } from '__tests__/utils/setup-jest'
-import { screen } from '@testing-library/react'
-
-import Icon from './icon'
-import { IconProps } from './icon'
+import { render, screen } from '__tests__/utils/setup-jest'
+import Icon, { type IconProps } from './icon'
 
 describe('Icon', () => {
   let props: IconProps
@@ -21,6 +18,6 @@ describe('Icon', () => {
   it('should render a font awesome icon as default', () => {
     render(<Icon {...props} />)
 
-    expect(screen.getByRole('img')).toBeTruthy()
+    expect(screen.getByRole('img')).toBeInTheDocument()
   })
 })

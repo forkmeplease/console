@@ -1,24 +1,36 @@
+import { type PropsWithChildren } from 'react'
+
 export enum TagSize {
   NORMAL = 'normal',
   BIG = 'big',
+  SMALL = 'small',
 }
 
 export interface TagProps {
-  children: React.ReactNode
   className?: string
   size?: TagSize
+  dataTestId?: string
+  fontWeight?: string
 }
 
-export function Tag(props: TagProps) {
-  const { children, className = '', size = TagSize.NORMAL } = props
-
-  const normalClassName = size === TagSize.NORMAL ? 'h-6 px-2' : ''
+/**
+ * @deprecated Should be replaced by Badge component
+ */
+export function Tag({
+  children,
+  className = '',
+  size = TagSize.NORMAL,
+  fontWeight = 'font-bold',
+  dataTestId = 'tag',
+}: PropsWithChildren<TagProps>) {
+  const normalClassName = size === TagSize.NORMAL ? 'h-7 px-2' : ''
   const bigClassName = size === TagSize.BIG ? 'h-8 px-3' : ''
+  const smallClassName = size === TagSize.SMALL ? 'h-5 px-1.5' : ''
 
   return (
     <span
-      className={`rounded text-xs items-center inline-flex font-bold ${normalClassName} ${bigClassName} ${className}`}
-      data-testid="tag"
+      data-testid={dataTestId}
+      className={`inline-flex items-center rounded text-xs ${fontWeight} ${normalClassName} ${bigClassName} ${smallClassName} ${className}`}
     >
       {children}
     </span>

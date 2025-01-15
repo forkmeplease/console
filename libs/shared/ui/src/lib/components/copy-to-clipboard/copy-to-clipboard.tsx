@@ -1,38 +1,49 @@
-import { useState } from 'react'
-import { copyToClipboard as copyToClipboardUtil } from '@qovery/shared/utils'
-import Icon from '../icon/icon'
-import Tooltip from '../tooltip/tooltip'
+import { Slot } from '@radix-ui/react-slot'
+import { Children, type PropsWithChildren, type ReactElement, cloneElement, useState } from 'react'
+import { useCopyToClipboard } from '@qovery/shared/util-hooks'
+import { twMerge } from '@qovery/shared/util-js'
+import { Icon } from '../icon/icon'
 
-export interface CopyToClipboardProps {
-  content: string
+export interface CopyToClipboardProps extends PropsWithChildren {
+  text: string
   className?: string
-  iconClassName?: string
-  tooltipContent?: string
 }
 
-export function CopyToClipboard(props: CopyToClipboardProps) {
-  const { content, className = '', iconClassName = '', tooltipContent = 'Copy' } = props
+export function CopyToClipboard({ text, children, className = '' }: CopyToClipboardProps) {
+  const [, copyToClipboard] = useCopyToClipboard()
+  const [copied, setCopied] = useState(false)
 
-  const [icon, setIcon] = useState('icon-solid-copy')
+  Children.only(children)
 
-  const copyToClipboard = () => {
-    copyToClipboardUtil(content)
-    setIcon('icon-solid-check')
-    setTimeout(() => {
-      setIcon('icon-solid-copy')
-    }, 1000)
-  }
+  const child = children as ReactElement
 
   return (
-    <Tooltip content={tooltipContent}>
-      <span
-        onClick={copyToClipboard}
-        className={`bigger-click-zone cursor-pointer ${className}`}
-        data-testid="copy-container"
-      >
-        <Icon name={icon} className={`${iconClassName}`} />
-      </span>
-    </Tooltip>
+    <Slot
+      className={className}
+      onClick={(event) => {
+        if (!event.defaultPrevented) {
+          copyToClipboard(text)
+          setCopied(true)
+          setTimeout(() => {
+            setCopied(false)
+          }, 1000)
+        }
+      }}
+    >
+      {copied
+        ? cloneElement(
+            child,
+            {
+              ...child.props,
+              color: 'green',
+              variant: 'solid',
+              className: twMerge(child.props.className, 'hover:bg-green-500'),
+            },
+            <Icon iconName="check" className="mr-1" />,
+            'Copied'
+          )
+        : child}
+    </Slot>
   )
 }
 

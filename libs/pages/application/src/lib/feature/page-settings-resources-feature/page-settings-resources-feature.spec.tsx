@@ -1,101 +1,61 @@
-import { ResizeObserver } from '__tests__/utils/resize-observer'
-import { act, fireEvent, render } from '__tests__/utils/setup-jest'
-import * as storeApplication from '@qovery/domains/application'
-import { MemorySizeEnum } from '@qovery/shared/enums'
-import { ApplicationEntity } from '@qovery/shared/interfaces'
-import PageSettingsResourcesFeature, { handleSubmit } from './page-settings-resources-feature'
+import { wrapWithReactHookForm } from '__tests__/utils/wrap-with-react-hook-form'
+import { type Application } from '@qovery/domains/services/data-access'
+import { applicationFactoryMock, environmentFactoryMock } from '@qovery/shared/factories'
+import { renderWithProviders, screen, waitFor } from '@qovery/shared/util-tests'
+import { SettingsResourcesFeature, type SettingsResourcesFeatureProps } from './page-settings-resources-feature'
 
-import SpyInstance = jest.SpyInstance
+const mockApplication = applicationFactoryMock(1)[0] as Application
+const mockEnvironment = environmentFactoryMock(1)[0]
+const mockEditService = jest.fn()
 
-const mockApplication: ApplicationEntity = storeApplication.applicationFactoryMock(1)[0]
-
-jest.mock('@qovery/domains/application', () => {
+jest.mock('@qovery/domains/services/feature', () => {
   return {
-    ...jest.requireActual('@qovery/domains/application'),
-    editApplication: jest.fn(),
-    getApplicationsState: () => ({
-      loadingStatus: 'loaded',
-      ids: [mockApplication.id],
-      entities: {
-        [mockApplication.id]: mockApplication,
-      },
-      error: null,
+    useEditService: () => ({
+      mutate: mockEditService,
+      isLoading: false,
     }),
-    selectApplicationById: () => mockApplication,
   }
 })
 
-const mockDispatch = jest.fn()
-jest.mock('react-redux', () => ({
-  ...jest.requireActual('react-redux'),
-  useDispatch: () => mockDispatch,
-}))
+jest.mock('@qovery/domains/services/feature', () => {
+  return {
+    ...jest.requireActual('@qovery/domains/services/feature'),
+    useRunningStatus: () => ({
+      data: {
+        state: 'STARTING',
+      },
+    }),
+  }
+})
 
-jest.mock('react-router-dom', () => ({
-  ...(jest.requireActual('react-router-dom') as any),
-  useParams: () => ({ applicationId: '0' }),
-}))
+const props: SettingsResourcesFeatureProps = {
+  service: mockApplication,
+  environment: mockEnvironment,
+}
 
-describe('PageSettingsResourcesFeature', () => {
-  window.ResizeObserver = ResizeObserver
+describe('SettingsResourcesFeature', () => {
   it('should render successfully', () => {
-    const { baseElement } = render(<PageSettingsResourcesFeature />)
+    const { baseElement } = renderWithProviders(wrapWithReactHookForm(<SettingsResourcesFeature {...props} />))
     expect(baseElement).toBeTruthy()
   })
 
-  it('should submit resources with converters with GB', () => {
-    const size = MemorySizeEnum.GB
-    const cpu = 3400
-    const memory = 16
-    const app = handleSubmit({ instances: [1, 10], cpu: [cpu], memory: memory }, mockApplication, size)
+  it('should edit an APPLICATION', async () => {
+    const { userEvent } = renderWithProviders(wrapWithReactHookForm(<SettingsResourcesFeature {...props} />))
 
-    expect(app.min_running_instances).toBe(1)
-    expect(app.max_running_instances).toBe(10)
-    expect(app.cpu).toBe(cpu * 1000)
-    expect(app.memory).toBe(memory * 1024)
-  })
+    const inputCPU = screen.getByLabelText('vCPU (milli)')
+    await userEvent.clear(inputCPU)
+    await userEvent.type(inputCPU, '1000')
 
-  it('should submit resources with converters with MB', () => {
-    const size = MemorySizeEnum.MB
-    const cpu = 3400
-    const memory = 512
-    const app = handleSubmit({ instances: [1, 10], cpu: [cpu], memory: memory }, mockApplication, size)
+    const inputMemory = screen.getByLabelText('Memory (MiB)')
+    await userEvent.clear(inputMemory)
+    await userEvent.type(inputMemory, '2048')
 
-    expect(app.min_running_instances).toBe(1)
-    expect(app.max_running_instances).toBe(10)
-    expect(app.cpu).toBe(cpu * 1000)
-    expect(app.memory).toBe(memory)
-  })
+    const submitButton = screen.getByRole('button', { name: /save/i })
+    await userEvent.click(submitButton)
 
-  it('should dispatch editApplication if form is submitted', async () => {
-    const editApplicationSpy: SpyInstance = jest.spyOn(storeApplication, 'editApplication')
-    mockDispatch.mockImplementation(() => ({
-      unwrap: () =>
-        Promise.resolve({
-          data: {},
-        }),
-    }))
-
-    const { getByTestId } = render(<PageSettingsResourcesFeature />)
-
-    await act(() => {
-      const input = getByTestId('input-memory-memory')
-      fireEvent.input(input, { target: { value: 9 } })
+    waitFor(() => {
+      expect(mockEditService.mock.calls[0][0].payload.cpu).toEqual(1000)
+      expect(mockEditService.mock.calls[0][0].payload.memory).toEqual(2048)
     })
-
-    expect(getByTestId('submit-button')).not.toBeDisabled()
-
-    await act(() => {
-      getByTestId('submit-button').click()
-    })
-
-    const cloneApplication = handleSubmit(
-      { memory: 9, cpu: [1], instances: [1, 3] },
-      mockApplication,
-      MemorySizeEnum.MB
-    )
-
-    expect(editApplicationSpy.mock.calls[0][0].applicationId).toBe(mockApplication.id)
-    expect(editApplicationSpy.mock.calls[0][0].data).toStrictEqual(cloneApplication)
   })
 })

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { ENVIRONMENTS_DEPLOYMENT_RULES_URL, ENVIRONMENTS_URL } from '@qovery/shared/router'
-import { Icon, Menu, MenuData, Skeleton } from '@qovery/shared/ui'
-import { dateToHours, upperCaseFirstLetter } from '@qovery/shared/utils'
+import { ENVIRONMENTS_DEPLOYMENT_RULES_URL, ENVIRONMENTS_URL } from '@qovery/shared/routes'
+import { Icon, Menu, type MenuData, Skeleton } from '@qovery/shared/ui'
+import { dateToHours } from '@qovery/shared/util-dates'
+import { upperCaseFirstLetter } from '@qovery/shared/util-js'
 
 export interface DeploymentRuleItemProps {
   id: string
@@ -11,12 +12,23 @@ export interface DeploymentRuleItemProps {
   stopTime: string
   weekDays: string[]
   isLast: boolean
-  isLoading?: boolean
   removeDeploymentRule: (id: string) => void
+  isLoading?: boolean
+  noDragDrop?: boolean
 }
 
 export function DeploymentRuleItem(props: DeploymentRuleItemProps) {
-  const { id, name, startTime, stopTime, weekDays, isLast = false, isLoading = false, removeDeploymentRule } = props
+  const {
+    id,
+    name,
+    startTime,
+    stopTime,
+    weekDays,
+    isLast = false,
+    isLoading = false,
+    removeDeploymentRule,
+    noDragDrop = false,
+  } = props
   const [menuOpen, setMenuOpen] = useState(false)
   const { organizationId, projectId } = useParams()
 
@@ -30,7 +42,7 @@ export function DeploymentRuleItem(props: DeploymentRuleItemProps) {
       items: [
         {
           name: 'Edit rule',
-          contentLeft: <Icon name="icon-solid-pen" className="text-brand-400 text-sm" />,
+          contentLeft: <Icon iconName="pen" iconStyle="regular" className="text-sm text-brand-500" />,
           link: {
             url: `${ENVIRONMENTS_URL(organizationId, projectId)}${ENVIRONMENTS_DEPLOYMENT_RULES_URL}/edit/${id}`,
           },
@@ -41,8 +53,8 @@ export function DeploymentRuleItem(props: DeploymentRuleItemProps) {
       items: [
         {
           name: 'Delete rule',
-          textClassName: '!text-error-500',
-          contentLeft: <Icon name="icon-solid-trash" className="text-error-500 text-sm" />,
+          textClassName: '!text-red-600',
+          contentLeft: <Icon iconName="trash-can" iconStyle="regular" className="text-sm text-red-600" />,
           onClick: () => removeDeploymentRule(id),
         },
       ],
@@ -66,14 +78,14 @@ export function DeploymentRuleItem(props: DeploymentRuleItemProps) {
       data-testid="item"
       className={`${
         isLast ? 'rounded-b' : ''
-      } border bg-element-light-lighter-200 border-element-light-lighter-500 flex px-5 py-4 -mt-px justify-between`}
+      } -mt-px flex justify-between border border-neutral-250 bg-neutral-100 px-5 py-4`}
     >
       <div>
         <Skeleton show={isLoading} width={180} height={20} className="mb-1">
-          <h3 className="text-sm text-text-500 font-medium max-w-full truncate">{name}</h3>
+          <h3 className="max-w-full truncate text-sm font-medium text-neutral-400">{name}</h3>
         </Skeleton>
         <Skeleton show={isLoading} width={300} height={20}>
-          <p data-testid="time" className="text-xs text-text-500 max-w-full truncate">
+          <p data-testid="time" className="max-w-full truncate text-xs text-neutral-400">
             {dateToHours(startTime)} - {dateToHours(stopTime)}
             {isWeekdays() && weekDays.length < 7 ? ' - Running every weekday' : ''}
             {weekDays.length === 7 && ' - Running everyday'}
@@ -82,18 +94,20 @@ export function DeploymentRuleItem(props: DeploymentRuleItemProps) {
         </Skeleton>
       </div>
       <Skeleton show={isLoading} width={58} height={30}>
-        <div className="flex border border-element-light-lighter-500 rounded h-[34px] overflow-hidden">
-          <span className="w-8 h-8 flex items-center bg-white justify-center border-r border-element-light-lighter-500 text-text-400 text-xs cursor-pointer hover:bg-brand-50 hover:text-brand-500 transition">
-            <Icon name="icon-solid-grip-lines" />
-          </span>
+        <div className="flex h-[34px] overflow-hidden rounded border border-neutral-250">
+          {!noDragDrop && (
+            <span className="flex h-8 w-8 cursor-pointer items-center justify-center border-r border-neutral-250 bg-white text-xs text-neutral-350 transition hover:bg-brand-50 hover:text-brand-500">
+              <Icon name="icon-solid-grip-lines" />
+            </span>
+          )}
           <Menu
             menus={menu}
             width={248}
             onOpen={(isOpen: boolean) => setMenuOpen(isOpen)}
             trigger={
               <span
-                className={`w-8 h-8 flex items-center justify-center text-xs bg-white cursor-pointer hover:bg-brand-50 hover:text-brand-500 transition ${
-                  menuOpen ? 'bg-element-light-lighter-300 text-brand-500' : 'text-text-400'
+                className={`flex h-8 w-8 cursor-pointer items-center justify-center bg-white text-xs transition hover:bg-brand-50 hover:text-brand-500 ${
+                  menuOpen ? 'bg-neutral-150 text-brand-500' : 'text-neutral-350'
                 }`}
               >
                 <Icon name="icon-solid-ellipsis-v" />

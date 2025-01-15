@@ -1,14 +1,12 @@
-import { render } from '__tests__/utils/setup-jest'
-import { screen } from '@testing-library/react'
-import { Menu, MenuDirection, MenuProps } from './menu'
-import Button from '../buttons/button/button'
+import { render, screen } from '__tests__/utils/setup-jest'
 import Icon from '../icon/icon'
+import { Menu, MenuDirection, type MenuProps } from './menu'
 
 let props: MenuProps
 
 beforeEach(() => {
   props = {
-    trigger: <Button>Test menu</Button>,
+    trigger: <button>Test menu</button>,
     children: <p>Contenu du menu</p>,
     menus: [
       {
@@ -75,7 +73,7 @@ describe('Menu', () => {
 
     const menu = screen.getByRole('menu')
 
-    expect(menu).toBeTruthy()
+    expect(menu).toBeInTheDocument()
   })
 
   it('should have an accurate direction', () => {
@@ -86,21 +84,11 @@ describe('Menu', () => {
 
     const menu = screen.getByRole('menu')
 
-    expect(menu.classList.contains('szh-menu--dir-right')).toBe(true)
+    expect(menu).toHaveClass('szh-menu--dir-right')
   })
 
-  it('should have accurate classname', () => {
+  it('should have an item have an icon', () => {
     props.open = true
-    props.className = 'some-class-name'
-
-    render(<Menu {...props} />)
-
-    const menu = screen.getByRole('menu')
-
-    expect(menu.classList.contains('some-class-name')).toBe(true)
-  })
-
-  it('should an item have an icon', () => {
     props.menus = [
       {
         items: [
@@ -119,10 +107,11 @@ describe('Menu', () => {
 
     const item = screen.getByTestId('menu-icon')
 
-    expect(item).toBeTruthy()
+    expect(item).toBeInTheDocument()
   })
 
   it('should have a search input on menu', () => {
+    props.open = true
     props.menus = [
       {
         items: [
@@ -142,6 +131,26 @@ describe('Menu', () => {
 
     const search = screen.getByTestId('menu-search')
 
-    expect(search).toBeTruthy()
+    expect(search).toBeInTheDocument()
+  })
+
+  it('should have a custom content on menu', () => {
+    props.open = true
+    props.menus = [
+      {
+        items: [
+          {
+            name: 'Test 1',
+            itemContentCustom: <p>hello</p>,
+          },
+        ],
+        search: true,
+      },
+    ]
+
+    render(<Menu {...props} />)
+
+    const menu = screen.getByTestId('menuItem')
+    expect(menu).toHaveTextContent('hello')
   })
 })

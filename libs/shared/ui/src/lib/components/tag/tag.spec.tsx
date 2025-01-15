@@ -1,6 +1,5 @@
-import { render } from '__tests__/utils/setup-jest'
-import { screen } from '@testing-library/react'
-import Tag, { TagProps, TagSize } from './tag'
+import { render, screen } from '__tests__/utils/setup-jest'
+import Tag, { type TagProps, TagSize } from './tag'
 
 let props: TagProps
 
@@ -20,6 +19,6 @@ describe('Tag', () => {
     props.size = TagSize.BIG
     render(<Tag {...props} />)
     const tag = screen.getByTestId('tag')
-    expect(tag.classList.contains('h-8')).toBeTruthy()
+    expect(tag).toHaveClass('h-8')
   })
 })

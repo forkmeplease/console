@@ -1,33 +1,12 @@
-import { Button, ButtonSize, ButtonStyle, IconAwesomeEnum } from '@qovery/shared/ui'
+import { type ReactNode } from 'react'
 import { BreadcrumbFeature } from '../../feature/breadcrumb/breadcrumb'
 
-export interface TopBarProps {
-  darkMode?: boolean
-}
-
-export function TopBar(props: TopBarProps) {
-  const { darkMode } = props
-
+export function TopBar({ children }: { children?: ReactNode }) {
   return (
-    <div
-      className={`sticky top-0 left-16 z-20 border-l border-b w-full h-navbar-height ${
-        darkMode
-          ? 'border-element-light-darker-100 bg-element-light-darker-400 border-b-0'
-          : 'border-element-light-lighter-400 bg-white'
-      }`}
-    >
-      <div className="flex px-5 justify-between items-center h-full">
+    <div className="sticky left-16 top-0 h-navbar-height w-full border-b border-l border-neutral-200 bg-white dark:border-neutral-500 dark:bg-neutral-600">
+      <div className="flex h-full items-center justify-between px-5">
         <BreadcrumbFeature />
-        {!darkMode && (
-          <Button
-            style={ButtonStyle.STROKED}
-            size={ButtonSize.LARGE}
-            iconRight={IconAwesomeEnum.ARROW_RIGHT_FROM_BRACKET}
-            onClick={() => window.location.replace(`https://console.qovery.com/platform/organization/`)}
-          >
-            Back to the console V2
-          </Button>
-        )}
+        {children}
       </div>
     </div>
   )

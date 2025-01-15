@@ -1,6 +1,5 @@
-import { fireEvent, screen } from '@testing-library/react'
-import { render } from '__tests__/utils/setup-jest'
-import InputRadio, { InputRadioProps } from './input-radio'
+import { fireEvent, render, screen } from '__tests__/utils/setup-jest'
+import InputRadio, { type InputRadioProps } from './input-radio'
 
 describe('InputRadio', () => {
   let props: InputRadioProps

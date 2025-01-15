@@ -1,118 +1,106 @@
-import { Environment } from 'qovery-typescript-axios'
+import { DatabaseModeEnum, type Environment } from 'qovery-typescript-axios'
+import { type PropsWithChildren, useContext } from 'react'
 import { useLocation, useParams } from 'react-router-dom'
-import { IconEnum, RunningStatus } from '@qovery/shared/enums'
-import { DatabaseEntity } from '@qovery/shared/interfaces'
+import { match } from 'ts-pattern'
+import { useCluster } from '@qovery/domains/clusters/feature'
+import { EnvironmentMode } from '@qovery/domains/environments/feature'
+import { type AnyService, type Database } from '@qovery/domains/services/data-access'
 import {
+  NeedRedeployFlag,
+  ServiceAccessModal,
+  ServiceActionToolbar,
+  ServiceAvatar,
+  ServiceStateChip,
+  ServiceTerminalContext,
+} from '@qovery/domains/services/feature'
+import { IconEnum } from '@qovery/shared/enums'
+import {
+  CLUSTER_URL,
   DATABASE_DEPLOYMENTS_URL,
-  DATABASE_GENERAL_URL, //DATABASE_METRICS_URL,
+  DATABASE_GENERAL_URL,
   DATABASE_SETTINGS_URL,
-  DATABASE_URL, //DATABASE_VARIABLES_URL,
-} from '@qovery/shared/router'
+  DATABASE_URL,
+} from '@qovery/shared/routes'
 import {
-  ButtonIconAction,
+  Button,
+  ErrorBoundary,
   Header,
   Icon,
+  Link,
+  Section,
   Skeleton,
-  StatusChip,
-  StatusMenuActions,
   Tabs,
-  Tag,
-  TagMode,
-  TagSize,
+  Tooltip,
+  useModal,
 } from '@qovery/shared/ui'
-import { copyToClipboard } from '@qovery/shared/utils'
 
 export interface ContainerProps {
-  statusActions: StatusMenuActions[]
-  database?: DatabaseEntity
+  service?: AnyService
   environment?: Environment
-  children?: React.ReactNode
-  removeDatabase?: (databaseId: string) => void
 }
 
-export function Container(props: ContainerProps) {
-  const { database, environment, children, statusActions, removeDatabase } = props
-
-  const { organizationId, projectId, environmentId, databaseId } = useParams()
+export function Container({ service, environment, children }: PropsWithChildren<ContainerProps>) {
+  const { organizationId = '', projectId = '', environmentId = '', databaseId = '' } = useParams()
+  const { setOpen } = useContext(ServiceTerminalContext)
   const location = useLocation()
+  const { closeModal, openModal } = useModal()
 
-  const copyContent = `Organization ID: ${organizationId}\nProject ID: ${projectId}\nEnvironment ID: ${environmentId}\nService ID: ${databaseId}`
-
-  const buttonActionsDefault = [
-    {
-      iconLeft: <Icon name="icon-solid-play" className="px-0.5" />,
-      iconRight: <Icon name="icon-solid-angle-down" className="px-0.5" />,
-      menusClassName: removeDatabase ? 'border-r border-r-element-light-lighter-500' : '',
-      statusActions: {
-        status: database?.status && database?.status.state,
-        actions: statusActions,
-      },
-    },
-    {
-      ...(removeDatabase && {
-        iconLeft: <Icon name="icon-solid-ellipsis-v" className="px-0.5" />,
-        menus: [
-          {
-            items: [
-              {
-                name: 'Remove',
-                contentLeft: <Icon name="icon-solid-trash" className="text-sm text-brand-400" />,
-                onClick: () => removeDatabase(databaseId ? databaseId : ''),
-              },
-              {
-                name: 'Copy identifiers',
-                contentLeft: <Icon name="icon-solid-copy" className="text-sm text-brand-400" />,
-                onClick: () => copyToClipboard(copyContent),
-              },
-            ],
-          },
-        ],
-      }),
-    },
-  ]
+  const { data: cluster } = useCluster({ organizationId, clusterId: environment?.cluster_id || '' })
 
   const headerActions = (
-    <>
-      <Skeleton width={150} height={24} show={!database?.status}>
+    <div className="flex flex-row items-center gap-4">
+      <Skeleton width={150} height={36} show={!service}>
         <div className="flex">
-          {environment && database && database?.status && (
-            <>
-              <ButtonIconAction
-                className="!h-8"
-                actions={buttonActionsDefault}
-                statusInformation={{
-                  id: database?.id,
-                  name: database?.name,
-                  mode: environment?.mode,
-                }}
-              />
-              <span className="ml-4 mr-1 mt-2 h-4 w-[1px] bg-element-light-lighter-400"></span>
-            </>
+          {environment && service && (
+            <ServiceActionToolbar
+              serviceId={service.id}
+              environment={environment}
+              shellAction={(service as Database).mode === 'CONTAINER' ? () => setOpen(true) : undefined}
+            />
           )}
         </div>
       </Skeleton>
-      {environment && (
-        <Skeleton width={80} height={24} show={!environment?.mode}>
-          <TagMode status={environment?.mode} size={TagSize.BIG} />
+      <div className="h-4 w-px bg-neutral-250" />
+      <div className="flex flex-row items-center gap-2">
+        {environment && (
+          <Skeleton width={80} height={22} show={!environment?.mode}>
+            <EnvironmentMode mode={environment.mode} />
+          </Skeleton>
+        )}
+        <Skeleton width={120} height={22} show={!cluster}>
+          <Tooltip content={cluster?.name ?? ''}>
+            <Link
+              as="button"
+              color="neutral"
+              variant="surface"
+              size="xs"
+              to={CLUSTER_URL(environment?.organization.id, environment?.cluster_id)}
+            >
+              <Icon
+                name={
+                  cluster?.kubernetes === 'SELF_MANAGED'
+                    ? IconEnum.KUBERNETES
+                    : (environment?.cloud_provider.provider as IconEnum)
+                }
+                width="16"
+              />
+              <p className="ml-1.5 max-w-[200px] truncate">{cluster?.name}</p>
+            </Link>
+          </Tooltip>
         </Skeleton>
-      )}
-      <Skeleton width={100} height={24} show={!environment?.cloud_provider}>
-        <div className="border border-element-light-lighter-400 bg-white h-8 px-3 rounded text-xs items-center inline-flex font-medium gap-2">
-          <Icon name={environment?.cloud_provider.provider as IconEnum} width="16" />
-          <p className="max-w-[54px] truncate">{environment?.cloud_provider.cluster}</p>
-        </div>
-      </Skeleton>
-      <Tag className="bg-element-light-lighter-300 gap-2 hidden">
-        <span className="w-2 h-2 rounded-lg bg-progressing-300"></span>
-        <span className="w-2 h-2 rounded-lg bg-accent3-500"></span>
-      </Tag>
-    </>
+      </div>
+    </div>
   )
 
   const tabsItems = [
     {
       icon: (
-        <StatusChip status={(database?.running_status && database?.running_status.state) || RunningStatus.STOPPED} />
+        <ServiceStateChip
+          mode="running"
+          environmentId={environmentId}
+          serviceId={databaseId}
+          withDeploymentFallback={service && 'mode' in service && service.mode === DatabaseModeEnum.MANAGED}
+        />
       ),
       name: 'Overview',
       active:
@@ -120,34 +108,15 @@ export function Container(props: ContainerProps) {
       link: DATABASE_URL(organizationId, projectId, environmentId, databaseId) + DATABASE_GENERAL_URL,
     },
     {
-      icon: (
-        <Skeleton width={16} height={16} rounded show={!database?.status}>
-          <StatusChip mustRenameStatus status={database?.status && database?.status.state} />
-        </Skeleton>
-      ),
-      name: 'Deployments',
+      icon: <ServiceStateChip mode="deployment" environmentId={environmentId} serviceId={databaseId} />,
+      name: 'Deployments History',
       active:
         location.pathname ===
         DATABASE_URL(organizationId, projectId, environmentId, databaseId) + DATABASE_DEPLOYMENTS_URL,
       link: DATABASE_URL(organizationId, projectId, environmentId, databaseId) + DATABASE_DEPLOYMENTS_URL,
     },
-    // {
-    //   icon: <Icon name="icon-solid-chart-area" />,
-    //   name: 'Metrics',
-    //   active:
-    //     location.pathname === DATABASE_URL(organizationId, projectId, environmentId, databaseId) + DATABASE_METRICS_URL,
-    //   link: DATABASE_URL(organizationId, projectId, environmentId, databaseId) + DATABASE_METRICS_URL,
-    // },
-    // {
-    //   icon: <Icon name="icon-solid-wheel" />,
-    //   name: 'Variables',
-    //   active:
-    //     location.pathname ===
-    //     DATABASE_URL(organizationId, projectId, environmentId, databaseId) + DATABASE_VARIABLES_URL,
-    //   link: DATABASE_URL(organizationId, projectId, environmentId, databaseId) + DATABASE_VARIABLES_URL,
-    // },
     {
-      icon: <Icon name="icon-solid-wheel" />,
+      icon: <Icon iconName="gear" iconStyle="regular" />,
       name: 'Settings',
       active: location.pathname.includes(
         DATABASE_URL(organizationId, projectId, environmentId, databaseId) + DATABASE_SETTINGS_URL
@@ -157,11 +126,48 @@ export function Container(props: ContainerProps) {
   ]
 
   return (
-    <>
-      <Header title={database?.name} icon={IconEnum.DATABASE} actions={headerActions} />
-      <Tabs items={tabsItems} />
-      {children}
-    </>
+    <ErrorBoundary>
+      <Section className="flex-1">
+        <Header title={service?.name} actions={headerActions}>
+          {service && <ServiceAvatar service={service} border="solid" />}
+        </Header>
+        <Tabs
+          items={tabsItems}
+          contentRight={match(service)
+            .with({ serviceType: 'DATABASE' }, (s) => (
+              <Button
+                className="mr-4 gap-2"
+                size="md"
+                color="neutral"
+                variant="surface"
+                onClick={() =>
+                  openModal({
+                    content: (
+                      <ServiceAccessModal
+                        organizationId={organizationId}
+                        projectId={projectId}
+                        service={s}
+                        onClose={closeModal}
+                      />
+                    ),
+                    options: {
+                      width: 680,
+                    },
+                  })
+                }
+              >
+                Access info
+                <Icon iconName="info-circle" iconStyle="regular" />
+              </Button>
+            ))
+            .otherwise(() => null)}
+        />
+        <NeedRedeployFlag />
+        <div className="mt-2 flex min-h-0 flex-grow flex-col items-stretch rounded-b-none rounded-t-sm bg-white">
+          <ErrorBoundary key={tabsItems.find(({ active }) => active)?.link}>{children}</ErrorBoundary>
+        </div>
+      </Section>
+    </ErrorBoundary>
   )
 }
 

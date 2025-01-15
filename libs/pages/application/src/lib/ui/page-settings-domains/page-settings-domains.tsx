@@ -1,94 +1,135 @@
-import { CustomDomain } from 'qovery-typescript-axios'
-import { ApplicationEntity, LoadingStatus } from '@qovery/shared/interfaces'
+import { type CheckedCustomDomainResponse, type CustomDomain } from 'qovery-typescript-axios'
+import { SettingsHeading } from '@qovery/shared/console-shared'
 import {
   BlockContent,
   Button,
-  ButtonIcon,
-  ButtonIconStyle,
+  Callout,
   EmptyState,
-  HelpSection,
-  IconAwesomeEnum,
+  Icon,
   InputText,
   LoaderSpinner,
+  Section,
+  Tooltip,
 } from '@qovery/shared/ui'
 
 export interface PageSettingsDomainsProps {
-  application?: ApplicationEntity
+  onCheckCustomDomains: () => void
+  checkedCustomDomains?: CheckedCustomDomainResponse[]
+  isFetchingCheckedCustomDomains: boolean
   onAddDomain: () => void
   onEdit: (customDomain: CustomDomain) => void
   onDelete: (customDomain: CustomDomain) => void
   domains?: CustomDomain[]
-  loading?: LoadingStatus
+  loading?: boolean
 }
 
 export function PageSettingsDomains(props: PageSettingsDomainsProps) {
   return (
-    <div className="flex flex-col justify-between w-full">
-      <div className="p-8  max-w-content-with-navigation-left">
-        <div className="flex justify-between mb-8">
-          <div>
-            <h1 className="h5 text-text-700 mb-2">Domain</h1>
-            <p className="text-sm text-text-500">Add custom domains to your application.</p>
-          </div>
-
-          <Button onClick={() => props.onAddDomain()} iconRight={IconAwesomeEnum.CIRCLE_PLUS}>
+    <div className="w-full justify-between">
+      <Section className="max-w-content-with-navigation-left  p-8">
+        <SettingsHeading title="Domain" description="Add custom domains to your service.">
+          <Button size="md" variant="solid" color="brand" onClick={() => props.onAddDomain()}>
             Add Domain
+            <Icon iconName="circle-plus" iconStyle="regular" className="ml-2" />
           </Button>
-        </div>
-
-        {(props.loading === 'not loaded' || props.loading === 'loading') && props.domains?.length === 0 ? (
+        </SettingsHeading>
+        {props.checkedCustomDomains?.some(({ error_details }) => error_details) && (
+          <Callout.Root className="mb-6 mt-2.5" color="red">
+            <Callout.Icon>
+              <Icon iconName="triangle-exclamation" iconStyle="regular" />
+            </Callout.Icon>
+            <Callout.TextHeading className="text-neutral-400">
+              Some domains are in error. Please check the status below.
+            </Callout.TextHeading>
+          </Callout.Root>
+        )}
+        {props.loading && props.domains?.length === 0 ? (
           <div className="flex justify-center">
             <LoaderSpinner className="w-6" />
           </div>
         ) : props.domains && props.domains.length > 0 ? (
           <BlockContent title="Configured domains">
             {props.domains &&
-              props.domains.map((customDomain, i) => (
-                <div
-                  key={`domain-${customDomain.domain}-${customDomain.id}`}
-                  className={`flex justify-between w-full items-center gap-3 ${
-                    props.domains && props.domains.length !== i + 1 ? 'mb-5' : ''
-                  }`}
-                  data-testid="form-row"
-                >
-                  <InputText
-                    name={`domain-${customDomain.domain}-${customDomain.id}`}
-                    className="shrink-0 grow flex-1"
-                    value={customDomain.domain}
-                    label="Default Domain"
-                    disabled
-                  />
-                  <ButtonIcon
-                    className="text-text-500"
-                    style={ButtonIconStyle.FLAT}
-                    onClick={() => props.onEdit(customDomain)}
-                    dataTestId="edit-button"
-                    icon={IconAwesomeEnum.WHEEL}
-                  />
-                  <ButtonIcon
-                    className="text-text-500"
-                    onClick={() => props.onDelete(customDomain)}
-                    dataTestId="delete-button"
-                    icon={IconAwesomeEnum.TRASH}
-                    style={ButtonIconStyle.FLAT}
-                  />
-                </div>
-              ))}
+              props.domains.map((customDomain, i) => {
+                const checkedCustomDomain = props.checkedCustomDomains?.find(
+                  ({ domain_name }) => customDomain.domain === domain_name
+                )
+                return (
+                  <div
+                    key={`domain-${customDomain.domain}-${customDomain.id}`}
+                    className={`flex w-full items-center justify-between gap-3 ${
+                      props.domains && props.domains.length !== i + 1 ? 'mb-5' : ''
+                    }`}
+                    data-testid="form-row"
+                  >
+                    <InputText
+                      name={`domain-${customDomain.domain}-${customDomain.id}`}
+                      className="flex-1 shrink-0 grow"
+                      value={customDomain.domain}
+                      label="Default Domain"
+                      disabled
+                    />
+                    <Tooltip
+                      disabled={props.isFetchingCheckedCustomDomains}
+                      content={
+                        <div className="max-w-64">
+                          <span className="text-xs font-medium">Click to check set-up again.</span>
+                          {checkedCustomDomain?.error_details && (
+                            <p className="text-[11px] font-normal">{checkedCustomDomain?.error_details}</p>
+                          )}
+                        </div>
+                      }
+                    >
+                      <Button
+                        data-testid="recheck-button"
+                        variant="surface"
+                        color="neutral"
+                        size="lg"
+                        className="group relative h-[52px] w-[52px] justify-center"
+                        onClick={() => props.onCheckCustomDomains()}
+                      >
+                        {props.isFetchingCheckedCustomDomains ? (
+                          <LoaderSpinner className="absolute left-0 right-0 m-auto group-hover:hidden" theme="dark" />
+                        ) : checkedCustomDomain?.error_details ? (
+                          <Icon
+                            iconName="circle-exclamation"
+                            iconStyle="regular"
+                            className="text-red-500 group-hover:hidden"
+                          />
+                        ) : (
+                          <Icon iconName="check" className="text-green-500 group-hover:hidden" />
+                        )}
+                        <Icon iconName="arrow-rotate-right" className="hidden group-hover:block" />
+                      </Button>
+                    </Tooltip>
+                    <Button
+                      data-testid="edit-button"
+                      variant="surface"
+                      color="neutral"
+                      size="lg"
+                      className="h-[52px] w-[52px] justify-center"
+                      onClick={() => props.onEdit(customDomain)}
+                    >
+                      <Icon iconName="gear" iconStyle="regular" />
+                    </Button>
+                    <Button
+                      data-testid="delete-button"
+                      variant="surface"
+                      color="neutral"
+                      size="lg"
+                      className="h-[52px] w-[52px] justify-center"
+                      onClick={() => props.onDelete(customDomain)}
+                    >
+                      <Icon iconName="trash-alt" iconStyle="regular" />
+                    </Button>
+                  </div>
+                )
+              })}
           </BlockContent>
         ) : (
           <EmptyState title="No domains are set" description="Define a custom domain for your application" />
         )}
-      </div>
-      <HelpSection
-        description="Need help? You may find these links useful"
-        links={[
-          {
-            link: 'https://hub.qovery.com/docs/using-qovery/configuration/application/#domains',
-            linkLabel: 'How to configure my application',
-            external: true,
-          },
-        ]}
-      />
+      </Section>
     </div>
   )
 }

@@ -1,11 +1,12 @@
-import { getByTestId, waitFor } from '@testing-library/react'
-import { render } from '__tests__/utils/setup-jest'
 import { wrapWithReactHookForm } from '__tests__/utils/wrap-with-react-hook-form'
 import { DatabaseAccessibilityEnum, DatabaseModeEnum, DatabaseTypeEnum } from 'qovery-typescript-axios'
-import PageSettingsGeneral, { PageSettingsGeneralProps } from './page-settings-general'
+import { databaseFactoryMock } from '@qovery/shared/factories'
+import { renderWithProviders, screen } from '@qovery/shared/util-tests'
+import PageSettingsGeneral, { type PageSettingsGeneralProps } from './page-settings-general'
 
 describe('PageSettingsGeneral', () => {
   const props: PageSettingsGeneralProps = {
+    database: databaseFactoryMock(1)[0],
     onSubmit: jest.fn((e) => e.preventDefault()),
     loading: false,
   }
@@ -16,27 +17,32 @@ describe('PageSettingsGeneral', () => {
     mode: DatabaseModeEnum.CONTAINER,
     accessibility: DatabaseAccessibilityEnum.PUBLIC,
     version: '12',
+    cpu: 512,
+    memory: 1024,
   }
 
   it('should render successfully', async () => {
-    const { baseElement } = render(wrapWithReactHookForm(<PageSettingsGeneral {...props} />))
+    const { baseElement } = renderWithProviders(
+      wrapWithReactHookForm(<PageSettingsGeneral {...props} />, {
+        defaultValues,
+      })
+    )
     expect(baseElement).toBeTruthy()
   })
 
   it('should submit the form', async () => {
     const spy = jest.fn((e) => e.preventDefault())
     props.onSubmit = spy
-    const { baseElement } = render(
+    const { userEvent } = renderWithProviders(
       wrapWithReactHookForm(<PageSettingsGeneral {...props} />, {
-        defaultValues: defaultValues,
+        defaultValues,
       })
     )
+    // https://react-hook-form.com/advanced-usage#TransformandParse
+    const button = await screen.findByRole('button', { name: /save/i })
+    expect(button).toBeInTheDocument()
 
-    const button = getByTestId(baseElement, 'submit-button')
-
-    await waitFor(() => {
-      button.click()
-      expect(spy).toHaveBeenCalled()
-    })
+    await userEvent.click(button)
+    expect(spy).toHaveBeenCalled()
   })
 })

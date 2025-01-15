@@ -1,18 +1,19 @@
-import { FormEvent, useEffect, useRef, useState } from 'react'
+import { type FormEvent, type ReactNode, forwardRef, useEffect, useRef, useState } from 'react'
 
 export interface InputTextAreaProps {
   label: string
   name: string
-  value?: string | undefined
+  value?: string | null
   onChange?: (e: FormEvent<HTMLTextAreaElement>) => void
   className?: string
   disabled?: boolean
+  hint?: ReactNode
   error?: string
   dataTestId?: string
 }
 
-export function InputTextArea(props: InputTextAreaProps) {
-  const { label, value = '', name, onChange, className, error, dataTestId = 'input-textarea' } = props
+export const InputTextArea = forwardRef<HTMLTextAreaElement, InputTextAreaProps>(function InputTextArea(props, ref) {
+  const { label, value = '', name, onChange, className, hint, error, dataTestId = 'input-textarea' } = props
 
   const [currentValue, setCurrentValue] = useState(value)
 
@@ -29,7 +30,7 @@ export function InputTextArea(props: InputTextAreaProps) {
   const hasError = error && error.length > 0 ? 'input--error' : ''
   const inputActions = hasFocus ? 'input--focused' : ''
 
-  const isDisabled = props.disabled ? 'input--disabled !border-element-light-lighter-500' : ''
+  const isDisabled = props.disabled ? 'input--disabled !border-neutral-250' : ''
 
   return (
     <div
@@ -42,14 +43,15 @@ export function InputTextArea(props: InputTextAreaProps) {
         className={`input pb-0 pr-2 ${inputActions} ${hasError} ${isDisabled} ${hasLabelUp}`}
         ref={inputRef}
       >
-        <label htmlFor={label} className={`${hasFocus ? 'text-xs' : 'text-sm translate-y-2'}`}>
+        <label htmlFor={label} className={`${hasFocus ? 'text-xs' : 'translate-y-2 text-sm'}`}>
           {label}
         </label>
         <textarea
+          ref={ref}
           name={name}
           id={label}
-          className="w-full min-h-[52px] mt-5 pr-3 bg-transparent appearance-none text-sm text-text-700 outline-0"
-          value={currentValue}
+          className="mt-5 min-h-[52px] w-full appearance-none bg-transparent pr-3 text-sm text-neutral-400 outline-0"
+          value={!currentValue ? undefined : currentValue}
           onChange={(e) => {
             if (onChange) onChange(e)
             setCurrentValue(e.currentTarget.value)
@@ -59,9 +61,10 @@ export function InputTextArea(props: InputTextAreaProps) {
           disabled={props.disabled}
         />
       </div>
-      {error && <p className="px-4 mt-1 font-medium text-xs text-error-500">{error}</p>}
+      {hint && <p className="mt-0.5 px-3 text-xs font-normal text-neutral-350">{hint}</p>}
+      {error && <p className="mt-1 px-3 text-xs font-medium text-red-500">{error}</p>}
     </div>
   )
-}
+})
 
 export default InputTextArea

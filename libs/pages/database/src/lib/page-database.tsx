@@ -1,82 +1,78 @@
-import { Environment } from 'qovery-typescript-axios'
-import { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { Route, Routes, useNavigate, useParams } from 'react-router-dom'
+import { memo, useContext } from 'react'
+import { Navigate, Route, Routes, useParams } from 'react-router-dom'
+import { useEnvironment } from '@qovery/domains/environments/feature'
+import { type AnyService } from '@qovery/domains/services/data-access'
 import {
-  databasesLoadingStatus,
-  deleteDatabaseAction,
-  fetchDatabase,
-  fetchDatabaseMasterCredentials,
-  fetchDatabaseMetrics,
-  postDatabaseActionsDeploy,
-  postDatabaseActionsRestart,
-  postDatabaseActionsStop,
-  selectDatabaseById,
-} from '@qovery/domains/database'
-import { selectEnvironmentById } from '@qovery/domains/environment'
-import { DatabaseEntity, LoadingStatus } from '@qovery/shared/interfaces'
-import { SERVICES_GENERAL_URL, SERVICES_URL } from '@qovery/shared/router'
-import { StatusMenuActions } from '@qovery/shared/ui'
-import { isDeleteAvailable, useDocumentTitle } from '@qovery/shared/utils'
-import { AppDispatch, RootState } from '@qovery/store'
+  ServiceTerminal,
+  ServiceTerminalContext,
+  ServiceTerminalProvider,
+  useService,
+  useServiceType,
+} from '@qovery/domains/services/feature'
+import { NotFoundPage } from '@qovery/pages/layout'
+import { DATABASE_GENERAL_URL, DATABASE_URL } from '@qovery/shared/routes'
+import { useDocumentTitle } from '@qovery/shared/util-hooks'
 import { ROUTER_DATABASE } from './router/router'
 import Container from './ui/container/container'
 
-export function PageDatabase() {
-  useDocumentTitle('Database - Qovery')
-  const navigate = useNavigate()
-  const { organizationId = '', projectId = '', databaseId = '', environmentId = '' } = useParams()
-  const environment = useSelector<RootState, Environment | undefined>((state) =>
-    selectEnvironmentById(state, environmentId)
-  )
-  const database = useSelector<RootState, DatabaseEntity | undefined>((state) => selectDatabaseById(state, databaseId))
+const ServiceTerminalMemo = memo(ServiceTerminal)
 
-  const loadingStatus = useSelector<RootState, LoadingStatus>((state) => databasesLoadingStatus(state))
+function PageDatabaseWrapped() {
+  const { organizationId = '', projectId = '', environmentId = '', databaseId = '' } = useParams()
+  const { open } = useContext(ServiceTerminalContext)
+  const { data: environment, error: environmentError } = useEnvironment({ environmentId })
+  const { data: serviceType, isSuccess: isSuccessServiceType } = useServiceType({
+    environmentId,
+    serviceId: databaseId,
+  })
+  const { data: service } = useService({ environmentId, serviceId: databaseId })
 
-  const dispatch = useDispatch<AppDispatch>()
+  useDocumentTitle(`${service?.name || 'Database'} - Qovery`)
 
-  const statusActions: StatusMenuActions[] = [
-    {
-      name: 'restart',
-      action: (databaseId: string) => dispatch(postDatabaseActionsRestart({ environmentId, databaseId })),
-    },
-    {
-      name: 'deploy',
-      action: (databaseId: string) => dispatch(postDatabaseActionsDeploy({ environmentId, databaseId })),
-    },
-    {
-      name: 'stop',
-      action: (databaseId: string) => dispatch(postDatabaseActionsStop({ environmentId, databaseId })),
-    },
-  ]
-
-  const removeDatabase = (databaseId: string) => {
-    dispatch(deleteDatabaseAction({ environmentId, databaseId }))
-    navigate(SERVICES_URL(organizationId, projectId, environmentId) + SERVICES_GENERAL_URL)
+  // serviceType can be `undefined` if the `find` method in `select` return nothing. However the query itself is still success.
+  // Don't seems to have a better way for this case in react-query for now
+  // https://github.com/TanStack/query/issues/1540
+  // https://github.com/TanStack/query/issues/5878
+  if (environmentError || (!serviceType && isSuccessServiceType)) {
+    return <NotFoundPage error={environmentError} />
   }
 
-  useEffect(() => {
-    if (databaseId && loadingStatus === 'loaded') {
-      database?.metrics?.loadingStatus !== 'loaded' && dispatch(fetchDatabaseMetrics({ databaseId }))
-      database?.credentials?.loadingStatus !== 'loaded' && dispatch(fetchDatabaseMasterCredentials({ databaseId }))
-    } else {
-      dispatch(fetchDatabase({ databaseId }))
-    }
-  }, [databaseId, loadingStatus])
-
   return (
-    <Container
-      database={database}
-      environment={environment}
-      statusActions={statusActions}
-      removeDatabase={database?.status && isDeleteAvailable(database.status.state) ? removeDatabase : undefined}
-    >
-      <Routes>
-        {ROUTER_DATABASE.map((route) => (
-          <Route key={route.path} path={route.path} element={route.component} />
-        ))}
-      </Routes>
-    </Container>
+    <>
+      <Container service={service as AnyService} environment={environment}>
+        <Routes>
+          {ROUTER_DATABASE.map((route) => (
+            <Route key={route.path} path={route.path} element={route.component} />
+          ))}
+          <Route
+            path="*"
+            element={
+              <Navigate
+                replace
+                to={DATABASE_URL(organizationId, projectId, environmentId, databaseId) + DATABASE_GENERAL_URL}
+              />
+            }
+          />
+        </Routes>
+      </Container>
+      {open && environment && service && (
+        <ServiceTerminalMemo
+          organizationId={environment.organization.id}
+          clusterId={environment.cluster_id}
+          projectId={environment.project.id}
+          environmentId={environment.id}
+          serviceId={service.id}
+        />
+      )}
+    </>
+  )
+}
+
+export function PageDatabase() {
+  return (
+    <ServiceTerminalProvider>
+      <PageDatabaseWrapped />
+    </ServiceTerminalProvider>
   )
 }
 

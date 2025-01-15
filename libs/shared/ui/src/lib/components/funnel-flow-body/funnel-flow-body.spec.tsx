@@ -1,6 +1,5 @@
-import { getByTestId, getByText } from '@testing-library/react'
-import { render } from '__tests__/utils/setup-jest'
-import { ReactNode } from 'react'
+import { getByTestId, getByText, queryByTestId, render } from '__tests__/utils/setup-jest'
+import { type ReactNode } from 'react'
 import FunnelFlowBody from './funnel-flow-body'
 
 describe('FunnelFlowBody', () => {
@@ -28,5 +27,11 @@ describe('FunnelFlowBody', () => {
     expect(baseElement).toBeTruthy()
 
     getByText(getByTestId(baseElement, 'funnel-body-content'), 'Content')
+  })
+
+  it('should not render help section on the side', () => {
+    const { baseElement } = render(<FunnelFlowBody>{children}</FunnelFlowBody>)
+
+    expect(queryByTestId(baseElement, 'funnel-body-help')).not.toBeInTheDocument()
   })
 })

@@ -1,0 +1,262 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`PageSettingsResources should render warning box and icon for cpu 1`] = `
+<div>
+  <div
+    class="flex w-full flex-col justify-between"
+  >
+    <section
+      class="flex flex-col max-w-content-with-navigation-left p-8"
+    >
+      <div
+        class="mb-8 flex w-full justify-between gap-2"
+      >
+        <div>
+          <h1
+            class="text-neutral-400 text-xl font-bold mb-2"
+          >
+            Resources
+          </h1>
+          <p
+            class="mb-3 max-w-lg text-sm text-neutral-400"
+          >
+            Manage the resources assigned to the service.
+          </p>
+          <button
+            class="inline-flex shrink-0 font-medium transition focus-visible:[&:not(:active)]:outline-2 outline-0 shadow-sm disabled:shadow-none active:shadow-none outline-neutral-500 text-xs h-6 px-2 rounded bg-brand-50 border border-brand-500 text-brand-500 hover:[&:not(:active):not(:disabled)]:bg-white w-fit items-center gap-1"
+          >
+            <i
+              aria-hidden="true"
+              class="fa-regular fa-circle-question p-0.5 text-xs"
+            />
+            <span>
+              Need help here?
+            </span>
+          </button>
+        </div>
+      </div>
+      <form
+        class="space-y-10"
+      >
+        <section
+          class="flex flex-col gap-4"
+        >
+          <h2
+            class="text-neutral-400 text-base font-bold"
+          >
+            Resources configuration
+          </h2>
+          <div
+            class=""
+            data-testid="input-text-wrapper"
+          >
+            <div
+              class="relative"
+            >
+              <div
+                aria-label="input-container"
+                class="input    input--label-up "
+              >
+                <div
+                  class=""
+                >
+                  <label
+                    class="translate-y-2 text-sm"
+                    for="vCPU (milli)"
+                  >
+                    vCPU (milli)
+                  </label>
+                  <input
+                    class="input__value "
+                    data-testid="input-text"
+                    id="vCPU (milli)"
+                    name="cpu"
+                    type="number"
+                    value="10"
+                  />
+                </div>
+              </div>
+            </div>
+            <p
+              class="mt-0.5 px-3 text-xs font-normal text-neutral-350 dark:text-neutral-50"
+            >
+              Minimum value is 
+              10
+               milli vCPU.
+               
+              Maximum value allowed based on the selected cluster instance type: 
+              10
+               milli vCPU.
+               
+            </p>
+          </div>
+          <div
+            class="flex flex-row gap-x-3 p-3 border rounded text-sm border-red-500 bg-red-50 text-red-500 mt-3"
+            data-accent-color="red"
+            data-testid="banner-box"
+          >
+            <div
+              class="-order-2 text-lg leading-6"
+            >
+              <i
+                aria-hidden="true"
+                class="fa-regular fa-triangle-exclamation "
+              />
+            </div>
+            <div
+              class="-order-1 mr-auto gap-x-3 text-neutral-400"
+            >
+              <span
+                class="block font-medium leading-6"
+              >
+                Not enough resources
+              </span>
+              <span
+                class="text-neutral-400"
+              >
+                Increase the capacity of your cluster nodes or reduce the service consumption.
+              </span>
+            </div>
+          </div>
+          <div
+            class=""
+            data-testid="input-memory-memory-wrapper"
+          >
+            <div
+              class="relative"
+            >
+              <div
+                aria-label="input-container"
+                class="input    input--label-up "
+              >
+                <div
+                  class=""
+                >
+                  <label
+                    class="translate-y-2 text-sm"
+                    for="Memory (MiB)"
+                  >
+                    Memory (MiB)
+                  </label>
+                  <input
+                    class="input__value "
+                    data-testid="input-memory-memory"
+                    id="Memory (MiB)"
+                    name="memory"
+                    type="number"
+                    value="323"
+                  />
+                </div>
+              </div>
+            </div>
+            <p
+              class="mt-0.5 px-3 text-xs font-normal text-neutral-350 dark:text-neutral-50"
+            >
+              Minimum value is 
+              1
+               MiB.
+               
+              Maximum value allowed based on the selected cluster instance type: 
+              10
+               MiB.
+               
+            </p>
+          </div>
+        </section>
+        <section
+          class="flex flex-col gap-4"
+        >
+          <h2
+            class="text-neutral-400 text-base font-bold"
+          >
+            Instances
+          </h2>
+          <div
+            class="grid grid-cols-2 gap-4"
+          >
+            <div
+              class=""
+              data-testid="input-text-wrapper"
+            >
+              <div
+                class="relative"
+              >
+                <div
+                  aria-label="input-container"
+                  class="input    input--label-up "
+                >
+                  <div
+                    class=""
+                  >
+                    <label
+                      class="translate-y-2 text-sm"
+                      for="Instances min"
+                    >
+                      Instances min
+                    </label>
+                    <input
+                      class="input__value "
+                      data-testid="input-text"
+                      id="Instances min"
+                      name="min_running_instances"
+                      type="number"
+                      value="1"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              class=""
+              data-testid="input-text-wrapper"
+            >
+              <div
+                class="relative"
+              >
+                <div
+                  aria-label="input-container"
+                  class="input    input--label-up "
+                >
+                  <div
+                    class=""
+                  >
+                    <label
+                      class="translate-y-2 text-sm"
+                      for="Instances max"
+                    >
+                      Instances max
+                    </label>
+                    <input
+                      class="input__value "
+                      data-testid="input-text"
+                      id="Instances max"
+                      name="max_running_instances"
+                      type="number"
+                      value="1"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p
+            class="text-xs text-neutral-350"
+          >
+            Application auto-scaling is based on real-time CPU consumption. When your app goes above 60% (default) of CPU consumption for 5 minutes, your app will be auto-scaled and more instances will be added.
+          </p>
+        </section>
+        <div
+          class="flex justify-end"
+        >
+          <button
+            class="inline-flex items-center shrink-0 font-medium transition focus-visible:[&:not(:active)]:outline-2 outline-0 shadow-sm disabled:shadow-none active:shadow-none outline-neutral-500 text-sm h-11 px-5 rounded bg-brand-500 active:bg-brand-600 hover:bg-brand-400 text-white disabled:text-brand-300 disabled:bg-brand-100"
+            type="submit"
+          >
+            Save
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
+`;

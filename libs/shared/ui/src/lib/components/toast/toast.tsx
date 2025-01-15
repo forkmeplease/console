@@ -1,5 +1,7 @@
-import { Toast, Toaster, toast as toastAction } from 'react-hot-toast'
-import { ToastEnum } from '@qovery/shared/toast'
+import { type IconName } from '@fortawesome/fontawesome-common-types'
+import { type MouseEvent } from 'react'
+import { type Toast, Toaster, toast as toastAction } from 'react-hot-toast'
+import { ToastEnum } from '../../utils/toast'
 import { Icon } from '../icon/icon'
 
 export interface ToastProps {
@@ -14,16 +16,16 @@ export interface ToastProps {
 }
 
 export const ToastContent = (
-  status: ToastEnum,
+  status: ToastEnum | keyof typeof ToastEnum,
   options?: Toast,
   title?: string,
   description?: string,
   callback?: () => void,
-  iconAction?: string,
+  iconAction?: IconName,
   labelAction?: string,
   externalLink?: string
 ) => {
-  const onLabelClick = (e: React.MouseEvent<HTMLElement>) => {
+  const onLabelClick = (e: MouseEvent<HTMLElement>) => {
     e.preventDefault()
 
     if (callback) {
@@ -36,23 +38,27 @@ export const ToastContent = (
   }
 
   return (
-    <div data-testid="toast" className="toast" onClick={() => options && toastAction.dismiss(options.id)}>
-      <div className="toast__wrapper">
-        <div className="toast__icon">
-          {status === ToastEnum.SUCCESS && <Icon name="icon-solid-check" className="text-success-500" />}
-          {status === ToastEnum.ERROR && <Icon name="icon-solid-circle-exclamation" className="text-error-500" />}
-          {status === ToastEnum.WARNING && <Icon name="icon-solid-circle-exclamation" className="text-warning-500" />}
+    <div
+      data-testid="toast"
+      className="group relative cursor-pointer rounded bg-neutral-900 shadow-[0_16px_24px_rgba(0,0,0,0.12)]"
+      onClick={() => options && toastAction.dismiss(options.id)}
+    >
+      <div className="flex">
+        <div className="mt-[1px] flex h-full justify-center pl-4 pt-2">
+          {status === ToastEnum.SUCCESS && <Icon name="icon-solid-check" className="text-green-500" />}
+          {status === ToastEnum.ERROR && <Icon name="icon-solid-circle-exclamation" className="text-red-500" />}
+          {status === ToastEnum.WARNING && <Icon name="icon-solid-circle-exclamation" className="text-yellow-500" />}
         </div>
-        <div className="toast__content">
+        <div className="max-w-[256px] break-words py-2 pl-3 pr-4">
           {title && (
-            <p data-testid="toast-title" className="text-white font-medium">
+            <p data-testid="toast-title" className="font-medium text-white">
               {title}
             </p>
           )}
           {description && (
             <span
               data-testid="toast-description"
-              className={`block text-sm text-text-300 font-medium ${!labelAction ? 'mb-1' : ''}`}
+              className={`block text-sm font-medium text-neutral-300 ${!labelAction ? 'mb-1' : ''}`}
             >
               {description}
             </span>
@@ -62,7 +68,7 @@ export const ToastContent = (
             <button
               data-testid="label-action"
               onClick={(e) => onLabelClick(e)}
-              className="cursor-pointer text-blue-400 font-medium text-sm -mt-1 mb-1"
+              className="-mt-1 mb-1 cursor-pointer text-sm font-medium text-blue-400"
             >
               {labelAction}
             </button>
@@ -70,23 +76,26 @@ export const ToastContent = (
         </div>
         {!labelAction && options && callback && (
           <div
-            className="flex justify-end items-center px-4 rounded-r border-l border-element-light-darker-100 transition ease-in-out duration-150 hover:bg-element-light-darker-500"
+            className="flex items-center justify-end rounded-r border-l border-neutral-500 px-4 transition duration-150 ease-in-out hover:bg-neutral-700"
             onClick={() => {
               toastAction.dismiss(options.id)
               callback()
             }}
           >
             {iconAction ? (
-              <Icon name={iconAction} className="text-white text-sm" />
+              <Icon iconName={iconAction} className="text-sm text-white" />
             ) : (
-              <Icon name="icon-solid-wheel" className="text-white text-sm" />
+              <Icon iconName="gear" className="text-sm text-white" />
             )}
           </div>
         )}
 
         {options && (
-          <button className="toast__close" onClick={() => toastAction.dismiss(options.id)}>
-            <Icon name="icon-solid-xmark" className="text-sm" />
+          <button
+            className="absolute left-[-8px] top-[-8px] flex h-6 w-6 items-center justify-center rounded-full border border-neutral-400 bg-neutral-600 text-white opacity-0 duration-150 ease-out hover:bg-neutral-700 group-hover:opacity-100"
+            onClick={() => toastAction.dismiss(options.id)}
+          >
+            <Icon iconName="xmark" className="text-sm" />
           </button>
         )}
       </div>

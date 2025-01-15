@@ -1,12 +1,12 @@
-import { RunningStatus } from '@qovery/shared/enums'
+import { type ServiceStateDto } from 'qovery-ws-typescript-axios'
 
 export interface ServiceRunningStatus {
   id: string
-  state: RunningStatus
+  state: keyof typeof ServiceStateDto
   pods: {
     name: string
-    state: RunningStatus
-    restart_count: 0
+    state: keyof typeof ServiceStateDto
+    restart_count: number
     state_message: string
   }[]
 }

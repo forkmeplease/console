@@ -1,40 +1,43 @@
-import { Dispatch, MouseEvent, SetStateAction, useState } from 'react'
-import { Button, ButtonSize, ButtonStyle, Icon, Menu, TableHeadProps } from '@qovery/shared/ui'
-import { upperCaseFirstLetter } from '@qovery/shared/utils'
-import { MenuItemProps } from '../../menu/menu-item/menu-item'
+import { type Dispatch, type MouseEvent, type SetStateAction, useEffect, useState } from 'react'
+import { upperCaseFirstLetter } from '@qovery/shared/util-js'
+import { Button } from '../../button/button'
+import Icon from '../../icon/icon'
+import { IconAwesomeEnum } from '../../icon/icon-awesome.enum'
+import Menu from '../../menu/menu'
+import { type MenuItemProps } from '../../menu/menu-item/menu-item'
+import { type TableFilterProps, type TableHeadCustomFilterProps, type TableHeadProps } from '../table'
 
-export interface TableHeadFilterProps {
+export interface TableHeadFilterProps<T> {
   title: string
-  dataHead: TableHeadProps[]
-  currentFilter: string
-  setCurrentFilter: Dispatch<SetStateAction<string>>
-  defaultData: any[]
-  setFilterData: Dispatch<SetStateAction<any[]>>
+  dataHead: TableHeadProps<T>
+  defaultData: T[]
+  setFilter: Dispatch<SetStateAction<TableFilterProps[]>>
+  filter: TableFilterProps[]
 }
+
+export const ALL = 'ALL'
 
 // create multiple filter
 // need to output the function for testing
-export function createFilter(
-  dataHead: TableHeadProps[],
-  defaultData: any[] | undefined,
-  defaultValue = 'ALL',
+export function createFilter<T>(
+  dataHead: TableHeadProps<T>,
+  defaultData: T[] | undefined,
+  defaultValue = ALL,
   currentFilter: string,
-  setCurrentFilter: Function,
-  setLocalFilter: Function,
-  setDataFilterNumber: Function,
-  setFilterData: Function
+  setCurrentFilter: Dispatch<SetStateAction<string>>,
+  setDataFilterNumber: Dispatch<SetStateAction<number>>,
+  setFilter: Dispatch<SetStateAction<TableFilterProps[]>>
 ) {
   const keys: string[] = []
   const menus = []
+
   // get array of keys
-  for (let i = 0; i < dataHead.length; i++) {
-    const data = dataHead[i]
-    data.filter && data.filter.filter((currentData) => keys.push(currentData.key))
-  }
+  dataHead?.filter?.filter((currentData) => keys.push(currentData.key))
 
   // get menu by group of key
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i]
+
     const menu: MenuItemProps[] | undefined =
       defaultData &&
       groupBy(
@@ -43,161 +46,246 @@ export function createFilter(
         defaultValue,
         currentFilter,
         setCurrentFilter,
-        setLocalFilter,
         setDataFilterNumber,
-        setFilterData
+        setFilter,
+        dataHead?.filter?.[i]
       )
 
-    if (menu)
+    if (menu) {
       menus.push({
-        title: (dataHead[0].filter && dataHead[0].filter[i].title) || undefined,
-        search: (dataHead[0].filter && dataHead[0].filter[i].search) || false,
+        title: (dataHead.filter && dataHead.filter[i].title) || undefined,
+        search: (dataHead.filter && dataHead.filter[i].search) || false,
         items: menu,
       })
+    }
   }
 
   return menus
 }
 
 // group by same value
-export function groupBy(
-  data: Array<any>,
+export function groupBy<T>(
+  data: Array<T>,
   property: string,
-  defaultValue = 'ALL',
+  defaultValue = ALL,
   currentFilter: string,
-  setCurrentFilter: Function,
-  setLocalFilter: Function,
-  setDataFilterNumber: Function,
-  setFilterData: Function
+  setCurrentFilter: Dispatch<SetStateAction<string>>,
+  setDataFilterNumber: Dispatch<SetStateAction<number>>,
+  setFilter: Dispatch<SetStateAction<TableFilterProps[]>>,
+  dataHeadFilter?: TableHeadCustomFilterProps<T>
 ) {
-  const dataByKeys = data.reduce((acc, obj) => {
-    // create global key for all objects
-    if (!acc[defaultValue]) {
-      acc[defaultValue] = []
+  if (dataHeadFilter?.itemsCustom) {
+    // custom list without datas from array of string
+    const result: MenuItemProps[] = [defaultValue, ...(dataHeadFilter?.itemsCustom ?? {})].map((item: string) => ({
+      name: upperCaseFirstLetter(item.toLowerCase())?.replace('_', ' '),
+      truncateLimit: 20,
+      contentLeft: (
+        <Icon
+          name={IconAwesomeEnum.CHECK}
+          className={`text-sm ${currentFilter === item ? 'text-green-400' : 'text-transparent'}`}
+        />
+      ),
+      onClick: () => {
+        if (currentFilter !== item) {
+          // set filter
+          setCurrentFilter(item)
+          setFilter &&
+            setFilter((prev) => [
+              ...prev.filter((currentValue) => currentValue.key !== property),
+              {
+                key: property,
+                value: item,
+              },
+            ])
+        } else {
+          // reset with default filter
+          setCurrentFilter(defaultValue)
+          setFilter && setFilter([])
+        }
+      },
+    }))
+
+    return result as MenuItemProps[]
+  } else {
+    const dataByKeys: Record<string, T[]> = data.reduce(
+      (acc, obj) => {
+        const defaultKey = defaultValue as string
+
+        if (!acc[defaultKey]) {
+          acc[defaultKey] = []
+        }
+        acc[defaultKey].push(obj)
+
+        if (property.includes('.')) {
+          const splitProperty = property.split('.')
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          let nestedObj: any = obj
+          let key: string | undefined
+
+          for (const prop of splitProperty) {
+            // TODO: `in` looks fishy because that's not the way to use this keyword in js
+            nestedObj = nestedObj && prop in nestedObj ? nestedObj[prop] : null
+            if (nestedObj === null || nestedObj === undefined) {
+              break
+            }
+          }
+
+          if (nestedObj !== null && nestedObj !== undefined) {
+            key = nestedObj as string
+          }
+
+          if (key) {
+            if (!acc[key]) {
+              acc[key] = []
+            }
+            acc[key].push(obj)
+          }
+        } else {
+          const key: string = obj[property as keyof T] as string
+
+          if (!acc[key]) {
+            acc[key] = []
+          }
+          acc[key].push(obj)
+        }
+
+        return acc
+      },
+      {} as Record<string, T[]>
+    )
+
+    if (dataHeadFilter?.itemContentCustom) {
+      delete dataByKeys[defaultValue]
     }
 
-    // detect children of children "obj.obj"
-    if (property.includes('.')) {
-      const splitProperty = property.split('.')
-      const key = obj[splitProperty[0]] && obj[splitProperty[0]][splitProperty[1]]
+    // create menus by keys
+    const result: MenuItemProps[] = Object.keys(dataByKeys).map((key: string) => ({
+      name: upperCaseFirstLetter(key.toLowerCase())?.replace('_', ' '),
+      truncateLimit: 20,
+      contentLeft: (
+        <Icon
+          name={IconAwesomeEnum.CHECK}
+          className={`text-sm ${currentFilter === key ? 'text-green-400' : 'text-transparent'}`}
+        />
+      ),
+      contentRight: (
+        <span className="rounded-sm bg-neutral-200 px-1 text-xs font-bold text-neutral-350">
+          {dataByKeys[key].length}
+        </span>
+      ),
+      // set custom content hide name, contentLeft and contentRight (keep only the onClick)
+      itemContentCustom:
+        dataHeadFilter?.itemContentCustom && dataHeadFilter?.itemContentCustom(dataByKeys[key][0], currentFilter),
+      onClick: () => {
+        const currentFilterData = [...dataByKeys[key]]
 
-      if (!acc[key]) {
-        acc[key] = []
-      }
+        if (currentFilter !== key) {
+          // set filter when is different of current filter
+          setCurrentFilter(key)
+          setDataFilterNumber(currentFilterData.length)
+          setFilter &&
+            setFilter((prev) => [
+              ...prev.filter((currentValue) => currentValue.key !== property),
+              {
+                key: property,
+                value: key,
+              },
+            ])
+        } else {
+          // reset with default filter
+          setCurrentFilter(defaultValue)
+          setDataFilterNumber(0)
+          setFilter &&
+            setFilter((prev) => {
+              const result = prev.filter((currentValue) => currentValue.key !== property)
+              return [...result, { key: property, value: defaultValue }]
+            })
+        }
+      },
+    }))
 
-      acc[defaultValue].push(obj)
-      acc[key].push(obj)
-    } else {
-      const key = obj[property]
-
-      if (!acc[key]) {
-        acc[key] = []
-      }
-      acc[defaultValue].push(obj)
-      acc[key].push(obj)
-    }
-
-    return acc
-  }, {})
-
-  // create menus by keys
-  const result: MenuItemProps[] = Object.keys(dataByKeys).map((key: string) => ({
-    name: upperCaseFirstLetter(key.toLowerCase())?.replace('_', ' ') || '',
-    truncateLimit: 20,
-    contentLeft: (
-      <Icon
-        name="icon-solid-check"
-        className={`text-sm ${currentFilter === key ? 'text-success-400' : 'text-transparent'}`}
-      />
-    ),
-    contentRight: (
-      <span className="px-1 bg-element-light-lighter-400 text-text-400 text-xs font-bold rounded-sm">
-        {dataByKeys[key].length}
-      </span>
-    ),
-    onClick: () => {
-      const currentFilterData = [...dataByKeys[key]]
-
-      if (currentFilter !== key) {
-        // set filter when is different of current filter
-        setCurrentFilter(key)
-        setLocalFilter(key)
-        setDataFilterNumber(currentFilterData.length)
-        setFilterData && setFilterData(currentFilterData)
-      } else {
-        // reset by default filter
-        setCurrentFilter(defaultValue)
-        setLocalFilter('')
-        setDataFilterNumber(0)
-        setFilterData && setFilterData(data)
-      }
-    },
-  }))
-
-  return result as MenuItemProps[]
+    return result as MenuItemProps[]
+  }
 }
 
-export function TableHeadFilter(props: TableHeadFilterProps) {
-  const { title, dataHead, defaultData, setFilterData, currentFilter, setCurrentFilter } = props
+/**
+ * @deprecated Prefer TablePrimitives + tanstack-table for type-safety and documentation
+ */
+export function TableHeadFilter<T>({ title, dataHead, defaultData, filter, setFilter }: TableHeadFilterProps<T>) {
+  const [currentFilter, setCurrentFilter] = useState(ALL)
 
-  const ALL = 'ALL'
+  const hasFilter = filter?.some((item) => item.key === dataHead.filter?.[0].key && item.value !== ALL)
 
-  const [localFilter, setLocalFilter] = useState('')
-  const [dataFilterNumber, setDataFilterNumber] = useState(0)
+  const [dataFilterNumber, setDataFilterNumber] = useState(hasFilter ? defaultData.length : 0)
+  const [isOpen, setOpen] = useState(false)
+
+  const key = dataHead.filter?.[0].key || ''
+  useEffect(() => {
+    filter.find((item) => item.key === key && item.value !== ALL && setCurrentFilter(item.value || ALL))
+  }, [filter])
 
   function cleanFilter(event: MouseEvent) {
     event.preventDefault()
     setCurrentFilter(ALL)
     setDataFilterNumber(0)
     // set global data by default
-    defaultData && setFilterData && setFilterData(defaultData)
+    setFilter &&
+      setFilter((prev) => {
+        const result = prev.filter((currentValue) => currentValue.key !== key)
+        return [...result, { key: key, value: ALL }]
+      })
   }
 
+  const menus = createFilter(
+    dataHead,
+    defaultData,
+    ALL,
+    currentFilter,
+    setCurrentFilter,
+    setDataFilterNumber,
+    setFilter
+  )
+
+  const hideFilterNumber: boolean = dataHead.filter?.some((item) => item.hideFilterNumber) || false
+  const isDark = document.documentElement.classList.contains('dark')
+
   return (
-    <div className="flex" key={Math.random()}>
+    <div className="flex items-center">
       <Menu
-        key={Math.random()}
-        menus={createFilter(
-          dataHead,
-          defaultData,
-          ALL,
-          currentFilter,
-          setCurrentFilter,
-          setLocalFilter,
-          setDataFilterNumber,
-          setFilterData
-        )}
-        width={280}
+        open={isOpen}
+        onOpen={setOpen}
+        menus={menus}
+        width={dataHead.menuWidth || 280}
         isFilter
         trigger={
-          <div>
-            {localFilter === currentFilter && localFilter !== ALL ? (
-              <Button
-                className="whitespace-nowrap inline-block btn--active"
-                size={ButtonSize.TINY}
-                style={ButtonStyle.TAB}
-              >
-                {title} ({dataFilterNumber})
+          <div className="flex">
+            {hasFilter ? (
+              <Button type="button" size="xs" className="whitespace-nowrap pr-6">
+                {title} {!hideFilterNumber ? `(${dataFilterNumber})` : ''}
               </Button>
             ) : (
               <Button
-                className="inline-block"
-                size={ButtonSize.TINY}
-                style={ButtonStyle.TAB}
-                iconRight="icon-solid-angle-down"
+                type="button"
+                variant={isDark ? 'solid' : 'surface'}
+                color="neutral"
+                size="xs"
+                className="items-center gap-1.5"
               >
                 {title}
+                <Icon iconName="angle-down" className="relative top-[1px]" />
               </Button>
             )}
           </div>
         }
       />
-      {localFilter === currentFilter && localFilter !== ALL && (
-        <div className="btn btn--tiny btn--tab btn--active relative left-[-9px]">
-          <span onClick={(event) => cleanFilter(event)}>
-            <Icon name="icon-solid-circle-xmark" />
-          </span>
-        </div>
+      {hasFilter && (
+        <span
+          role="button"
+          className="relative -left-6 flex h-6 cursor-pointer items-center px-2 text-xs text-neutral-50"
+          onClick={(event) => cleanFilter(event)}
+        >
+          <Icon iconName="xmark" />
+        </span>
       )}
     </div>
   )

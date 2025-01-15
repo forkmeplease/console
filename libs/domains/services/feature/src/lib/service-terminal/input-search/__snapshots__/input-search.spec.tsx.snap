@@ -1,0 +1,125 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`InputSearch should match snapshot 1`] = `
+<body>
+  <div>
+    <div
+      class="relative z-10"
+    >
+      <button
+        class="items-center shrink-0 font-medium transition focus-visible:[&:not(:active)]:outline-2 outline-0 shadow-sm disabled:shadow-none active:shadow-none outline-brand-500 text-xs h-7 px-2 rounded bg-neutral-500 active:bg-neutral-600 hover:bg-neutral-400 text-white disabled:text-neutral-300 disabled:bg-neutral-100 hidden"
+      >
+        my-value
+        <span>
+          <i
+            aria-hidden="true"
+            class="fa-solid fa-xmark ml-2 text-sm"
+          />
+        </span>
+      </button>
+      <div
+        class=""
+      >
+        <i
+          aria-hidden="true"
+          class="fa-solid fa-magnifying-glass absolute left-2.5 top-1.5 text-xs text-neutral-50"
+        />
+        <input
+          aria-activedescendant=""
+          aria-autocomplete="list"
+          aria-controls="downshift-:r6:-menu"
+          aria-expanded="false"
+          aria-labelledby="downshift-:r6:-label"
+          autocomplete="off"
+          class="h-7 w-56 rounded border border-neutral-350 bg-transparent pl-7 pr-2 text-xs text-neutral-250 focus:border-brand-400 focus:outline-none"
+          id="downshift-:r6:-input"
+          placeholder="placeholder"
+          role="combobox"
+          value=""
+        />
+      </div>
+      <div
+        class="mt-1 max-h-40 w-full min-w-56 overflow-y-auto rounded bg-neutral-600 p-2 hidden"
+      >
+        <ul
+          aria-labelledby="downshift-:r6:-label"
+          id="downshift-:r6:-menu"
+          role="listbox"
+        >
+          <p
+            class="text-medium flex w-full flex-col py-2 text-center text-xs text-neutral-50"
+          >
+            <i
+              aria-hidden="true"
+              class="fa-solid fa-wave-pulse mb-1 block"
+            />
+            No results found
+          </p>
+        </ul>
+      </div>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`InputSearch should match with snapshot 1`] = `
+<body>
+  <div>
+    <div
+      class="relative z-10"
+    >
+      <button
+        class="items-center shrink-0 font-medium transition focus-visible:[&:not(:active)]:outline-2 outline-0 shadow-sm disabled:shadow-none active:shadow-none outline-brand-500 text-xs h-7 px-2 rounded bg-neutral-500 active:bg-neutral-600 hover:bg-neutral-400 text-white disabled:text-neutral-300 disabled:bg-neutral-100 hidden"
+      >
+        my-value
+        <span>
+          <i
+            aria-hidden="true"
+            class="fa-solid fa-xmark ml-2 text-sm"
+          />
+        </span>
+      </button>
+      <div
+        class=""
+      >
+        <i
+          aria-hidden="true"
+          class="fa-solid fa-magnifying-glass absolute left-2.5 top-1.5 text-xs text-neutral-50"
+        />
+        <input
+          aria-activedescendant=""
+          aria-autocomplete="list"
+          aria-controls="downshift-:rd:-menu"
+          aria-expanded="false"
+          aria-labelledby="downshift-:rd:-label"
+          autocomplete="off"
+          class="h-7 w-56 rounded border border-neutral-350 bg-transparent pl-7 pr-2 text-xs text-neutral-250 focus:border-brand-400 focus:outline-none"
+          id="downshift-:rd:-input"
+          placeholder="placeholder"
+          role="combobox"
+          value=""
+        />
+      </div>
+      <div
+        class="mt-1 max-h-40 w-full min-w-56 overflow-y-auto rounded bg-neutral-600 p-2 hidden"
+      >
+        <ul
+          aria-labelledby="downshift-:rd:-label"
+          id="downshift-:rd:-menu"
+          role="listbox"
+        >
+          <p
+            class="text-medium flex w-full flex-col py-2 text-center text-xs text-neutral-50"
+          >
+            <i
+              aria-hidden="true"
+              class="fa-solid fa-wave-pulse mb-1 block"
+            />
+            No results found
+          </p>
+        </ul>
+      </div>
+    </div>
+  </div>
+</body>
+`;

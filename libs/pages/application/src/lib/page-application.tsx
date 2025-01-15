@@ -1,118 +1,87 @@
-import equal from 'fast-deep-equal'
-import { Environment } from 'qovery-typescript-axios'
-import { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { Route, Routes, useLocation, useParams } from 'react-router-dom'
+import { memo, useContext } from 'react'
+import { Navigate, Route, Routes, useParams } from 'react-router-dom'
+import { match } from 'ts-pattern'
+import { useEnvironment } from '@qovery/domains/environments/feature'
 import {
-  applicationsLoadingStatus,
-  deleteApplicationAction,
-  fetchApplicationCommits,
-  fetchApplicationInstances,
-  fetchApplicationLinks,
-  fetchApplicationStatus,
-  postApplicationActionsDeploy,
-  postApplicationActionsRestart,
-  postApplicationActionsStop,
-  selectApplicationById,
-} from '@qovery/domains/application'
-import { selectEnvironmentById } from '@qovery/domains/environment'
-import { ServiceTypeEnum, getServiceType } from '@qovery/shared/enums'
-import { ApplicationEntity, GitApplicationEntity, LoadingStatus } from '@qovery/shared/interfaces'
-import { APPLICATION_DEPLOYMENTS_URL, APPLICATION_URL } from '@qovery/shared/router'
-import { StatusMenuActions } from '@qovery/shared/ui'
-import { isDeleteAvailable, useDocumentTitle } from '@qovery/shared/utils'
-import { AppDispatch, RootState } from '@qovery/store'
+  ServiceTerminal,
+  ServiceTerminalContext,
+  ServiceTerminalProvider,
+  useService,
+  useServiceType,
+} from '@qovery/domains/services/feature'
+import { NotFoundPage } from '@qovery/pages/layout'
+import { APPLICATION_GENERAL_URL, APPLICATION_URL } from '@qovery/shared/routes'
+import { useDocumentTitle } from '@qovery/shared/util-hooks'
 import { ROUTER_APPLICATION } from './router/router'
 import Container from './ui/container/container'
 
-export function PageApplication() {
-  const { applicationId = '', environmentId = '', organizationId, projectId } = useParams()
-  const { pathname } = useLocation()
-  const environment = useSelector<RootState, Environment | undefined>((state) =>
-    selectEnvironmentById(state, environmentId)
-  )
-  const application = useSelector<RootState, ApplicationEntity | undefined>(
-    (state) => selectApplicationById(state, applicationId),
-    equal
-  )
+const ServiceTerminalMemo = memo(ServiceTerminal)
 
-  useDocumentTitle(`${application?.name || 'Application'} - Qovery`)
-
-  const loadingStatus = useSelector<RootState, LoadingStatus>((state) => applicationsLoadingStatus(state))
-
-  const dispatch = useDispatch<AppDispatch>()
-
-  useEffect(() => {
-    if (application && applicationId && loadingStatus === 'loaded') {
-      if (application.links?.loadingStatus !== 'loaded')
-        dispatch(fetchApplicationLinks({ applicationId, serviceType: getServiceType(application) }))
-      if (application.instances?.loadingStatus !== 'loaded')
-        dispatch(fetchApplicationInstances({ applicationId, serviceType: getServiceType(application) }))
-      if (
-        (application as GitApplicationEntity)?.commits?.loadingStatus !== 'loaded' &&
-        getServiceType(application) === ServiceTypeEnum.APPLICATION
-      )
-        dispatch(fetchApplicationCommits({ applicationId }))
-    }
-    const fetchApplicationStatusByInterval = setInterval(
-      () =>
-        application && dispatch(fetchApplicationStatus({ applicationId, serviceType: getServiceType(application) })),
-      3000
-    )
-    return () => clearInterval(fetchApplicationStatusByInterval)
-  }, [applicationId, loadingStatus, dispatch])
-
-  const payload = (applicationId: string) => ({
+function PageApplicationWrapped() {
+  const { organizationId = '', projectId = '', environmentId = '', applicationId = '' } = useParams()
+  const { open } = useContext(ServiceTerminalContext)
+  const { data: environment, error: environmentError } = useEnvironment({ environmentId })
+  const { data: serviceType, isSuccess: isSuccessServiceType } = useServiceType({
     environmentId,
-    applicationId,
-    serviceType: application && getServiceType(application),
-    withDeployments:
-      pathname ===
-      APPLICATION_URL(organizationId, projectId, environmentId, applicationId) + APPLICATION_DEPLOYMENTS_URL,
+    serviceId: applicationId,
   })
+  const { data: service } = useService({ environmentId, serviceId: applicationId })
 
-  const statusActions: StatusMenuActions[] = [
-    {
-      name: 'redeploy',
-      action: (applicationId: string) => dispatch(postApplicationActionsRestart(payload(applicationId))),
-    },
-    {
-      name: 'deploy',
-      action: (applicationId: string) => dispatch(postApplicationActionsDeploy(payload(applicationId))),
-    },
-    {
-      name: 'stop',
-      action: (applicationId: string) => dispatch(postApplicationActionsStop(payload(applicationId))),
-    },
-  ]
+  useDocumentTitle(`${service?.name || 'Service'} - Qovery`)
 
-  const removeApplication = (applicationId: string) => {
-    if (application) {
-      dispatch(
-        deleteApplicationAction({
-          environmentId,
-          applicationId,
-          serviceType: getServiceType(application),
-        })
-      )
-    }
+  // serviceType can be `undefined` if the `find` method in `select` return nothing. However the query itself is still success.
+  // Don't seems to have a better way for this case in react-query for now
+  // https://github.com/TanStack/query/issues/1540
+  // https://github.com/TanStack/query/issues/5878
+  if (environmentError || (!serviceType && isSuccessServiceType)) {
+    return <NotFoundPage error={environmentError} />
   }
 
   return (
-    <Container
-      application={application}
-      environment={environment}
-      statusActions={statusActions}
-      removeApplication={
-        application?.status && isDeleteAvailable(application.status.state) ? removeApplication : undefined
-      }
-    >
-      <Routes>
-        {ROUTER_APPLICATION.map((route) => (
-          <Route key={route.path} path={route.path} element={route.component} />
-        ))}
-      </Routes>
+    <Container>
+      {match(service)
+        .with({ serviceType: 'DATABASE' }, () => null)
+        .otherwise((service) => {
+          return (
+            <>
+              <Routes>
+                {ROUTER_APPLICATION.map((route) => (
+                  <Route key={route.path} path={route.path} element={route.component} />
+                ))}
+                <Route
+                  path="*"
+                  element={
+                    <Navigate
+                      replace
+                      to={
+                        APPLICATION_URL(organizationId, projectId, environmentId, applicationId) +
+                        APPLICATION_GENERAL_URL
+                      }
+                    />
+                  }
+                />
+              </Routes>
+              {open && environment && service && (
+                <ServiceTerminalMemo
+                  organizationId={environment.organization.id}
+                  clusterId={environment.cluster_id}
+                  projectId={environment.project.id}
+                  environmentId={environment.id}
+                  serviceId={service.id}
+                />
+              )}
+            </>
+          )
+        })}
     </Container>
+  )
+}
+
+export function PageApplication() {
+  return (
+    <ServiceTerminalProvider>
+      <PageApplicationWrapped />
+    </ServiceTerminalProvider>
   )
 }
 

@@ -1,6 +1,6 @@
-import { Meta, Story } from '@storybook/react'
-import CopyToClipboard from '../../copy-to-clipboard/copy-to-clipboard'
-import { InputText, InputTextProps } from './input-text'
+import { type Meta, type Story } from '@storybook/react'
+import CopyToClipboardButtonIcon from '../../copy-to-clipboard-button-icon/copy-to-clipboard-button-icon'
+import { InputText, type InputTextProps } from './input-text'
 
 export default {
   component: InputText,
@@ -14,6 +14,7 @@ const defaultProps: InputTextProps = {
   name: 'firstName',
   rightElement: null,
   disabled: false,
+  type: 'text',
 }
 
 export const Primary = Template.bind({})
@@ -21,10 +22,14 @@ Primary.args = {
   ...defaultProps,
 }
 
-const TemplateWithRightElement: Story<InputTextProps> = (args) => <InputText {...args} />
+export const Time = Template.bind({})
+Time.args = {
+  ...defaultProps,
+  type: 'time',
+}
 
 export const WithRightElement = Template.bind({})
 WithRightElement.args = {
   ...defaultProps,
-  rightElement: <CopyToClipboard content="Copy to clipboard" />,
+  rightElement: <CopyToClipboardButtonIcon content="Copy to clipboard" />,
 }

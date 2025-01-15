@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import Button, { ButtonStyle } from '../buttons/button/button'
+import Button from '../button/button'
 
 export interface StickyActionFormToasterProps {
   visible?: boolean
@@ -40,25 +40,27 @@ export function StickyActionFormToaster(props: StickyActionFormToasterProps) {
   return (
     <div className={`sticky bottom-4 flex justify-center ${className} ${!visibleState ? 'mb-[52px]' : ''}`}>
       <div
-        data-testid={'sticky-action-form-toaster'}
-        className={`rounded bg-element-light-darker-100 shadow-xl text-white inline-flex items-center pl-4 p-2 gap-10 ${
+        data-testid="sticky-action-form-toaster"
+        className={`inline-flex items-center gap-10 rounded bg-neutral-500 p-2 pl-4 text-white shadow-xl ${
           visible ? 'animate-action-bar-fade-in' : 'animate-action-bar-fade-out'
         } ${visibleState ? 'visible' : 'hidden'}`}
       >
-        {description && <span className="font-medium text-white text-sm">{description}</span>}
+        {description && <span className="text-sm font-medium text-white">{description}</span>}
         <div className="flex gap-5">
           {resetLabel && onReset && (
-            <button type="button" className="text-ssm underline font-medium" onClick={() => onReset()}>
+            <button type="button" className="text-ssm font-medium underline" onClick={() => onReset()}>
               {resetLabel}
             </button>
           )}
           {submitLabel && onSubmit && (
             <Button
-              style={ButtonStyle.CONFIRM}
+              color="green"
+              size="md"
+              data-testid="submit-button"
               onClick={() => onSubmit()}
-              disabled={props.disabledValidation}
-              dataTestId="submit-button"
               loading={props.loading}
+              disabled={props.disabledValidation}
+              type="button"
             >
               {submitLabel}
             </Button>

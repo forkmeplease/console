@@ -1,14 +1,12 @@
-import React from 'react'
+import { type PropsWithChildren } from 'react'
 import { createPortal } from 'react-dom'
-import Button, { ButtonStyle } from '../buttons/button/button'
+import { Button } from '../button/button'
 import Icon from '../icon/icon'
-import { IconAwesomeEnum } from '../icon/icon-awesome.enum'
 
-export interface FunnelFlowProps {
+export interface FunnelFlowProps extends PropsWithChildren {
   totalSteps: number
   currentStep: number
   currentTitle: string
-  children: React.ReactNode
   exitTo?: string
   onExit?: () => void
   portal?: boolean
@@ -16,33 +14,35 @@ export interface FunnelFlowProps {
 
 const FunnelFlowContent = (props: FunnelFlowProps) => {
   return (
-    <div className="absolute top-0 left-0 inset-0 bg-element-light-lighter-300 scroll-auto flex flex-col min-h-0 z-20">
-      <header className="h-16 px-5 bg-white flex shrink-0 items-center justify-between">
-        <div className="flex items-center h-full">
+    <div className="absolute inset-0 left-0 top-0 flex min-h-0 flex-col scroll-auto bg-neutral-150">
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-neutral-200 bg-white px-5">
+        <div className="flex h-full items-center">
           <div className="pr-4">
             <img className="w-[90px] shrink-0" src="assets/logos/logo-black.svg" alt="Qovery logo black" />
           </div>
-          <div className="flex h-full items-center gap-4 pl-4 border-l border-l-element-light-lighter-400">
-            <div className="h-5 px-1 bg-element-light-lighter-400 font-medium rounded-sm text-text-400 text-xs flex items-center">
+          <div className="flex h-full items-center gap-4 border-l border-l-neutral-200 pl-4">
+            <div className="flex h-5 items-center rounded-md bg-brand-500 px-1 text-2xs font-medium text-white">
               {props.currentStep}/{props.totalSteps}
             </div>
-            <h4 className="text-text-600 text-sm font-medium">{props.currentTitle}</h4>
+            <h4 className="text-sm font-medium text-neutral-400">{props.currentTitle}</h4>
           </div>
         </div>
-        <div className="border-l border-l-element-light-lighter-400 pl-4 h-full flex items-center">
-          <Button onClick={props.onExit} style={ButtonStyle.STROKED} className="btn--no-min-w">
-            Close <Icon name={IconAwesomeEnum.CROSS} className="ml-2" />
-          </Button>
-        </div>
+        {props.onExit && (
+          <div className="flex h-full items-center border-l border-l-neutral-200 pl-5">
+            <Button onClick={props.onExit} variant="surface" size="md">
+              Close <Icon iconName="xmark" iconStyle="regular" className="ml-2 text-base" />
+            </Button>
+          </div>
+        )}
       </header>
-      <div data-testid="progress-bar-wrapper" className="h-[6px] bg-element-light-lighter-500 relative shrink-0">
+      <div data-testid="progress-bar-wrapper" className="relative h-[6px] shrink-0 bg-neutral-250">
         <div
           data-testid="progress-bar"
           style={{ transform: `scaleX(${props.currentStep / props.totalSteps})` }}
-          className="h-full absolute origin-left transition-transform duration-700 ease-in-out inset-0 bg-brand-500"
-        ></div>
+          className="absolute inset-0 h-full origin-left bg-brand-500 transition-transform duration-700 ease-in-out"
+        />
       </div>
-      <div data-testid="funnel-content" className="flex-grow min-h-0 flex relative">
+      <div data-testid="funnel-content" className="relative flex min-h-0 flex-grow">
         {props.children}
       </div>
     </div>

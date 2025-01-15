@@ -1,0 +1,25 @@
+export const APPLICATION_URL = (
+  organizationId = ':organizationId',
+  projectId = ':projectId',
+  environmentId = ':environmentId',
+  applicationId = ':applicationId'
+) => `/organization/${organizationId}/project/${projectId}/environment/${environmentId}/application/${applicationId}`
+export const APPLICATION_GENERAL_URL = '/general'
+export const APPLICATION_DEPLOYMENTS_URL = '/deployments'
+export const APPLICATION_VARIABLES_URL = '/variables'
+export const APPLICATION_SETTINGS_URL = '/settings'
+
+export const APPLICATION_SETTINGS_GENERAL_URL = '/general'
+export const APPLICATION_SETTINGS_RESOURCES_URL = '/resources'
+export const APPLICATION_SETTINGS_CONFIGURE_URL = '/configure'
+export const APPLICATION_SETTINGS_DOCKERFILE_URL = '/dockerfile'
+export const APPLICATION_SETTINGS_VALUES_OVERRIDE_FILE_URL = '/values-override-file'
+export const APPLICATION_SETTINGS_VALUES_OVERRIDE_ARGUMENTS_URL = '/values-override-arguments'
+export const APPLICATION_SETTINGS_NETWORKING_URL = '/networking'
+export const APPLICATION_SETTINGS_STORAGE_URL = '/storage'
+export const APPLICATION_SETTINGS_DOMAIN_URL = '/domain'
+export const APPLICATION_SETTINGS_HEALTHCHECKS_URL = '/health-checks'
+export const APPLICATION_SETTINGS_PORT_URL = '/port'
+export const APPLICATION_SETTINGS_DEPLOYMENT_RESTRICTIONS = '/deployment-restrictions'
+export const APPLICATION_SETTINGS_ADVANCED_SETTINGS_URL = '/advanced-settings'
+export const APPLICATION_SETTINGS_DANGER_ZONE_URL = '/danger-zone'

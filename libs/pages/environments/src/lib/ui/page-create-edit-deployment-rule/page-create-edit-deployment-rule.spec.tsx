@@ -1,22 +1,22 @@
 import { render } from '__tests__/utils/setup-jest'
 import { useForm } from 'react-hook-form'
-import { clusterFactoryMock } from '@qovery/domains/organization'
-import PageCreateEditDeploymentRule, { PageCreateEditDeploymentRuleProps } from './page-create-edit-deployment-rule'
+import { clusterFactoryMock } from '@qovery/shared/factories'
+import PageCreateEditDeploymentRule, {
+  type PageCreateEditDeploymentRuleProps,
+} from './page-create-edit-deployment-rule'
 
 describe('PageCreateEditDeploymentRule', () => {
-  let props: PageCreateEditDeploymentRuleProps
-  let Wrapper: React.FC
+  let props: Partial<PageCreateEditDeploymentRuleProps>
 
   beforeEach(() => {
     props = {
       title: 'Create rule',
       btnLabel: 'Create',
       onSubmit: jest.fn(),
-      control: null as any,
       clusters: clusterFactoryMock(2),
     }
 
-    Wrapper = () => {
+    const Wrapper = () => {
       const { control } = useForm<{
         id: string
         name: string
@@ -24,8 +24,6 @@ describe('PageCreateEditDeploymentRule', () => {
         start_time: string
         stop_time: string
         mode: string
-        auto_deploy: boolean
-        auto_delete: boolean
         auto_stop: boolean
         description: string
         cluster_id: string
@@ -33,14 +31,14 @@ describe('PageCreateEditDeploymentRule', () => {
 
       props.control = control
 
-      return <PageCreateEditDeploymentRule {...props} />
+      return <PageCreateEditDeploymentRule {...(props as PageCreateEditDeploymentRuleProps)} />
     }
 
     render(<Wrapper />)
   })
 
   it('should render successfully', () => {
-    const { baseElement } = render(<PageCreateEditDeploymentRule {...props} />)
+    const { baseElement } = render(<PageCreateEditDeploymentRule {...(props as PageCreateEditDeploymentRuleProps)} />)
 
     expect(baseElement).toBeTruthy()
   })

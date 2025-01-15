@@ -1,109 +1,97 @@
-import { act, render } from '__tests__/utils/setup-jest'
-import * as storeOrganization from '@qovery/domains/organization'
+import * as organizationsDomain from '@qovery/domains/organizations/feature'
+import { membersMock } from '@qovery/shared/factories'
+import { renderWithProviders, screen } from '@qovery/shared/util-tests'
 import PageOrganizationMembersFeature from './page-organization-members-feature'
 
 import SpyInstance = jest.SpyInstance
 
-const mockOrganization = storeOrganization.organizationFactoryMock(1)[0]
+const useEditMemberRoleSpy: SpyInstance = jest.spyOn(organizationsDomain, 'useEditMemberRole')
+const useMembersSpy: SpyInstance = jest.spyOn(organizationsDomain, 'useMembers')
+const useInviteMembersSpy: SpyInstance = jest.spyOn(organizationsDomain, 'useInviteMembers')
+const useTransferOwnershipMemberRoleSpy: SpyInstance = jest.spyOn(organizationsDomain, 'useTransferOwnershipMemberRole')
+const useDeleteInviteMemberSpy: SpyInstance = jest.spyOn(organizationsDomain, 'useDeleteInviteMember')
+const useCreateInviteMemberSpy: SpyInstance = jest.spyOn(organizationsDomain, 'useCreateInviteMember')
 
-jest.mock('@qovery/domains/organization', () => {
-  return {
-    ...jest.requireActual('@qovery/domains/organization'),
-    editMemberRole: jest.fn(),
-    selectOrganizationById: () => mockOrganization,
-  }
-})
-
-jest.mock('@qovery/domains/user', () => {
-  return {
-    ...jest.requireActual('@qovery/domains/user'),
-    selectUser: () => ({
-      sub: '0',
-    }),
-  }
-})
-
-const mockDispatch = jest.fn()
-jest.mock('react-redux', () => ({
-  ...jest.requireActual('react-redux'),
-  useDispatch: () => mockDispatch,
-}))
+const useAvailableRolesMockSpy = jest.spyOn(organizationsDomain, 'useAvailableRoles') as jest.Mock
+// XXX: Prevent infinite loading
+// https://github.com/Qovery/console/blob/b2a922b8bf94b31e9f9e49449ff124785667b875/libs/pages/settings/src/lib/ui/page-organization-members/page-organization-members.tsx#L144
+const mockMembers = [...membersMock(1, 'Owner', '10'), ...membersMock(1, 'Admin', '11')]
 
 jest.mock('react-router-dom', () => ({
-  ...(jest.requireActual('react-router-dom') as any),
+  ...jest.requireActual('react-router-dom'),
   useParams: () => ({ organizationId: '0' }),
 }))
 
 describe('PageOrganizationMembersFeature', () => {
+  beforeEach(() => {
+    useAvailableRolesMockSpy.mockReturnValue({
+      data: [
+        {
+          id: '0',
+          name: 'my-role',
+        },
+      ],
+      isFetched: true,
+    })
+    useEditMemberRoleSpy.mockReturnValue({
+      mutateAsync: jest.fn(),
+    })
+    useTransferOwnershipMemberRoleSpy.mockReturnValue({
+      mutateAsync: jest.fn(),
+    })
+    useDeleteInviteMemberSpy.mockReturnValue({
+      mutateAsync: jest.fn(),
+    })
+    useCreateInviteMemberSpy.mockReturnValue({
+      mutateAsync: jest.fn(),
+    })
+    useMembersSpy.mockReturnValue({
+      data: mockMembers,
+      isFetched: true,
+    })
+    useInviteMembersSpy.mockReturnValue({
+      data: [],
+      isFetched: true,
+    })
+  })
   it('should render successfully', () => {
-    const { baseElement } = render(<PageOrganizationMembersFeature />)
+    const { baseElement } = renderWithProviders(<PageOrganizationMembersFeature />)
     expect(baseElement).toBeTruthy()
   })
 
   it('should have dispatch to edit member role', async () => {
-    const editMemberRoleSpy: SpyInstance = jest.spyOn(storeOrganization, 'editMemberRole')
+    const { userEvent } = renderWithProviders(<PageOrganizationMembersFeature />)
+    await userEvent.click(screen.getByTestId('element'))
 
-    mockDispatch.mockImplementation(() => ({
-      unwrap: () =>
-        Promise.resolve({
-          data: {},
-        }),
-    }))
+    const items = screen.getAllByTestId('menuItem')
 
-    const { getAllByTestId } = render(<PageOrganizationMembersFeature />)
+    // menu for row members
+    await userEvent.click(items[5])
 
-    const items = getAllByTestId('menuItem')
-
-    await act(() => {
-      // 5 is menu for row members
-      items[5].click()
-    })
-
-    expect(editMemberRoleSpy).toBeCalled()
+    expect(useEditMemberRoleSpy).toHaveBeenCalled()
   })
 
   it('should have dispatch to transfer ownership', async () => {
-    const transferOwnershipSpy: SpyInstance = jest.spyOn(storeOrganization, 'transferOwnershipMemberRole')
-    const fetchMembersSpy: SpyInstance = jest.spyOn(storeOrganization, 'fetchMembers')
+    const { userEvent } = renderWithProviders(<PageOrganizationMembersFeature />)
+    await userEvent.click(screen.getByTestId('element'))
+    const items = screen.getAllByTestId('menuItem')
 
-    mockDispatch.mockImplementation(() => ({
-      unwrap: () => Promise.resolve(mockOrganization.members?.items),
-    }))
+    // menu for row members
+    await userEvent.click(items[3])
 
-    const { getAllByTestId } = render(<PageOrganizationMembersFeature />)
-
-    const items = getAllByTestId('menuItem')
-
-    await act(() => {
-      // 3 is menu for row members
-      items[3].click()
-    })
-
-    expect(transferOwnershipSpy).toBeCalled()
-    expect(fetchMembersSpy).toBeCalled()
+    expect(useTransferOwnershipMemberRoleSpy).toHaveBeenCalled()
+    expect(useMembersSpy).toHaveBeenCalled()
   })
 
   it('should have dispatch resend invite', async () => {
-    const resendInviteSpy: SpyInstance = jest.spyOn(storeOrganization, 'deleteInviteMember')
-    const postInviteMemberSpy: SpyInstance = jest.spyOn(storeOrganization, 'postInviteMember')
+    const { userEvent } = renderWithProviders(<PageOrganizationMembersFeature />)
+    await userEvent.click(screen.getByTestId('element'))
+    const items = screen.getAllByTestId('menuItem')
 
-    mockDispatch.mockImplementation(() => ({
-      unwrap: () =>
-        Promise.resolve({
-          data: {},
-        }),
-    }))
+    // menu for resend invite
+    await userEvent.click(items[8])
 
-    const { getAllByTestId } = render(<PageOrganizationMembersFeature />)
-
-    const items = getAllByTestId('menuItem')
-
-    await act(() => {
-      // 8 is menu for resend invite
-      items[8].click()
-    })
-
-    expect(resendInviteSpy).toBeCalled()
-    expect(postInviteMemberSpy).toBeCalled()
+    expect(useDeleteInviteMemberSpy).toHaveBeenCalled()
+    expect(useCreateInviteMemberSpy).toHaveBeenCalled()
   })
 })

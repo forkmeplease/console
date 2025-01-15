@@ -1,24 +1,31 @@
-import { Control, Controller } from 'react-hook-form'
-import { Button, ButtonSize, ButtonStyle, InputText } from '@qovery/shared/ui'
+import { type Control, Controller } from 'react-hook-form'
+import { useNavigate } from 'react-router-dom'
+import { ENVIRONMENTS_URL } from '@qovery/shared/routes'
+import { Button, Icon, InputText } from '@qovery/shared/ui'
 
 export interface StepProjectProps {
   onSubmit: () => void
-  control: Control<any, any>
+  control: Control<{
+    organization_name: string
+    project_name: string
+  }>
   authLogout: () => void
+  backButton?: boolean
 }
 
 export function StepProject(props: StepProjectProps) {
-  const { onSubmit, control, authLogout } = props
+  const { onSubmit, control, authLogout, backButton } = props
+  const navigate = useNavigate()
 
   return (
     <div className="pb-10">
-      <h1 className="h3 text-text-700 mb-3">
+      <h1 className="h3 mb-3 text-neutral-400">
         Create your Organization
         <span className="ml-2" role="img" aria-label="star">
           ✨
         </span>
       </h1>
-      <p className="text-sm mb-10 text-text-500">
+      <p className="mb-10 text-sm text-neutral-400">
         You will now create your Organization and a first project within it. Both the Organization and Project name can
         be edited afterwards.
       </p>
@@ -53,16 +60,42 @@ export function StepProject(props: StepProjectProps) {
             />
           )}
         />
-        <div className="mt-10 pt-5 flex justify-between border-t border-element-light-lighter-400">
-          <Button
-            onClick={() => authLogout()}
-            size={ButtonSize.XLARGE}
-            style={ButtonStyle.STROKED}
-            iconLeft="icon-solid-arrow-left"
-          >
-            Disconnect
-          </Button>
-          <Button size={ButtonSize.XLARGE} style={ButtonStyle.BASIC} type="submit">
+        <div className="mt-10 flex justify-between border-t border-neutral-200 pt-5">
+          {!backButton ? (
+            <Button
+              type="button"
+              size="lg"
+              color="neutral"
+              variant="surface"
+              className="gap-2"
+              onClick={() => authLogout()}
+            >
+              <Icon name="icon-solid-arrow-left" />
+              Disconnect
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="lg"
+              color="neutral"
+              variant="surface"
+              className="gap-2"
+              onClick={() =>
+                localStorage['currentOrganizationId']
+                  ? navigate(
+                      ENVIRONMENTS_URL(
+                        localStorage['currentOrganizationId'] || '',
+                        localStorage['currentProjectId'] || ''
+                      )
+                    )
+                  : navigate(-1)
+              }
+            >
+              <Icon name="icon-solid-arrow-left" />
+              Back
+            </Button>
+          )}
+          <Button type="submit" size="lg">
             Continue
           </Button>
         </div>

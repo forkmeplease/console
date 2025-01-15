@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '__tests__/utils/setup-jest'
 import { wrapWithReactHookForm } from '__tests__/utils/wrap-with-react-hook-form'
-import ModalCrud, { ModalCrudProps } from './modal-crud'
+import ModalCrud, { type ModalCrudProps } from './modal-crud'
 
 describe('ModalCrud', () => {
   let props: ModalCrudProps
@@ -26,8 +26,24 @@ describe('ModalCrud', () => {
 
     await waitFor(() => {
       button.click()
-      expect(button).not.toBeDisabled()
+      expect(button).toBeEnabled()
       expect(props.onSubmit).toHaveBeenCalled()
+    })
+  })
+
+  it('should delete the form', async () => {
+    props.isEdit = true
+    props.onDelete = jest.fn()
+    props.deleteButtonLabel = 'Delete this element'
+
+    render(wrapWithReactHookForm(<ModalCrud {...props} />))
+
+    const button = screen.getByTestId('delete-button')
+
+    await waitFor(() => {
+      button.click()
+      expect(button).toHaveTextContent(props.deleteButtonLabel)
+      expect(props.onDelete).toHaveBeenCalled()
     })
   })
 
@@ -52,7 +68,7 @@ describe('ModalCrud', () => {
 
     await waitFor(() => {
       button.click()
-      expect(button).not.toBeDisabled()
+      expect(button).toBeEnabled()
     })
   })
 })

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Value } from '@qovery/shared/interfaces'
+import { type Value } from '@qovery/shared/interfaces'
+import { twMerge } from '@qovery/shared/util-js'
 import Icon from '../../icon/icon'
+import { IconAwesomeEnum } from '../../icon/icon-awesome.enum'
 
 export interface InputSelectSmallProps {
   name: string
@@ -11,10 +13,21 @@ export interface InputSelectSmallProps {
   dataTestId?: string
   onChange?: (item: string | undefined) => void
   defaultValue?: string
+  inputClassName?: string
 }
 
 export function InputSelectSmall(props: InputSelectSmallProps) {
-  const { name, label, items, defaultValue, className = '', onChange, getValue, dataTestId } = props
+  const {
+    name,
+    label,
+    items,
+    defaultValue,
+    className = '',
+    onChange,
+    getValue,
+    dataTestId,
+    inputClassName = '',
+  } = props
 
   const [value, setValue] = useState(defaultValue)
 
@@ -35,13 +48,16 @@ export function InputSelectSmall(props: InputSelectSmallProps) {
   }, [defaultValue])
 
   return (
-    <div className={`${className} relative flex gap-4 items-center`}>
-      {label && <label className="text-sm shrink-0">{label}</label>}
+    <div className={`${className} relative flex items-center gap-4`}>
+      {label && <label className="shrink-0 text-sm">{label}</label>}
       <select
         data-testid={dataTestId || 'input-select-small'}
         name={name}
         value={value}
-        className="input input__select--small"
+        className={twMerge(
+          'h-9 w-full cursor-pointer appearance-none rounded border border-neutral-250 bg-neutral-100 px-4 py-2 pb-2 pl-2 pr-6 pt-2 text-sm text-neutral-400',
+          inputClassName
+        )}
         onChange={(e) => onClickItem(e.target.value)}
       >
         {items.map((item: Value, index: number) => (
@@ -51,8 +67,8 @@ export function InputSelectSmall(props: InputSelectSmallProps) {
         ))}
       </select>
       <Icon
-        name="icon-solid-angle-down"
-        className="absolute top-3 right-4 text-sm text-text-500 leading-3 translate-y-0.5 pointer-events-none"
+        name={IconAwesomeEnum.CHEVRON_DOWN}
+        className="pointer-events-none absolute right-4 top-2.5 translate-y-0.5 text-xs leading-3 text-neutral-400"
       />
     </div>
   )

@@ -1,40 +1,28 @@
-import { EnvironmentModeEnum } from 'qovery-typescript-axios'
-import { ApplicationEntity } from '@qovery/shared/interfaces'
-import { BlockContentDelete, HelpSection } from '@qovery/shared/ui'
+import { type EnvironmentModeEnum } from 'qovery-typescript-axios'
+import { BlockContentDelete } from '@qovery/shared/ui'
 
 export interface PageSettingsDangerZoneProps {
-  deleteApplication: () => void
-  application?: ApplicationEntity
+  deleteService: () => void
+  serviceName?: string
   environmentMode?: EnvironmentModeEnum
 }
 
 export function PageSettingsDangerZone(props: PageSettingsDangerZoneProps) {
-  const { deleteApplication, application, environmentMode } = props
+  const { deleteService, serviceName, environmentMode } = props
   return (
-    <div className="flex flex-col justify-between w-full">
-      <div className="p-8 max-w-content-with-navigation-left">
+    <div className="flex w-full flex-col justify-between">
+      <div className="max-w-content-with-navigation-left p-8">
         <BlockContentDelete
-          title="Delete application"
-          ctaLabel="Delete application"
-          callback={deleteApplication}
+          title="Delete service"
+          ctaLabel="Delete service"
+          callback={deleteService}
           modalConfirmation={{
             mode: environmentMode,
-            title: 'Delete application',
-            description: 'To confirm the deletion of your application, please type the name of the application:',
-            name: application?.name,
+            title: 'Delete service',
+            name: serviceName,
           }}
         />
       </div>
-      <HelpSection
-        description="Need help? You may find these links useful"
-        links={[
-          {
-            link: 'https://hub.qovery.com/docs/using-qovery/configuration/application/#delete-an-application',
-            linkLabel: 'How to delete my application',
-            external: true,
-          },
-        ]}
-      />
     </div>
   )
 }

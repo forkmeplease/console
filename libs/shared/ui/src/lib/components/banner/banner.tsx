@@ -1,56 +1,51 @@
-import { IconEnum } from '@qovery/shared/enums'
-import Button, { ButtonSize, ButtonStyle } from '../buttons/button/button'
-import { IconAwesomeEnum } from '../icon/icon-awesome.enum'
+import { type IconName } from '@fortawesome/fontawesome-common-types'
+import { type VariantProps, cva } from 'class-variance-authority'
+import { type PropsWithChildren, forwardRef } from 'react'
+import { twMerge } from '@qovery/shared/util-js'
+import Button from '../button/button'
+import Icon from '../icon/icon'
 
-export interface BannerProps {
-  children: React.ReactNode
-  bannerStyle?: BannerStyle
+const bannerVariants = cva('flex h-10 items-center justify-center text-sm font-medium', {
+  variants: {
+    color: {
+      brand: ['bg-brand-500', 'text-white'],
+      yellow: ['bg-yellow-500', 'text-yellow-900'],
+      purple: ['bg-purple-500', 'text-white'],
+    },
+  },
+})
+
+const buttonVariants = cva('ml-4', {
+  variants: {
+    color: {
+      brand: ['!bg-brand-400/50', 'hover:!bg-brand-400/75', '!text-white'],
+      yellow: ['!bg-yellow-600/50', 'hover:!bg-yellow-600/75', '!text-yellow-900'],
+      purple: ['!bg-purple-400', 'hover:!bg-purple-600', '!text-white'],
+    },
+  },
+})
+
+export interface BannerProps extends VariantProps<typeof bannerVariants> {
   buttonLabel?: string
-  buttonIconRight?: IconAwesomeEnum | IconEnum | string
+  buttonIconRight?: IconName
   onClickButton?: () => void
 }
 
-export enum BannerStyle {
-  WARNING = 'WARNING',
-  PRIMARY = 'PRIMARY',
-}
-
-export function Banner(props: BannerProps) {
-  const { children, bannerStyle = BannerStyle.WARNING } = props
-
-  let classNameStyle: string
-  let classNameButton: string
-
-  switch (bannerStyle) {
-    case BannerStyle.PRIMARY:
-      classNameStyle = `bg-brand-500 text-white`
-      classNameButton = '!bg-brand-400/50 hover:!bg-brand-400/75 !text-white'
-      break
-    case BannerStyle.WARNING:
-    default:
-      classNameStyle = `bg-warning-500 text-warning-900`
-      classNameButton = '!bg-warning-600/50 hover:!bg-warning-600/75 !text-warning-900'
-      break
-  }
-
+export const Banner = forwardRef<HTMLDivElement, PropsWithChildren<BannerProps>>(function Banner(
+  { children, buttonLabel, buttonIconRight, onClickButton, color = 'yellow' },
+  forwardedRef
+) {
   return (
-    <div data-testid="banner" className={`${classNameStyle || ''}`}>
-      <div className="flex gap-4 h-10 items-center justify-center font-medium text-sm">
-        {children}
-        {props.buttonLabel && (
-          <Button
-            style={ButtonStyle.RAISED}
-            size={ButtonSize.TINY}
-            className={classNameButton || ''}
-            iconRight={props.buttonIconRight}
-            onClick={props.onClickButton}
-          >
-            {props.buttonLabel}
-          </Button>
-        )}
-      </div>
+    <div className={bannerVariants({ color })} ref={forwardedRef}>
+      {children}
+      {buttonLabel && (
+        <Button type="button" className={twMerge('gap-1', buttonVariants({ color }))} onClick={onClickButton}>
+          {buttonLabel}
+          {buttonIconRight && <Icon iconName={buttonIconRight} />}
+        </Button>
+      )}
     </div>
   )
-}
+})
 
 export default Banner

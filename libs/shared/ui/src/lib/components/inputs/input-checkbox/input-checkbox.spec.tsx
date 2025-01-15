@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import InputCheckbox, { InputCheckboxProps } from './input-checkbox'
+import { fireEvent, render, screen } from '__tests__/utils/setup-jest'
+import InputCheckbox, { type InputCheckboxProps } from './input-checkbox'
 
 const props: InputCheckboxProps = {
   name: 'test',
@@ -19,7 +19,7 @@ describe('InputCheckbox', () => {
 
     fireEvent.click(input)
 
-    expect(input.checked).toBe(true)
+    expect(input).toBeChecked()
   })
 
   it('should checked when the formValue and value is the same', async () => {
@@ -29,7 +29,7 @@ describe('InputCheckbox', () => {
 
     const input = screen.getByRole('checkbox') as HTMLInputElement
 
-    expect(input.checked).toBe(true)
+    expect(input).toBeChecked()
   })
 
   it('should call the onChange method when the input event is emitted', async () => {

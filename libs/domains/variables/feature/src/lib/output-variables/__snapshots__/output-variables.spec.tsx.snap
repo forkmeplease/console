@@ -1,0 +1,139 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`OutputVariables should match snapshot 1`] = `
+<body>
+  <div>
+    <div
+      class="overflow-hidden rounded border"
+    >
+      <table
+        class="min-w-full divide-y divide-neutral-200 text-neutral-400 w-full text-xs"
+      >
+        <thead>
+          <tr>
+            <th
+              class="h-11 px-4 text-left font-medium"
+              style="width: 50%;"
+            >
+              <button
+                class="flex items-center gap-1 cursor-pointer select-none"
+                type="button"
+              >
+                Job output variables
+                <span
+                  class=""
+                  data-state="closed"
+                >
+                  <i
+                    aria-hidden="true"
+                    class="fa-solid fa-circle-info text-neutral-350"
+                  />
+                </span>
+              </button>
+            </th>
+            <th
+              class="h-11 px-4 text-left font-medium"
+              style="width: 50%;"
+            >
+              Value
+            </th>
+          </tr>
+        </thead>
+        <tbody
+          class="divide-y divide-neutral-200"
+        >
+          <tr
+            class="h-12"
+          >
+            <td
+              class="h-14 px-4 py-0"
+              style="width: 50%;"
+            >
+              <div
+                class="flex items-center gap-1"
+              >
+                <span
+                  class="text-sm text-neutral-350"
+                >
+                  DB_PASSWORD
+                </span>
+                 
+              </div>
+            </td>
+            <td
+              class="h-14 px-4 py-0"
+              style="width: 50%;"
+            >
+              <span
+                class="flex items-center gap-2 text-sm text-neutral-300"
+              >
+                <span
+                  class=""
+                  data-state="closed"
+                >
+                  <i
+                    aria-hidden="true"
+                    class="fa-regular fa-lock-keyhole block w-4"
+                  />
+                </span>
+                <span
+                  class="pt-1.5 text-xl font-medium tracking-widest"
+                  data-testid="hide_value_secret"
+                >
+                  *************
+                </span>
+              </span>
+            </td>
+          </tr>
+          <tr
+            class="h-12"
+          >
+            <td
+              class="h-14 px-4 py-0"
+              style="width: 50%;"
+            >
+              <div
+                class="flex items-center gap-1"
+              >
+                <span
+                  class="text-sm text-neutral-350"
+                >
+                  DB_USERNAME
+                </span>
+                 
+              </div>
+            </td>
+            <td
+              class="h-14 px-4 py-0"
+              style="width: 50%;"
+            >
+              <span
+                class="flex items-center gap-2 text-sm"
+              >
+                <button
+                  class="w-4 text-brand-500"
+                  data-state="closed"
+                  data-testid="toggle-button"
+                  type="button"
+                >
+                  <i
+                    aria-hidden="true"
+                    class="fa-regular fa-eye "
+                  />
+                </button>
+                <span
+                  class="pt-1.5 text-xl font-medium tracking-widest text-neutral-350"
+                  data-state="closed"
+                  data-testid="hide_value"
+                >
+                  *************
+                </span>
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+`;

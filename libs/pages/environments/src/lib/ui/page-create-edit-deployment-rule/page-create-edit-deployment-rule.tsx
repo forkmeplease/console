@@ -1,24 +1,22 @@
-import { Cluster } from 'qovery-typescript-axios'
+import { type Cluster } from 'qovery-typescript-axios'
 import { useEffect, useState } from 'react'
-import { Control, Controller, FieldValues } from 'react-hook-form'
-import { useNavigate, useParams } from 'react-router-dom'
-import { Value } from '@qovery/shared/interfaces'
-import { ENVIRONMENTS_DEPLOYMENT_RULES_URL, ENVIRONMENTS_URL } from '@qovery/shared/router'
+import { type Control, Controller, type FieldValues } from 'react-hook-form'
+import { useParams } from 'react-router-dom'
+import { environmentModeValues, timezoneValues, weekdaysValues } from '@qovery/shared/enums'
+import { type Value } from '@qovery/shared/interfaces'
+import { ENVIRONMENTS_DEPLOYMENT_RULES_URL, ENVIRONMENTS_URL } from '@qovery/shared/routes'
 import {
-  BaseLink,
   BlockContent,
   Button,
-  ButtonSize,
-  ButtonStyle,
-  HelpSection,
+  Heading,
   Icon,
   InputSelect,
   InputText,
   InputTextArea,
   InputToggle,
+  Link,
+  Section,
 } from '@qovery/shared/ui'
-import { environmentModeValues, timezoneValues, weekdaysValues } from '@qovery/shared/utils'
-import HelpSidebar from '../help-sidebar/help-sidebar'
 
 export interface PageCreateEditDeploymentRuleProps {
   title: string
@@ -30,23 +28,13 @@ export interface PageCreateEditDeploymentRuleProps {
 }
 
 export function PageCreateEditDeploymentRule(props: PageCreateEditDeploymentRuleProps) {
-  const { title, control, onSubmit, clusters, btnLabel = 'Create Rule', defaultAutoStop = false } = props
+  const { title, control, onSubmit, clusters, btnLabel = 'Create rule', defaultAutoStop = false } = props
   const { organizationId, projectId } = useParams()
   const [autoStop, setAutoStop] = useState(defaultAutoStop)
 
   useEffect(() => {
     setAutoStop(defaultAutoStop)
   }, [defaultAutoStop])
-
-  const listHelpfulLinks: BaseLink[] = [
-    {
-      link: 'https://hub.qovery.com/docs/using-qovery/configuration/deployment-rule/',
-      linkLabel: 'How to configure my deployment rule',
-      external: true,
-    },
-  ]
-
-  const navigate = useNavigate()
 
   const clustersList: Value[] = clusters
     ? clusters?.map((cluster) => {
@@ -59,27 +47,25 @@ export function PageCreateEditDeploymentRule(props: PageCreateEditDeploymentRule
     : []
 
   return (
-    <div className="mt-2 bg-white rounded">
+    <div className="mt-2 rounded bg-white">
       <div className="flex">
         <div className="flex-grow overflow-y-auto">
-          <div className="py-7 px-10">
+          <Section className="px-10 py-7">
             <div className="max-w-[620px]">
-              <Button
-                size={ButtonSize.TINY}
-                style={ButtonStyle.FLAT}
-                onClick={() =>
-                  navigate(ENVIRONMENTS_URL(organizationId, projectId) + ENVIRONMENTS_DEPLOYMENT_RULES_URL)
-                }
-                className="!px-0 mb-1"
+              <Link
+                color="brand"
+                size="xs"
+                to={ENVIRONMENTS_URL(organizationId, projectId) + ENVIRONMENTS_DEPLOYMENT_RULES_URL}
+                className="mb-2"
               >
                 <Icon name="icon-solid-arrow-left" className="mr-1 text-xs" />
-                Back
-              </Button>
+                Back{' '}
+              </Link>
 
-              <h1 className="font-bold text-xl text-text-700 mb-2">{title}</h1>
+              <Heading className="mb-2">{title}</Heading>
 
               <div className="mb-10">
-                <p className="text-text-500 text-xs leading-5">
+                <p className="text-xs leading-5 text-neutral-400">
                   Declaring deployment rules at the project level allows you to apply defaults rule to all newly created
                   environments.
                 </p>
@@ -131,7 +117,7 @@ export function PageCreateEditDeploymentRule(props: PageCreateEditDeploymentRule
                     )}
                   />
 
-                  <p className="text-xs text-text-400">
+                  <p className="text-xs text-neutral-350">
                     Use wildcards to specify just part of the name of the target environment (ex: [PR] Dev-*).
                   </p>
                 </BlockContent>
@@ -167,36 +153,6 @@ export function PageCreateEditDeploymentRule(props: PageCreateEditDeploymentRule
                       />
                     )}
                   />
-                  <div className="flex items-center gap-3 mb-7">
-                    <Controller
-                      name="auto_deploy"
-                      control={control}
-                      render={({ field }) => (
-                        <InputToggle
-                          value={field.value}
-                          onChange={field.onChange}
-                          title="Auto-deploy"
-                          description="Your applications will be redeployed each time a commit is done on the selected branch."
-                          small
-                        />
-                      )}
-                    />
-                  </div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <Controller
-                      name="auto_delete"
-                      control={control}
-                      render={({ field }) => (
-                        <InputToggle
-                          value={field.value}
-                          onChange={field.onChange}
-                          title="Auto-delete"
-                          description="Your environment will be automatically deleted if the associated PR/MR is closed."
-                          small
-                        />
-                      )}
-                    />
-                  </div>
                 </BlockContent>
 
                 <BlockContent title="Setup to apply - Start & stop">
@@ -288,18 +244,14 @@ export function PageCreateEditDeploymentRule(props: PageCreateEditDeploymentRule
                   </div>
                 </BlockContent>
                 <div className="flex justify-end">
-                  <Button className="mb-14" size={ButtonSize.LARGE} style={ButtonStyle.BASIC} type="submit">
+                  <Button className="mb-14" size="lg" type="submit">
                     {btnLabel}
                   </Button>
                 </div>
               </form>
             </div>
-          </div>
-          <div className="bg-white rounded-b w-full">
-            <HelpSection description="Need help? You may find these links useful" links={listHelpfulLinks} />
-          </div>
+          </Section>
         </div>
-        <HelpSidebar />
       </div>
     </div>
   )

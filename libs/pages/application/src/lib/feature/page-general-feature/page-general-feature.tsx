@@ -1,42 +1,40 @@
-import { useSelector } from 'react-redux'
+import { memo } from 'react'
 import { useParams } from 'react-router-dom'
-import { applicationsLoadingStatus, getApplicationsState } from '@qovery/domains/application'
-import { ApplicationEntity, LoadingStatus } from '@qovery/shared/interfaces'
-import { BaseLink } from '@qovery/shared/ui'
-import { RootState } from '@qovery/store'
+import { useEnvironment } from '@qovery/domains/environments/feature'
+import { useService } from '@qovery/domains/services/feature'
+import { MetricsWebSocketListener } from '@qovery/shared/util-web-sockets'
 import PageGeneral from '../../ui/page-general/page-general'
 
+// XXX: Prevent web-socket invalidations when re-rendering
+const WebSocketListenerMemo = memo(MetricsWebSocketListener)
+
 export function PageGeneralFeature() {
-  const { applicationId = '' } = useParams()
-  const application = useSelector<RootState, ApplicationEntity | undefined>(
-    (state) => getApplicationsState(state).entities[applicationId]
-  )
-  const listHelpfulLinks: BaseLink[] = [
-    {
-      link: 'https://hub.qovery.com/docs/using-qovery/configuration/application',
-      linkLabel: 'How to manage my application',
-      external: true,
-    },
-  ]
-  const loadingStatus = useSelector<RootState, LoadingStatus>((state) => applicationsLoadingStatus(state))
+  const { applicationId = '', organizationId = '', projectId = '', environmentId = '' } = useParams()
+  const { data: service } = useService({ environmentId, serviceId: applicationId })
 
-  const computeStability = (): number => {
-    let c = 0
-
-    application?.running_status?.pods.forEach((pod) => {
-      c += pod.restart_count
-    })
-
-    return c
-  }
+  const { data: environment } = useEnvironment({ environmentId })
 
   return (
-    <PageGeneral
-      application={application}
-      listHelpfulLinks={listHelpfulLinks}
-      loadingStatus={loadingStatus}
-      serviceStability={computeStability()}
-    />
+    <>
+      {Boolean(applicationId) && Boolean(environmentId) && (
+        <PageGeneral
+          serviceId={applicationId}
+          environmentId={environmentId}
+          isCronJob={service?.serviceType === 'JOB' && service.job_type === 'CRON'}
+          isLifecycleJob={service?.serviceType === 'JOB' && service.job_type === 'LIFECYCLE'}
+        />
+      )}
+      {service && environment && (
+        <WebSocketListenerMemo
+          organizationId={organizationId}
+          clusterId={environment.cluster_id}
+          projectId={projectId}
+          environmentId={environmentId}
+          serviceId={applicationId}
+          serviceType={service.serviceType}
+        />
+      )}
+    </>
   )
 }
 

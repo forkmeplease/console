@@ -1,0 +1,293 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`SelectCommitModal should match snapshot 1`] = `
+<div>
+  <div
+    class="flex flex-col gap-6 p-5"
+  >
+    <div
+      class="flex flex-col gap-2 text-sm"
+    >
+      <h2
+        class="h4 max-w-sm truncate text-neutral-400 dark:text-neutral-50"
+      >
+        Deploy other version
+      </h2>
+      <p
+        class="text-neutral-350 dark:text-neutral-50"
+      >
+        Type a version to deploy
+      </p>
+      For X service
+    </div>
+    <div
+      class="relative w-full"
+    >
+      <span
+        class="icon-solid-magnifying-glass shrink-0 absolute left-3 top-1/2 block -translate-y-1/2 text-base leading-none text-neutral-400 dark:text-white"
+        role="img"
+      />
+      <input
+        class="w-full rounded border border-neutral-250 pl-10 pr-6 text-neutral-400 placeholder:text-neutral-350 focus:border-brand-400 focus:outline-none focus:transition-[border-color] dark:border-neutral-350 dark:bg-transparent dark:text-white dark:placeholder:text-neutral-250 h-9 text-xs"
+        data-testid="input-search"
+        name="search"
+        placeholder="Search by commit message or commit id"
+        type="text"
+      />
+    </div>
+    <div
+      aria-required="false"
+      dir="ltr"
+      role="radiogroup"
+      style="outline: none;"
+      tabindex="0"
+    >
+      <div
+        class="relative overflow-y-auto pr-[1px] max-h-[440px]"
+        data-testid="scroll-shadow-wrapper"
+      >
+        <div
+          class="pointer-events-none sticky top-0 -mb-4 h-4 w-full bg-scroll-shadow-up transition-opacity duration-300 opacity-0"
+          data-testid="scroll-shadow-top"
+        />
+        <div
+          class="pl-2"
+        >
+          <div
+            class="relative pl-5 text-sm font-medium text-neutral-350"
+          >
+            <i
+              aria-hidden="true"
+              class="fa-solid fa-code-commit absolute left-0 top-1 -translate-x-1/2 text-neutral-300 dark:text-neutral-350"
+            />
+            Commit
+             on 
+            Jan 01, 0123
+          </div>
+          <div
+            class="border-l border-neutral-250 pb-5 pl-5 pt-3 dark:border-neutral-350"
+          >
+            <label
+              class="-mt-px flex w-full flex-row gap-3 border border-neutral-250 p-3 first:rounded-t-md last:rounded-b-md dark:border-neutral-350 cursor-pointer"
+            >
+              <div>
+                <button
+                  aria-checked="false"
+                  class="group transition bg-neutral-100 dark:bg-neutral-500 border border-neutral-300 w-[20px] h-[20px] rounded-full hover:border-2 hover:border-brand-500 data-[state=checked]:bg-brand-500 data-[state=checked]:border-2 data-[state=checked]:border-brand-500 disabled:hover:border disabled:bg-neutral-150 disabled:border-neutral-250 disabled:data-[state=checked]:hover:border-2 disabled:data-[state=checked]:border-brand-300 disabled:data-[state=checked]:bg-brand-300"
+                  data-radix-collection-item=""
+                  data-state="unchecked"
+                  role="radio"
+                  tabindex="-1"
+                  type="button"
+                  value="123"
+                />
+              </div>
+              <div
+                class="flex min-w-0 flex-1 flex-col items-start gap-1 text-sm"
+              >
+                <a
+                  class="max-w-full truncate font-medium text-neutral-400 hover:text-brand-500 dark:text-neutral-50"
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  lorem
+                </a>
+                <span
+                  class="text-neutral-350 dark:text-neutral-50"
+                >
+                  committed 
+                  1903 years
+                   ago
+                </span>
+              </div>
+              <div
+                class="flex flex-col items-end gap-2"
+              >
+                <div
+                  class="flex items-center gap-1.5"
+                >
+                  <div
+                    class="relative block rounded-full border border-neutral-200  "
+                    data-state="closed"
+                    data-testid="avatar"
+                    style="width: 28px; height: 28px;"
+                  >
+                    <div
+                      class="flex h-full w-full items-center justify-center rounded-full bg-neutral-200 text-center"
+                    >
+                      <span
+                        class="relative text-xs font-medium text-neutral-400"
+                      >
+                        F
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    class="block w-fit cursor-pointer"
+                    data-state="closed"
+                    data-testid="tag-commit"
+                  >
+                    <span
+                      class="inline-flex items-center rounded text-xs font-bold h-7 px-2   flex items-center justify-center border font-medium  w-[90px] border-neutral-250 text-neutral-350 hover:bg-neutral-200 dark:text-neutral-50 dark:hover:bg-neutral-400"
+                      data-testid="tag"
+                    >
+                      <div
+                        class="mr-1 w-4"
+                      >
+                        <i
+                          aria-hidden="true"
+                          class="fa-regular fa-code-commit mr-1"
+                        />
+                      </div>
+                      123
+                    </span>
+                  </div>
+                </div>
+                <span
+                  class="text-xs text-brand-500"
+                >
+                   
+                </span>
+              </div>
+            </label>
+          </div>
+        </div>
+        <div
+          class="pl-2"
+        >
+          <div
+            class="relative pl-5 text-sm font-medium text-neutral-350"
+          >
+            <i
+              aria-hidden="true"
+              class="fa-solid fa-code-commit absolute left-0 top-1 -translate-x-1/2 text-neutral-300 dark:text-neutral-350"
+            />
+            Commit
+             on 
+            Jan 01, 0456
+          </div>
+          <div
+            class="border-l border-neutral-250 pb-5 pl-5 pt-3 dark:border-neutral-350"
+          >
+            <label
+              class="-mt-px flex w-full flex-row gap-3 border border-neutral-250 p-3 first:rounded-t-md last:rounded-b-md dark:border-neutral-350 bg-neutral-100 dark:bg-neutral-500"
+            >
+              <div>
+                <button
+                  aria-checked="true"
+                  class="group transition bg-neutral-100 dark:bg-neutral-500 border border-neutral-300 w-[20px] h-[20px] rounded-full hover:border-2 hover:border-brand-500 data-[state=checked]:bg-brand-500 data-[state=checked]:border-2 data-[state=checked]:border-brand-500 disabled:hover:border disabled:bg-neutral-150 disabled:border-neutral-250 disabled:data-[state=checked]:hover:border-2 disabled:data-[state=checked]:border-brand-300 disabled:data-[state=checked]:bg-brand-300"
+                  data-disabled=""
+                  data-radix-collection-item=""
+                  data-state="checked"
+                  disabled=""
+                  role="radio"
+                  tabindex="-1"
+                  type="button"
+                  value="456"
+                >
+                  <span
+                    class="flex items-center justify-center w-full h-full relative"
+                    data-disabled=""
+                    data-state="checked"
+                  >
+                    <i
+                      aria-hidden="true"
+                      class="fa-solid fa-check text-xs text-white"
+                    />
+                  </span>
+                </button>
+              </div>
+              <div
+                class="flex min-w-0 flex-1 flex-col items-start gap-1 text-sm"
+              >
+                <a
+                  class="max-w-full truncate font-medium hover:text-brand-500 dark:text-neutral-50 text-neutral-350"
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  ipsum
+                </a>
+                <span
+                  class="text-neutral-350 dark:text-neutral-50"
+                >
+                  committed 
+                  1570 years
+                   ago
+                </span>
+              </div>
+              <div
+                class="flex flex-col items-end gap-2"
+              >
+                <div
+                  class="flex items-center gap-1.5"
+                >
+                  <div
+                    class="relative block rounded-full border border-neutral-200  "
+                    data-state="closed"
+                    data-testid="avatar"
+                    style="width: 28px; height: 28px;"
+                  >
+                    <div
+                      class="flex h-full w-full items-center justify-center rounded-full bg-neutral-200 text-center"
+                    >
+                      <span
+                        class="relative text-xs font-medium text-neutral-400"
+                      >
+                        F
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    class="block w-fit cursor-pointer"
+                    data-state="closed"
+                    data-testid="tag-commit"
+                  >
+                    <span
+                      class="inline-flex items-center rounded text-xs font-bold h-7 px-2   flex items-center justify-center border font-medium  w-[90px] border-neutral-250 text-neutral-350 hover:bg-neutral-200 dark:text-neutral-50 dark:hover:bg-neutral-400"
+                      data-testid="tag"
+                    >
+                      <div
+                        class="mr-1 w-4"
+                      >
+                        <i
+                          aria-hidden="true"
+                          class="fa-regular fa-code-commit mr-1"
+                        />
+                      </div>
+                      456
+                    </span>
+                  </div>
+                </div>
+                <span
+                  class="text-xs text-neutral-400 dark:text-neutral-50"
+                >
+                  Current version
+                </span>
+              </div>
+            </label>
+          </div>
+        </div>
+        <div
+          class="pointer-events-none sticky bottom-0 -mt-4 h-4 w-full rotate-180 bg-scroll-shadow-bottom transition-opacity duration-300 opacity-0"
+          data-testid="scroll-shadow-bottom"
+        />
+      </div>
+    </div>
+    <div
+      class="flex justify-end gap-3"
+    >
+      <button
+        class="inline-flex items-center shrink-0 font-medium transition focus-visible:[&:not(:active)]:outline-2 outline-0 shadow-sm disabled:shadow-none active:shadow-none bg-white dark:bg-neutral-600 outline-brand-500 text-sm h-11 px-5 rounded border border-neutral-250 dark:border-neutral-400 text-neutral-400 dark:text-white hover:[&:not(:active)]:border-neutral-300 dark:hover:[&:not(:active):not(:disabled)]:border-neutral-350 active:bg-neutral-150 disabled:text-neutral-300 disabled:bg-neutral-100 disabled:border-none"
+      >
+        Cancel
+      </button>
+      <button
+        class="inline-flex items-center shrink-0 font-medium transition focus-visible:[&:not(:active)]:outline-2 outline-0 shadow-sm disabled:shadow-none active:shadow-none outline-neutral-500 text-sm h-11 px-5 rounded bg-brand-500 active:bg-brand-600 hover:bg-brand-400 text-white disabled:text-brand-300 disabled:bg-brand-100"
+        disabled=""
+      >
+        Deploy
+      </button>
+    </div>
+  </div>
+</div>
+`;

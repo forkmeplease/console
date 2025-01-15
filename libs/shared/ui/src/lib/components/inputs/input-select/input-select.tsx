@@ -1,47 +1,83 @@
-import { useEffect, useState } from 'react'
+import { type ReactNode, useEffect, useId, useState } from 'react'
 import Select, {
-  GroupBase,
-  MultiValue,
-  MultiValueProps,
-  NoticeProps,
-  OptionProps,
-  SingleValue,
-  SingleValueProps,
+  type GroupBase,
+  type MenuListProps,
+  type MenuPlacement,
+  type MultiValue,
+  type MultiValueProps,
+  type NoticeProps,
+  type OptionProps,
+  type Props as SelectProps,
+  type SingleValue,
+  type SingleValueProps,
   components,
 } from 'react-select'
-import { Value } from '@qovery/shared/interfaces'
-import Icon from '../../icon/icon'
-import { IconAwesomeEnum } from '../../icon/icon-awesome.enum'
+import CreatableSelect from 'react-select/creatable'
+import { match } from 'ts-pattern'
+import { type Value } from '@qovery/shared/interfaces'
+import { Icon } from '../../icon/icon'
+import { LoaderSpinner } from '../../loader-spinner/loader-spinner'
 
 export interface InputSelectProps {
   className?: string
-  label: string
+  label?: string
   value?: string | string[]
   options: Value[]
   disabled?: boolean
+  hint?: ReactNode
   error?: string
   onChange?: (e: string | string[]) => void
+  onInputChange?: (e: string) => void
   dataTestId?: string
   isMulti?: true
   portal?: boolean
   isSearchable?: boolean
   isClearable?: boolean
+  menuListButton?: {
+    label: string
+    onClick: () => void
+    icon?: ReactNode
+    title?: string
+  }
+  isFilter?: boolean
+  autoFocus?: boolean
+  placeholder?: string
+  menuPlacement?: MenuPlacement
+  filterOption?: 'fuzzy' | 'startsWith'
+  isCreatable?: boolean
+  isLoading?: boolean
+  minInputLength?: number
+  formatCreateLabel?: ((inputValue: string) => ReactNode) | undefined
+  isValidNewOption?: (inputValue: string) => boolean
 }
 
-export function InputSelect(props: InputSelectProps) {
-  const {
-    className = '',
-    label,
-    value,
-    options,
-    disabled,
-    error = false,
-    onChange,
-    dataTestId,
-    isMulti = undefined,
-    isSearchable = false,
-    isClearable = false,
-  } = props
+export function InputSelect({
+  className = '',
+  label,
+  value,
+  options,
+  disabled,
+  hint,
+  error,
+  portal,
+  onChange,
+  onInputChange,
+  dataTestId,
+  isMulti = undefined,
+  isSearchable = false,
+  isClearable = false,
+  isFilter = false,
+  isLoading = false,
+  autoFocus = false,
+  placeholder,
+  menuListButton,
+  menuPlacement = 'auto',
+  filterOption = 'fuzzy',
+  isCreatable = false,
+  minInputLength = 0,
+  formatCreateLabel,
+  isValidNewOption,
+}: InputSelectProps) {
   const [focused, setFocused] = useState(false)
   const [selectedItems, setSelectedItems] = useState<MultiValue<Value> | SingleValue<Value>>([])
   const [selectedValue, setSelectedValue] = useState<string | string[]>([])
@@ -89,58 +125,111 @@ export function InputSelect(props: InputSelectProps) {
     }
   }, [value, isMulti, options])
 
-  const Option = (props: OptionProps<Value, true, GroupBase<Value>>) => (
-    <components.Option {...props}>
-      {isMulti ? (
-        <span className="input-select__checkbox">
-          {props.isSelected && <Icon name={IconAwesomeEnum.CHECK} className="text-xs" />}
-        </span>
-      ) : props.isSelected ? (
-        <Icon name={IconAwesomeEnum.CHECK} className="text-success-500" />
-      ) : props.data.icon ? (
-        <div className="w-4 h-full flex items-center justify-center">{props.data.icon}</div>
-      ) : (
-        <Icon name={IconAwesomeEnum.CHECK} className="opacity-0" />
-      )}
-
-      <label className="ml-2">{props.label}</label>
-    </components.Option>
+  const MenuList = (props: MenuListProps<Value, true, GroupBase<Value>>) => (
+    <div role="listbox">
+      <components.MenuList {...props}>
+        {menuListButton && (
+          <div className={`flex h-9 items-start p-1 ${menuListButton.title ? 'justify-between' : 'justify-end'}`}>
+            {menuListButton.title && (
+              <span className="text-sm font-medium text-neutral-350">{menuListButton.title}</span>
+            )}
+            <button
+              type="button"
+              data-testid="input-menu-list-button"
+              className="inline-flex items-center gap-1 text-sm font-medium text-brand-500 transition duration-100 hover:text-brand-600"
+              onClick={menuListButton.onClick}
+            >
+              {menuListButton.label}
+              <Icon iconName="circle-plus" iconStyle="regular" className="text-xs leading-5" />
+            </button>
+          </div>
+        )}
+        {props.children}
+      </components.MenuList>
+    </div>
   )
 
+  const Option = (props: OptionProps<Value, true, GroupBase<Value>>) => {
+    const id = useId()
+    return (
+      <div role="option" aria-labelledby={id}>
+        <components.Option {...props}>
+          {isMulti ? (
+            <span className="input-select__checkbox">
+              {props.isSelected && <Icon iconName="check" className="text-xs" />}
+            </span>
+          ) : props.isSelected ? (
+            <Icon iconName="check" className="text-green-500" />
+          ) : props.data.icon ? (
+            <div className="flex h-full w-4 items-center justify-center">{props.data.icon}</div>
+          ) : (
+            <Icon iconName="check" className="opacity-0" />
+          )}
+          <label id={id} className="ml-2 truncate">
+            {props.label}
+          </label>
+        </components.Option>
+      </div>
+    )
+  }
+
   const MultiValue = (props: MultiValueProps<Value, true, GroupBase<Value>>) => (
-    <span className="text-sm text-text-600 mr-1">
+    <span className="mr-1 flex text-sm text-neutral-400">
       {props.data.label}
       {props.index + 1 !== (selectedItems as MultiValue<Value>).length && ', '}
     </span>
   )
 
   const SingleValue = (props: SingleValueProps<Value>) => (
-    <span
-      className={`text-sm text-text-600 mr-1 ${props.data.icon && !props.isMulti ? selectedWithIconClassName : ''}`}
-    >
-      {props.data.label}
-    </span>
+    <span className="mr-1 text-sm text-neutral-400">{props.data.label}</span>
   )
 
   const NoOptionsMessage = (props: NoticeProps<Value>) => {
+    const value = props.selectProps.inputValue
+
+    if (value.length <= minInputLength) {
+      return (
+        <components.NoOptionsMessage {...props}>
+          <div className="px-3 py-1 text-center">
+            <p className="text-xs font-medium text-neutral-350">
+              Search input must be at least {minInputLength} characters.
+            </p>
+          </div>{' '}
+        </components.NoOptionsMessage>
+      )
+    }
+
     return (
       <components.NoOptionsMessage {...props}>
-        <div className="text-center px-3 py-6">
-          <Icon name={IconAwesomeEnum.WAVE_PULSE} className="text-text-400" />
-          <p className="text-text-400 font-medium text-xs mt-1">No result for this search</p>
-        </div>{' '}
+        <div className="px-3 py-6 text-center">
+          <Icon iconName="wave-pulse" className="text-neutral-350" />
+          <p className="mt-1 text-xs font-medium text-neutral-350">No result for this search</p>
+        </div>
       </components.NoOptionsMessage>
     )
   }
+
+  const LoadingMessage = (props: NoticeProps<Value>) => {
+    return (
+      <components.LoadingMessage {...props}>
+        <div className="flex justify-center">
+          <LoaderSpinner className="w-4" />
+        </div>
+      </components.LoadingMessage>
+    )
+  }
+
+  const currentIcon = options.find((option) => option.value === selectedValue)
+  const hasIcon = !isMulti && currentIcon?.icon
 
   const inputActions =
     hasFocus && !disabled
       ? '!border-brand-500 !shadow-[0_2px_2px_rgba(0, 0, 0, 0.05)] input--focused'
       : disabled
-      ? '!bg-element-light-lighter-200 !border-element-light-lighter-500 !pointer-events-none'
-      : hasError
-      ? 'input--error'
-      : ''
+        ? '!bg-neutral-100 !border-neutral-250 !pointer-events-none'
+        : hasError
+          ? 'input--error'
+          : ''
 
   const [hasLabelUp, setHasLabelUp] = useState(value?.length !== 0 ? 'input--label-up' : '')
 
@@ -148,67 +237,111 @@ export function InputSelect(props: InputSelectProps) {
     setHasLabelUp(hasFocus || selectedValue.length !== 0 ? 'input--label-up' : '')
   }, [hasFocus, selectedValue, setHasLabelUp])
 
-  const currentIcon = options.find((option) => option.value === selectedValue)
-  const hasIcon = !props.isMulti && currentIcon?.icon
+  const selectProps: SelectProps<Value, true, GroupBase<Value>> = {
+    autoFocus,
+    options,
+    isMulti,
+    components: {
+      Option,
+      MultiValue,
+      SingleValue,
+      NoOptionsMessage,
+      MenuList,
+      LoadingMessage,
+    },
+    name: label,
+    isLoading,
+    inputId: label,
+    menuPlacement,
+    closeMenuOnSelect: !isMulti,
+    onChange: handleChange,
+    onInputChange,
+    classNamePrefix: 'input-select',
+    hideSelectedOptions: false,
+    isSearchable,
+    placeholder,
+    isClearable,
+    isDisabled: disabled,
+    value: selectedItems,
+    menuPortalTarget: portal ? document.body : undefined,
+    onFocus: () => setFocused(true),
+    onBlur: () => setFocused(false),
+    styles: {
+      menuPortal: (base) => ({
+        ...base,
+        pointerEvents: 'auto',
+        marginTop: `-${document.body.style.marginTop ? document.body.style.marginTop : 0}`,
+      }),
+    },
+    defaultMenuIsOpen: isFilter ? true : undefined,
+    filterOption: match(filterOption)
+      .with('fuzzy', () => undefined)
+      .with(
+        'startsWith',
+        () =>
+          ({ value }: Value, inputValue: string) =>
+            value?.startsWith(inputValue) ?? false
+      )
+      .exhaustive(),
+  }
+
+  const SelectComponent = isCreatable ? CreatableSelect : Select
 
   return (
     <div className={className}>
       <div
-        className={`input input--select ${inputActions} ${
-          disabled ? '!bg-element-light-lighter-200 !border-element-light-lighter-500' : ''
-        }`}
+        className={`input input--select ${hasIcon ? 'input--has-icon' : ''} ${inputActions} ${
+          disabled ? '!border-neutral-250 !bg-neutral-100' : ''
+        } ${isFilter ? 'input--filter' : ''}`}
         data-testid={dataTestId || 'select'}
       >
         {hasIcon && (
           <div
             data-testid="selected-icon"
-            className="w-12 h-full absolute left-0 top-0 flex items-center justify-center"
+            className="absolute left-0 top-0 flex h-full w-12 items-center justify-center"
           >
             {currentIcon.icon}
           </div>
         )}
-        <label
-          htmlFor={label}
-          className={
-            hasIcon
-              ? `!text-xs !translate-y-0 ${selectedWithIconClassName}`
-              : `${hasLabelUp ? '!text-xs !translate-y-0' : 'text-sm translate-y-2 top-1.5'}`
-          }
-        >
-          {label}
-        </label>
-        <Select
-          options={options}
-          isMulti={isMulti}
+        {label && (
+          <label
+            htmlFor={label}
+            className={
+              hasIcon
+                ? `!translate-y-0 !text-xs ${selectedWithIconClassName}`
+                : `${hasLabelUp ? '!translate-y-0 !text-xs' : 'top-1.5 translate-y-2 text-sm'}`
+            }
+          >
+            {label}
+          </label>
+        )}
+        <SelectComponent
           data-testid="select-react-select"
-          components={{
-            Option,
-            MultiValue,
-            SingleValue,
-            NoOptionsMessage,
-          }}
-          name={label}
-          inputId={label}
-          menuPlacement={'auto'}
-          closeMenuOnSelect={!isMulti}
-          onChange={handleChange}
-          classNamePrefix="input-select"
-          hideSelectedOptions={false}
-          isSearchable={isSearchable}
-          isClearable={isClearable}
-          isDisabled={disabled}
-          value={selectedItems}
-          menuPortalTarget={props.portal ? document.body : undefined}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          styles={{ menuPortal: (base) => ({ ...base, zIndex: 50, pointerEvents: 'auto' }) }}
+          {...selectProps}
+          isValidNewOption={isValidNewOption}
+          formatCreateLabel={formatCreateLabel ?? ((value) => `Select "${value}"`)}
         />
         <input type="hidden" name={label} value={selectedValue} />
-        <div className="absolute top-1/2 -translate-y-1/2 right-4 pointer-events-none">
-          <Icon name="icon-solid-angle-down" className="text-sm text-text-500" />
-        </div>
+        {!isFilter && (
+          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2">
+            <Icon name="icon-solid-angle-down" className="text-sm text-neutral-400" />
+          </div>
+        )}
+        {currentIcon?.onClickEditable && (
+          <div
+            data-testid="selected-edit-icon"
+            className="absolute right-8 top-[10px] flex h-8 w-8 cursor-pointer items-center justify-center text-sm text-neutral-400 hover:text-brand-500"
+            onClick={(event) => {
+              event.stopPropagation()
+              currentIcon.onClickEditable && currentIcon.onClickEditable()
+            }}
+          >
+            <Icon iconName="pen" />
+          </div>
+        )}
       </div>
-      {error && <p className="px-4 mt-1 font-medium text-xs text-error-500">{error}</p>}
+      {hint && <p className="mt-0.5 px-3 text-xs font-normal text-neutral-350">{hint}</p>}
+      {error && <p className="mt-0.5 px-3 text-xs font-medium text-red-500">{error}</p>}
     </div>
   )
 }

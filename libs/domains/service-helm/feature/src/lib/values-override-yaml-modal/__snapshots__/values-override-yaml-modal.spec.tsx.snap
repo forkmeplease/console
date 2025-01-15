@@ -1,0 +1,138 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ValuesOverrideYamlModal should match snapshot 1`] = `
+<body>
+  <script
+    src="https://cdn.jsdelivr.net/npm/monaco-editor@0.43.0/min/vs/loader.js"
+  />
+  <div>
+    <div
+      class="p-5"
+    >
+      <h2
+        class="h4 max-w-sm truncate text-neutral-400 dark:text-neutral-50"
+      >
+        Raw YAML
+      </h2>
+      <p
+        class="mt-2 text-sm text-neutral-350 dark:text-neutral-50"
+      >
+        Define here the values override for your chart. You can use Qovery any environment variable via the macro qovery.env.&lt;ENV_VAR_NAME&gt;
+      </p>
+      <form
+        class="mt-6"
+      >
+        <div
+          class="flex h-full"
+        >
+          <div
+            class="rounded border border-neutral-250 bg-neutral-100 w-full mb-0 rounded-r-none border-r-0"
+            data-testid="block-content"
+          >
+            <div
+              class="flex h-9 items-center justify-between border-b border-neutral-250 px-4"
+            >
+              <h2
+                class="text-ssm font-medium text-neutral-400"
+              >
+                Override
+              </h2>
+            </div>
+            <div
+              class="p-0"
+            >
+              <div
+                class="relative"
+              >
+                <section
+                  style="display: flex; position: relative; text-align: initial; width: 100%; height: calc(100vh - 278px);"
+                >
+                  <div
+                    style="display: flex; height: 100%; width: 100%; justify-content: center; align-items: center;"
+                  >
+                    <div
+                      class="aspect-square border-2  rounded-full border-solid border-r-neutral-500 animate-spin w-4 "
+                      data-testid="spinner"
+                    />
+                  </div>
+                  <div
+                    style="width: 100%; display: none;"
+                  />
+                </section>
+                <button
+                  aria-controls="radix-:ri:"
+                  aria-expanded="false"
+                  aria-haspopup="dialog"
+                  class="inline-flex items-center shrink-0 font-medium transition focus-visible:[&:not(:active)]:outline-2 outline-0 shadow-sm disabled:shadow-none active:shadow-none outline-brand-500 text-sm h-9 rounded border border-neutral-250 dark:border-neutral-400 text-neutral-400 dark:text-white hover:[&:not(:active)]:border-neutral-300 dark:hover:[&:not(:active):not(:disabled)]:border-neutral-350 active:bg-neutral-150 disabled:text-neutral-300 disabled:bg-neutral-100 disabled:border-none bg-neutral-100 dark:bg-neutral-500 hover:[&:not(:active):not(:disabled)]:bg-white dark:hover:[&:not(:active):not(:disabled)]:bg-neutral-400 absolute right-4 top-4 px-2.5"
+                  data-state="closed"
+                  type="button"
+                >
+                  <i
+                    aria-hidden="true"
+                    class="fa-solid fa-wand-magic-sparkles text-sm"
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+          <div
+            class="rounded border border-neutral-250 bg-neutral-100 w-full mb-0 rounded-l-none"
+            data-testid="block-content"
+          >
+            <div
+              class="flex h-9 items-center justify-between border-b border-neutral-250 px-4"
+            >
+              <h2
+                class="text-ssm font-medium text-neutral-400"
+              >
+                Default values.yaml
+              </h2>
+              <span
+                class="relative cursor-pointer transition after:absolute after:inset-[-4px] after:block after:content-[''] text-xs hover:text-neutral-400"
+                data-state="closed"
+                data-testid="copy-container"
+              >
+                <span
+                  class="icon-solid-copy shrink-0 "
+                  role="img"
+                />
+              </span>
+            </div>
+            <div
+              class="p-0"
+            >
+              <div
+                class="flex justify-center px-5 py-14"
+              >
+                <div
+                  class="aspect-square border-2  rounded-full border-solid border-r-neutral-500 animate-spin w-4 "
+                  data-testid="spinner"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="mt-6 flex justify-end gap-3"
+        >
+          <button
+            class="inline-flex items-center shrink-0 font-medium transition focus-visible:[&:not(:active)]:outline-2 outline-0 hover:[&:not(:focus-visible):not(:disabled)]:shadow-sm active:[&:not(:focus-visible)]:shadow-none outline-brand-500 text-sm h-11 px-5 rounded border border-transparent text-neutral-350 hover:[&:not(:active):not(:focus-visible)]:border-neutral-300 hover:[&:not(:disabled)]:text-neutral-400 dark:hover:[&:not(:disabled)]:text-neutral-250 focus-visible:text-neutral-400 active:bg-neutral-150 dark:active:bg-transparent active:text-neutral-400 disabled:text-neutral-300 disabled:bg-neutral-150 disabled:border-none"
+            data-testid="cancel-button"
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            class="inline-flex items-center shrink-0 font-medium transition focus-visible:[&:not(:active)]:outline-2 outline-0 shadow-sm disabled:shadow-none active:shadow-none outline-neutral-500 text-sm h-11 px-5 rounded bg-brand-500 active:bg-brand-600 hover:bg-brand-400 text-white disabled:text-brand-300 disabled:bg-brand-100"
+            data-testid="submit-button"
+            disabled=""
+            type="submit"
+          >
+            Save
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+`;

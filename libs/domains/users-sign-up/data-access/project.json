@@ -1,0 +1,9 @@
+{
+  "name": "domains-service-users-sign-up-data-access",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domains/users-sign-up/data-access/src",
+  "projectType": "library",
+  "tags": ["scope:domain", "type:data-access"],
+  "// targets": "to see all targets run: nx show project domains-service-users-sign-up-data-access --web",
+  "targets": {}
+}

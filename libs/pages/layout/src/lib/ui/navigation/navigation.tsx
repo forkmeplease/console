@@ -1,158 +1,143 @@
-import { Link, matchPath, useLocation, useParams } from 'react-router-dom'
-import { IconEnum } from '@qovery/shared/enums'
-import { INFRA_LOGS_URL, ORGANIZATION_URL, SETTINGS_URL } from '@qovery/shared/router'
+import clsx from 'clsx'
+import { Link as RouterLink, useLocation, useParams } from 'react-router-dom'
 import {
-  Avatar,
-  ButtonIcon,
-  ButtonIconStyle,
-  ButtonSize,
-  Icon,
-  IconAwesomeEnum,
-  Menu,
-  MenuAlign,
-  MenuDirection,
-  Modal,
-  ModalUser,
-} from '@qovery/shared/ui'
+  AUDIT_LOGS_URL,
+  CLUSTERS_URL,
+  CLUSTER_URL,
+  ENVIRONMENTS_GENERAL_URL,
+  ENVIRONMENTS_URL,
+  INFRA_LOGS_URL,
+  ORGANIZATION_AUDIT_LOGS_URL,
+  ORGANIZATION_PROJECT_URL,
+  ORGANIZATION_URL,
+  SETTINGS_URL,
+} from '@qovery/shared/routes'
+import { Icon, Link, Tooltip } from '@qovery/shared/ui'
+import MenuAccountFeature from '../../feature/menu-account-feature/menu-account-feature'
 
 export interface NavigationProps {
-  firstName: string
-  lastName: string
-  darkMode?: boolean
+  defaultOrganizationId: string
+  clusterNotification?: 'error' | 'warning'
 }
 
-export function Navigation(props: NavigationProps) {
-  const { firstName, lastName, darkMode } = props
-  const { organizationId = '', clusterId = '' } = useParams()
+export function Navigation({ defaultOrganizationId, clusterNotification }: NavigationProps) {
+  const { organizationId = defaultOrganizationId, clusterId = '', projectId } = useParams()
   const { pathname } = useLocation()
 
-  const matchLogInfraRoute = matchPath(pathname, INFRA_LOGS_URL(organizationId, clusterId))
-  const matchOrganizationRoute = pathname.includes(`${ORGANIZATION_URL(organizationId)}/project`)
+  const matchLogInfraRoute = pathname.includes(INFRA_LOGS_URL(organizationId, clusterId))
+  const matchOrganizationRoute = pathname.includes(ORGANIZATION_URL(organizationId) + ORGANIZATION_PROJECT_URL)
+  const matchEventsRoute = pathname.includes(ORGANIZATION_URL(organizationId) + ORGANIZATION_AUDIT_LOGS_URL)
   const matchSettingsRoute = pathname.includes(`${SETTINGS_URL(organizationId)}`)
-
-  const infosMenu = [
-    {
-      title: 'Need help?',
-      items: [
-        {
-          name: 'See documentations',
-          link: {
-            url: 'https://hub.qovery.com/',
-            external: true,
-          },
-          contentLeft: <Icon name="icon-solid-book" className="text-sm text-brand-400" />,
-        },
-        {
-          name: 'Community Forum',
-          link: {
-            url: 'https://discuss.qovery.com/',
-            external: true,
-          },
-          contentLeft: <Icon name={IconAwesomeEnum.PEOPLE} className="text-sm text-brand-400" />,
-        },
-        {
-          name: 'Roadmap',
-          link: {
-            url: 'https://roadmap.qovery.com/b/5m13y5v6/feature-ideas',
-            external: true,
-          },
-          contentLeft: <Icon name={IconAwesomeEnum.ROAD} className="text-sm text-brand-400" />,
-        },
-        {
-          name: 'Contact us',
-          link: {
-            url: 'https://discord.qovery.com/',
-            external: true,
-          },
-          contentLeft: <Icon name="icon-solid-envelope" className="text-sm text-brand-400" />,
-        },
-        /*{
-          name: 'Shortcuts',
-          link: {
-            url: 'https://discord.qovery.com/',
-          },
-          contentLeft: <Icon name="icon-solid-keyboard" className="text-sm text-brand-400" />,
-        },*/
-      ],
-    },
-  ]
+  const matchClusterRoute =
+    pathname.includes(CLUSTERS_URL(organizationId)) ||
+    matchLogInfraRoute ||
+    pathname.includes(CLUSTER_URL(organizationId, clusterId))
 
   return (
-    <div className={`w-16 h-screen ${darkMode ? 'bg-element-light-darker-400' : 'bg-white'}`}>
-      <Link
+    <div className="flex h-screen w-16 flex-col bg-white dark:bg-neutral-600">
+      <RouterLink
         to={matchLogInfraRoute ? INFRA_LOGS_URL(organizationId, clusterId) : ORGANIZATION_URL(organizationId)}
-        className={`flex w-16 h-16 items-center justify-center border-b z-10 ${
-          darkMode ? 'border-element-light-darker-100' : 'border-element-light-lighter-400'
-        }`}
+        className="z-10 flex h-16 w-16 items-center justify-center border-b border-neutral-200 dark:border-neutral-500"
       >
         <img className="w-[28px]" src="/assets/logos/logo-icon.svg" alt="Qovery logo" />
-      </Link>
+      </RouterLink>
 
-      <div className="flex flex-col justify-between h-[calc(100%-8rem)] px-2.5 py-5">
-        <div className="flex flex-col gap-3">
-          {matchLogInfraRoute ? (
-            <ButtonIcon
-              icon={IconAwesomeEnum.LAYER_GROUP}
-              style={ButtonIconStyle.ALT}
-              size={ButtonSize.XLARGE}
-              link={`https://console.qovery.com/platform/organization/${organizationId}/projects`}
-              external
-            />
-          ) : (
-            <ButtonIcon
-              className={matchOrganizationRoute ? 'is-active' : ''}
-              icon={IconAwesomeEnum.LAYER_GROUP}
-              style={ButtonIconStyle.ALT}
-              size={ButtonSize.XLARGE}
-              link={ORGANIZATION_URL(organizationId)}
-            />
-          )}
-          {/*
-          <ButtonIcon
-            icon="icon-solid-gauge-high"
-            style={ButtonIconStyle.ALT}
-            size={ButtonSize.XLARGE}
-            active={true}
-          />
-          <ButtonIcon icon="icon-solid-clock-rotate-left" style={ButtonIconStyle.ALT} size={ButtonSize.XLARGE} />
-          */}
+      <div className="flex flex-grow flex-col justify-between px-2.5 py-4">
+        <div className="flex flex-col gap-2">
+          <Tooltip content="Environments" side="right">
+            <div>
+              <Link
+                as="button"
+                color="neutral"
+                variant="plain"
+                className={clsx(
+                  'h-11 w-11 justify-center hover:!border-transparent hover:!bg-neutral-100 hover:!text-brand-500 dark:hover:!bg-brand-500 dark:hover:!text-neutral-100',
+                  {
+                    'bg-neutral-100 text-brand-500 dark:bg-brand-500 dark:text-neutral-100': matchOrganizationRoute,
+                  }
+                )}
+                to={
+                  projectId
+                    ? ENVIRONMENTS_URL(organizationId, projectId) + ENVIRONMENTS_GENERAL_URL
+                    : ORGANIZATION_URL(organizationId)
+                }
+              >
+                <Icon iconName="layer-group" className="text-[18px]" />
+              </Link>
+            </div>
+          </Tooltip>
+          <Tooltip content="Clusters" side="right">
+            <div className="relative">
+              <Link
+                as="button"
+                color="neutral"
+                variant="plain"
+                className={clsx(
+                  'h-11 w-11 justify-center hover:!border-transparent hover:!bg-neutral-100 hover:!text-brand-500 dark:hover:!bg-brand-500 dark:hover:!text-neutral-100',
+                  {
+                    'bg-neutral-100 text-brand-500 dark:bg-brand-500 dark:text-neutral-100': matchClusterRoute,
+                  }
+                )}
+                to={CLUSTERS_URL(organizationId)}
+              >
+                <Icon iconName="cloud-word" className="text-[18px]" />
+              </Link>
+              {clusterNotification === 'error' && (
+                <span className="absolute right-1.5 top-1.5 flex">
+                  <span className="absolute inline-flex h-full w-full animate-ping-small rounded-full bg-red-500 opacity-75" />
+                  <span className="h-2 w-2 rounded-lg bg-red-500"></span>
+                </span>
+              )}
+              {clusterNotification === 'warning' && (
+                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-lg bg-yellow-500"></span>
+              )}
+            </div>
+          </Tooltip>
+          <Tooltip content="Audit Logs" side="right">
+            <div>
+              <Link
+                as="button"
+                color="neutral"
+                variant="plain"
+                className={clsx(
+                  'h-11 w-11 justify-center hover:!border-transparent hover:!bg-neutral-100 hover:!text-brand-500 dark:hover:!bg-brand-500 dark:hover:!text-neutral-100',
+                  {
+                    'bg-neutral-100 text-brand-500 dark:bg-brand-500 dark:text-neutral-100': matchEventsRoute,
+                  }
+                )}
+                to={AUDIT_LOGS_URL(organizationId)}
+              >
+                <Icon iconName="clock-rotate-left" className="text-[18px]" />
+              </Link>
+            </div>
+          </Tooltip>
         </div>
         <div>
           <div className="flex flex-col gap-3">
-            <ButtonIcon
-              className={matchSettingsRoute ? 'is-active' : ''}
-              icon={IconAwesomeEnum.WHEEL}
-              style={ButtonIconStyle.ALT}
-              size={ButtonSize.XLARGE}
-              link={SETTINGS_URL(organizationId)}
-            />
-            <Menu
-              trigger={
-                <ButtonIcon icon={IconAwesomeEnum.CIRCLE_INFO} style={ButtonIconStyle.ALT} size={ButtonSize.XLARGE} />
-              }
-              direction={MenuDirection.RIGHT}
-              arrowAlign={MenuAlign.END}
-              menus={infosMenu}
-            />
+            <Tooltip content="Settings" side="right">
+              <div>
+                <Link
+                  as="button"
+                  color="neutral"
+                  variant="plain"
+                  className={clsx(
+                    'h-11 w-11 justify-center hover:!border-transparent hover:!bg-neutral-100 hover:!text-brand-500 dark:hover:!bg-brand-500 dark:hover:!text-neutral-100',
+                    {
+                      'bg-neutral-100 text-brand-500 dark:bg-brand-500 dark:text-neutral-100': matchSettingsRoute,
+                    }
+                  )}
+                  to={SETTINGS_URL(organizationId)}
+                >
+                  <Icon iconName="gear" className="text-[18px]" />
+                </Link>
+              </div>
+            </Tooltip>
           </div>
         </div>
       </div>
 
-      <div
-        className={`flex w-16 h-16 mb-2 items-center justify-center border-t ${
-          darkMode ? 'border-element-light-darker-100' : 'border-element-light-lighter-400'
-        }`}
-      >
-        <Modal
-          buttonClose={false}
-          trigger={
-            <div className="cursor-pointer">
-              <Avatar firstName={firstName} lastName={lastName} icon={IconEnum.GITLAB} noTooltip />
-            </div>
-          }
-        >
-          <ModalUser firstName={firstName} lastName={lastName} />
-        </Modal>
+      <div className="mb-5 flex h-16 w-16 items-center justify-center border-t border-neutral-200 dark:border-neutral-500">
+        <MenuAccountFeature />
       </div>
     </div>
   )

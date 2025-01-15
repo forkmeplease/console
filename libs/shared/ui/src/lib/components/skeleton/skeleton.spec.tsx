@@ -1,6 +1,5 @@
-import { render } from '__tests__/utils/setup-jest'
-import { screen } from '@testing-library/react'
-import Skeleton, { SkeletonProps } from './skeleton'
+import { renderWithProviders, screen } from '@qovery/shared/util-tests'
+import Skeleton, { type SkeletonProps } from './skeleton'
 
 describe('Skeleton', () => {
   let props: SkeletonProps
@@ -12,7 +11,7 @@ describe('Skeleton', () => {
   })
 
   it('should render successfully', () => {
-    const { baseElement } = render(<Skeleton {...props} />)
+    const { baseElement } = renderWithProviders(<Skeleton {...props} />)
     expect(baseElement).toBeTruthy()
   })
 
@@ -20,9 +19,9 @@ describe('Skeleton', () => {
     props.show = true
     props.width = 10
 
-    render(<Skeleton {...props} />)
+    renderWithProviders(<Skeleton {...props} />)
 
-    const skeleton = screen.queryByTestId('skeleton')
+    const skeleton = screen.getByRole('generic', { busy: true })
 
     expect(skeleton).toHaveStyle(`width: 10px`)
   })
@@ -31,9 +30,9 @@ describe('Skeleton', () => {
     props.show = true
     props.height = 10
 
-    render(<Skeleton {...props} />)
+    renderWithProviders(<Skeleton {...props} />)
 
-    const skeleton = screen.queryByTestId('skeleton')
+    const skeleton = screen.getByRole('generic', { busy: true })
 
     expect(skeleton).toHaveStyle(`height: 10px`)
   })
@@ -41,20 +40,20 @@ describe('Skeleton', () => {
   it('should have a truncate class', () => {
     props.truncate = true
 
-    render(<Skeleton {...props} />)
+    renderWithProviders(<Skeleton {...props} />)
 
-    const skeleton = screen.queryByTestId('skeleton')
+    const skeleton = screen.getByRole('generic', { busy: true })
 
-    expect(skeleton?.classList.contains('truncate'))
+    expect(skeleton?.classList).toContain('truncate')
   })
 
   it('should have a rounded 100%', () => {
     props.rounded = true
     props.square = true
 
-    render(<Skeleton {...props} />)
+    renderWithProviders(<Skeleton {...props} />)
 
-    const skeleton = screen.queryByTestId('skeleton')
+    const skeleton = screen.getByRole('generic', { busy: true })
 
     expect(skeleton).toHaveStyle(`border-radius: 100%`)
   })

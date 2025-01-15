@@ -1,6 +1,5 @@
-import { fireEvent, screen } from '@testing-library/react'
-import { render } from '__tests__/utils/setup-jest'
-import InputTextArea, { InputTextAreaProps } from './input-text-area'
+import { fireEvent, render, screen } from '__tests__/utils/setup-jest'
+import InputTextArea, { type InputTextAreaProps } from './input-text-area'
 
 describe('InputTextAreaArea', () => {
   let props: InputTextAreaProps
@@ -26,11 +25,11 @@ describe('InputTextAreaArea', () => {
 
     fireEvent.focus(input)
 
-    expect(inputContainer.className).toContain('input--focused')
+    expect(inputContainer).toHaveClass('input--focused')
 
     fireEvent.blur(input)
 
-    expect(inputContainer.className).not.toContain('input--focused')
+    expect(inputContainer).not.toHaveClass('input--focused')
   })
 
   it('should set the text value when the input event is emitted', async () => {
@@ -40,6 +39,6 @@ describe('InputTextAreaArea', () => {
 
     fireEvent.change(input, { target: { value: 'some new text value' } })
 
-    expect((input as HTMLInputElement).value).toBe('some new text value')
+    expect(input as HTMLInputElement).toHaveValue('some new text value')
   })
 })

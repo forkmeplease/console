@@ -1,6 +1,6 @@
-import Modal, { ModalContentProps, ModalProps } from './modal'
-import { Meta, Story } from '@storybook/react'
-import Button from '../buttons/button/button'
+import { type Meta, type Story } from '@storybook/react'
+import Button from '../button/button'
+import Modal, { type ModalContentProps, type ModalProps } from './modal'
 
 export default {
   component: Modal,
@@ -11,11 +11,13 @@ const Content = (props: ModalContentProps) => {
   const { setOpen } = props
 
   return (
-    <div className="py-4 px-5">
-      <h3 className="h3 font-medium text-base text-text-500">Title</h3>
-      <p className="text-sm text-text-400 mt-2 mb-6">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+    <div className="px-5 py-4">
+      <h3 className="h3 text-base font-medium text-neutral-400">Title</h3>
+      <p className="mb-6 mt-2 text-sm text-neutral-350">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
       <div className="flex justify-end">
-        <Button onClick={() => setOpen && setOpen(false)}>Save changes</Button>
+        <Button type="button" size="lg" onClick={() => setOpen && setOpen(false)}>
+          Save changes
+        </Button>
       </div>
     </div>
   )
@@ -23,7 +25,14 @@ const Content = (props: ModalContentProps) => {
 
 const Template: Story<ModalProps> = (...args) => (
   <div className="relative">
-    <Modal trigger={<Button>Trigger</Button>} {...args}>
+    <Modal
+      trigger={
+        <Button type="button" size="lg">
+          Trigger
+        </Button>
+      }
+      {...args}
+    >
       <Content />
     </Modal>
   </div>

@@ -1,14 +1,12 @@
-import { render } from '__tests__/utils/setup-jest'
-import { screen, fireEvent } from '@testing-library/react'
-import Modal, { ModalProps } from './modal'
-import Button from '../buttons/button/button'
+import { fireEvent, render, screen } from '__tests__/utils/setup-jest'
+import Modal, { type ModalProps } from './modal'
 
 describe('Modal', () => {
   let props: ModalProps
 
   beforeEach(() => {
     props = {
-      trigger: <Button data-testid="trigger-btn">Trigger</Button>,
+      trigger: <button data-testid="trigger-btn">Trigger</button>,
       children: <p>contenu</p>,
     }
   })
@@ -24,8 +22,7 @@ describe('Modal', () => {
     fireEvent.click(trigger)
 
     const modal = screen.getByRole('dialog')
-
-    expect(modal).toBeTruthy()
+    expect(modal).toBeInTheDocument()
   })
 
   it('should have accurate class name', () => {
@@ -39,7 +36,7 @@ describe('Modal', () => {
 
     const modal = screen.getByRole('dialog')
 
-    expect(modal.classList.contains('some-class-name')).toBeTruthy()
+    expect(modal).toHaveClass('some-class-name')
   })
 
   it('should be default open', () => {
@@ -49,6 +46,6 @@ describe('Modal', () => {
 
     const modal = screen.getByRole('dialog')
 
-    expect(modal).toBeTruthy()
+    expect(modal).toBeInTheDocument()
   })
 })

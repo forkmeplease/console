@@ -9,12 +9,25 @@ jobs:
     uses: ./.github/workflows/test-build-and-deploy.yml
     with:
       flow: deploy-staging
-      branch: staging
       configuration: staging
-      project-name: Console V3
+
+      # Qovery params
+      branch: staging
+      project-name: R&D / Frontend
       environment-name: staging
       application-names: console
       application-commit-id: ${{ github.sha }}
+
     secrets:
+      aws-region: ${{ secrets.AWS_REGION }}
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      s3-bucket-name: 'console-staging.qovery.com'
+      cloudflare-zone: ${{ secrets.CLOUDFLARE_ZONE }}
+      cloudflare-token: ${{ secrets.CLOUDFLARE_TOKEN }}
+      nx-cloud-access-token: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+      codecov-token: ${{ secrets.CODECOV_TOKEN }}
+
+      # Qovery secrets
       organization-id: ${{ secrets.QOVERY_ORGANIZATION_ID }}
       api-token: ${{ secrets.QOVERY_API_TOKEN }}

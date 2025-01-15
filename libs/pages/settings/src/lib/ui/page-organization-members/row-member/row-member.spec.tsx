@@ -1,10 +1,7 @@
-import { act, render } from '__tests__/utils/setup-jest'
-import { InviteMember } from 'qovery-typescript-axios'
-import { inviteMembersMock, membersMock } from '@qovery/domains/organization'
-import { dateYearMonthDayHourMinuteSecond, timeAgo } from '@qovery/shared/utils'
-import RowMember, { RowMemberProps } from './row-member'
-
-const originalClipboard = { ...global.navigator.clipboard }
+import { inviteMembersMock, membersMock } from '@qovery/shared/factories'
+import { dateMediumLocalFormat } from '@qovery/shared/util-dates'
+import { renderWithProviders, screen } from '@qovery/shared/util-tests'
+import RowMember, { type RowMemberProps } from './row-member'
 
 describe('RowMember', () => {
   const props: RowMemberProps = {
@@ -14,6 +11,7 @@ describe('RowMember', () => {
     transferOwnership: jest.fn(),
     loading: false,
     columnsWidth: '',
+    filter: [],
     availableRoles: [
       {
         id: '1',
@@ -26,26 +24,8 @@ describe('RowMember', () => {
     ],
   }
 
-  beforeEach(() => {
-    let clipboardData = ''
-    const mockClipboard = {
-      writeText: jest.fn((data) => {
-        clipboardData = data
-      }),
-      readText: jest.fn(() => {
-        return clipboardData
-      }),
-    }
-    global.navigator.clipboard = mockClipboard
-  })
-
-  afterEach(() => {
-    jest.resetAllMocks()
-    global.navigator.clipboard = originalClipboard
-  })
-
   it('should render successfully', () => {
-    const { baseElement } = render(<RowMember {...props} />)
+    const { baseElement } = renderWithProviders(<RowMember {...props} />)
     expect(baseElement).toBeTruthy()
   })
 
@@ -55,43 +35,29 @@ describe('RowMember', () => {
 
     props.member = memberOwner
 
-    const { getByTestId } = render(<RowMember {...props} />)
+    renderWithProviders(<RowMember {...props} />)
 
-    const input = getByTestId('input')
+    const input = screen.getByTestId('input')
 
-    expect(input).toHaveClass('bg-element-light-lighter-200 border-element-light-ligther-500 text-text-400')
+    expect(input).toHaveClass('bg-neutral-100 border-neutral-250 text-neutral-350')
   })
 
   it('should have loading input', () => {
     props.loadingUpdateRole = true
 
-    const { getByTestId } = render(<RowMember {...props} />)
+    renderWithProviders(<RowMember {...props} />)
 
-    getByTestId('spinner')
-  })
-
-  it('should have an avatar + render name and email', () => {
-    const { getByTestId, getByText } = render(<RowMember {...props} />)
-
-    const avatar = getByTestId('avatar')
-
-    const name = props.member.name?.split(' ') || []
-
-    getByText(props.member.name || '')
-    getByText(props.member.email || '')
-    expect(avatar.textContent).toBe(`${name[0].charAt(0)}${name[1].charAt(0)}`)
+    screen.getByTestId('spinner')
   })
 
   it('should have last activity and created date', () => {
-    const { getByTestId } = render(<RowMember {...props} />)
+    renderWithProviders(<RowMember {...props} />)
 
-    const dateLastActivity = getByTestId('last-activity')
-    const dateCreatedAt = getByTestId('created-at')
+    const dateLastActivity = screen.getByTestId('last-activity')
+    const dateCreatedAt = screen.getByTestId('created-at')
 
-    expect(dateLastActivity.textContent).toBe(`${timeAgo(new Date(props.member.last_activity_at || ''))} ago`)
-    expect(dateCreatedAt.textContent).toBe(
-      dateYearMonthDayHourMinuteSecond(new Date(props.member.created_at || ''), false)
-    )
+    expect(dateLastActivity).toHaveTextContent(/[0|1] second[s]* ago/)
+    expect(dateCreatedAt).toHaveTextContent(dateMediumLocalFormat(props.member.created_at))
   })
 
   it('should have menu with edit member role action', async () => {
@@ -99,15 +65,14 @@ describe('RowMember', () => {
     props.editMemberRole = spy
     props.member = membersMock(1)[0]
 
-    const { getAllByTestId } = render(<RowMember {...props} />)
+    const { userEvent } = renderWithProviders(<RowMember {...props} />)
+    await userEvent.click(screen.getByTestId('input'))
 
-    const items = getAllByTestId('menuItem')
+    const items = screen.getAllByTestId('menuItem')
 
-    await act(() => {
-      items[2].click()
-    })
+    await userEvent.click(items[0])
 
-    expect(spy).toBeCalled()
+    expect(spy).toHaveBeenCalled()
   })
 
   it('should have menu with transfer member role action', async () => {
@@ -116,32 +81,14 @@ describe('RowMember', () => {
     props.userIsOwner = true
     props.member = membersMock(1)[0]
 
-    const { getAllByTestId } = render(<RowMember {...props} />)
+    const { userEvent } = renderWithProviders(<RowMember {...props} />)
+    await userEvent.click(screen.getByTestId('element'))
 
-    const items = getAllByTestId('menuItem')
+    const items = screen.getAllByTestId('menuItem')
 
-    await act(() => {
-      items[0].click()
-    })
+    await userEvent.click(items[0])
 
-    expect(spy).toBeCalled()
-  })
-
-  it('should have menu with transfer member role action', async () => {
-    const spy = jest.fn()
-    props.transferOwnership = spy
-    props.userIsOwner = true
-    props.member = membersMock(1)[0]
-
-    const { getAllByTestId } = render(<RowMember {...props} />)
-
-    const items = getAllByTestId('menuItem')
-
-    await act(() => {
-      items[0].click()
-    })
-
-    expect(spy).toBeCalled()
+    expect(spy).toHaveBeenCalled()
   })
 
   it('should have menu with resend invite action', async () => {
@@ -149,28 +96,13 @@ describe('RowMember', () => {
     props.resendInvite = spy
     props.member = inviteMembersMock(1)[0]
 
-    const { getAllByTestId } = render(<RowMember {...props} />)
+    const { userEvent } = renderWithProviders(<RowMember {...props} />)
+    await userEvent.click(screen.getByTestId('element'))
 
-    const items = getAllByTestId('menuItem')
+    const items = screen.getAllByTestId('menuItem')
 
-    await act(() => {
-      items[0].click()
-    })
+    await userEvent.click(items[0])
 
-    expect(spy).toBeCalled()
-  })
-
-  it('should have menu with copy invitation link', async () => {
-    props.member = inviteMembersMock(1)[0]
-
-    const { getAllByTestId } = render(<RowMember {...props} />)
-
-    const items = getAllByTestId('menuItem')
-
-    await act(() => {
-      items[1].click()
-    })
-
-    expect(navigator.clipboard.readText()).toBe((props.member as InviteMember).invitation_link)
+    expect(spy).toHaveBeenCalled()
   })
 })

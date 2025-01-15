@@ -1,73 +1,123 @@
-import { getByTestId, screen, waitFor } from '@testing-library/react'
-import { render } from '__tests__/utils/setup-jest'
 import { wrapWithReactHookForm } from '__tests__/utils/wrap-with-react-hook-form'
-import { BuildModeEnum, BuildPackLanguageEnum, GitProviderEnum } from 'qovery-typescript-axios'
-import { ServiceTypeEnum } from '@qovery/shared/enums'
-import PageSettingsGeneral, { PageSettingsGeneralProps } from './page-settings-general'
+import { BuildModeEnum } from 'qovery-typescript-axios'
+import { type Application, type Container, type Job } from '@qovery/domains/services/data-access'
+import {
+  applicationFactoryMock,
+  containerFactoryMock,
+  cronjobFactoryMock,
+  helmFactoryMock,
+  organizationFactoryMock,
+} from '@qovery/shared/factories'
+import { renderWithProviders, screen, waitFor } from '@qovery/shared/util-tests'
+import PageSettingsGeneral, { type PageSettingsGeneralProps } from './page-settings-general'
+
+const mockApplication = applicationFactoryMock(1)[0] as Application
+const mockContainer = containerFactoryMock(1)[0] as Container
+const mockJob = cronjobFactoryMock(1)[0] as Job
+const mockHelm = helmFactoryMock(1)[0]
+const mockOrganization = organizationFactoryMock(1)[0]
 
 describe('PageSettingsGeneral', () => {
   const props: PageSettingsGeneralProps = {
-    watchBuildMode: BuildModeEnum.DOCKER,
+    service: mockApplication,
+    organization: mockOrganization,
+    isLoadingEditService: false,
     onSubmit: jest.fn((e) => e.preventDefault()),
-    type: ServiceTypeEnum.APPLICATION,
   }
 
-  const defaultValues = (mode = BuildModeEnum.DOCKER) => ({
-    name: 'hello-world',
-    build_mode: mode,
-    buildpack_language: BuildPackLanguageEnum.CLOJURE,
-    dockerfile_path: 'Dockerfile',
-    provider: GitProviderEnum.GITHUB,
-    repository: 'qovery/console',
-    branch: 'main',
-    root_path: '/',
-  })
-
   it('should render successfully', async () => {
-    const { baseElement } = render(wrapWithReactHookForm(<PageSettingsGeneral {...props} />))
+    const { baseElement } = renderWithProviders(wrapWithReactHookForm(<PageSettingsGeneral {...props} />))
     expect(baseElement).toBeTruthy()
   })
 
   it('should render the form with docker section', async () => {
-    render(
+    props.service = {
+      ...mockApplication,
+      name: 'hello-world',
+      dockerfile_path: 'Dockerfile',
+      build_mode: BuildModeEnum.DOCKER,
+    }
+
+    renderWithProviders(
       wrapWithReactHookForm(<PageSettingsGeneral {...props} />, {
-        defaultValues: defaultValues(),
+        defaultValues: props.service,
       })
     )
+
+    // https://react-hook-form.com/advanced-usage#TransformandParse
+    expect(await screen.findByRole('button', { name: /save/i })).toBeInTheDocument()
 
     screen.getByDisplayValue('hello-world')
     screen.getByText('Docker')
     screen.getByDisplayValue('Dockerfile')
+    screen.getByText(/The service will be automatically updated on every new commit on the branch./i)
   })
 
-  it('should render the form with buildpack section', () => {
-    props.watchBuildMode = BuildModeEnum.BUILDPACKS
+  it('should render application general settings fields', async () => {
+    const service = {
+      ...mockApplication,
+      dockerfile_path: 'Dockerfile',
+      build_mode: BuildModeEnum.DOCKER,
+    }
 
-    render(
-      wrapWithReactHookForm(<PageSettingsGeneral {...props} />, {
-        defaultValues: defaultValues(BuildModeEnum.BUILDPACKS),
+    renderWithProviders(
+      wrapWithReactHookForm(<PageSettingsGeneral service={service} {...props} />, {
+        defaultValues: service,
       })
     )
 
-    screen.getByDisplayValue('hello-world')
-    screen.getByText('Buildpacks')
-    screen.getByText('Clojure')
+    expect(screen.getByText('General')).toBeInTheDocument()
+    expect(screen.getByText('Build and deploy')).toBeInTheDocument()
+    // Necessary to get sub-component
+    waitFor(() => {
+      expect(screen.getByText('Source')).toBeInTheDocument()
+      expect(screen.getByText('Auto-deploy')).toBeInTheDocument()
+    })
   })
 
-  it('should submit the form', async () => {
-    const spy = jest.fn((e) => e.preventDefault())
-    props.onSubmit = spy
-    const { baseElement } = render(
-      wrapWithReactHookForm(<PageSettingsGeneral {...props} />, {
-        defaultValues: defaultValues(),
+  it('should render container general settings fields', async () => {
+    renderWithProviders(
+      wrapWithReactHookForm(<PageSettingsGeneral {...props} service={mockContainer} />, {
+        defaultValues: mockContainer,
       })
     )
 
-    const button = getByTestId(baseElement, 'submit-button')
+    expect(screen.getByText('General')).toBeInTheDocument()
+    expect(screen.getByText('Source')).toBeInTheDocument()
+    expect(screen.getByText('Deploy')).toBeInTheDocument()
+    // Necessary to get sub-component
+    waitFor(() => {
+      expect(screen.getByText('Auto-deploy')).toBeInTheDocument()
+    })
+  })
 
-    await waitFor(() => {
-      button.click()
-      expect(spy).toHaveBeenCalled()
+  it('should render jobs general settings fields', async () => {
+    renderWithProviders(
+      wrapWithReactHookForm(<PageSettingsGeneral {...props} service={mockJob} />, {
+        defaultValues: mockJob,
+      })
+    )
+
+    expect(screen.getByText('General')).toBeInTheDocument()
+    // Necessary to get sub-component
+    waitFor(() => {
+      expect(screen.getByText('Git repository')).toBeInTheDocument()
+      expect(screen.getByText('Auto-deploy')).toBeInTheDocument()
+    })
+  })
+
+  it('should render helm general settings fields', async () => {
+    renderWithProviders(
+      wrapWithReactHookForm(<PageSettingsGeneral {...props} service={mockJob} />, {
+        defaultValues: mockHelm,
+      })
+    )
+
+    expect(screen.getByText('General')).toBeInTheDocument()
+    // Necessary to get sub-component
+    waitFor(() => {
+      expect(screen.getByText('Source')).toBeInTheDocument()
+      expect(screen.getByText('Auto-deploy')).toBeInTheDocument()
     })
   })
 })

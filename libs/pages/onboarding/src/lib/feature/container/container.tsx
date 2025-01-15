@@ -1,35 +1,32 @@
-import { createContext, useEffect, useState } from 'react'
-import { Params, useNavigate } from 'react-router-dom'
-import {
-  ONBOARDING_PRICING_FREE_URL,
-  ONBOARDING_PRICING_URL,
-  ONBOARDING_PROJECT_URL,
-  ONBOARDING_URL,
-  Route,
-} from '@qovery/shared/router'
+import { type PropsWithChildren, createContext, useEffect, useState } from 'react'
+import { type Params, useNavigate } from 'react-router-dom'
+import { AssistantTrigger } from '@qovery/shared/assistant/feature'
+import { ONBOARDING_PRICING_URL, ONBOARDING_PROJECT_URL, type Route } from '@qovery/shared/routes'
+import { FunnelFlow, FunnelFlowBody } from '@qovery/shared/ui'
 import { ROUTER_ONBOARDING_STEP_1, ROUTER_ONBOARDING_STEP_2 } from '../../router/router'
-import { LayoutOnboarding } from '../../ui/layout-onboarding/layout-onboarding'
+import OnboardingRightContent from '../../ui/onboarding-right-content/onboarding-right-content'
 
 interface DefaultContextProps {
   organization_name: string
   project_name: string
-  setContextValue?: (data: { organization_name: string; project_name: string }) => void
+  admin_email: string
+  setContextValue?: (data: { organization_name: string; project_name: string; admin_email: string }) => void
 }
 
 const defaultContext = {
   organization_name: '',
   project_name: '',
+  admin_email: '',
 }
 
 export const ContextOnboarding = createContext<DefaultContextProps>(defaultContext)
 
 export interface ContainerProps {
-  children: React.ReactElement
   params: Readonly<Params<string>>
   firstStep: boolean
 }
 
-export function Container(props: ContainerProps) {
+export function Container(props: PropsWithChildren<ContainerProps>) {
   const { children, params, firstStep } = props
 
   const navigate = useNavigate()
@@ -40,20 +37,13 @@ export function Container(props: ContainerProps) {
 
   useEffect(() => {
     setStep(params['*'])
-
-    if (step === ONBOARDING_PRICING_URL.replace('/', '')) {
-      navigate(`${ONBOARDING_URL}${ONBOARDING_PRICING_FREE_URL}`)
-    }
   }, [params, setStep, step, navigate])
-
-  const stepsNumber: number = firstStep ? ROUTER_ONBOARDING_STEP_1.length : ROUTER_ONBOARDING_STEP_2.length
 
   const currentStepPosition = (routes: Route[]) =>
     routes.findIndex((route: Route) => route.path.replace('/:plan', '') === `/${step?.split('/')[0]}`) + 1
 
-  function getProgressPercentValue(): number {
-    return (100 * currentStepPosition(currentRoutes)) / stepsNumber
-  }
+  const stepProject = `/${step}` === ONBOARDING_PROJECT_URL
+  const stepPricing = `/${step}` === ONBOARDING_PRICING_URL
 
   return (
     <ContextOnboarding.Provider
@@ -62,22 +52,27 @@ export function Container(props: ContainerProps) {
         setContextValue,
       }}
     >
-      <LayoutOnboarding
-        getProgressPercentValue={getProgressPercentValue()}
-        routes={ROUTER_ONBOARDING_STEP_2}
-        stepsNumber={stepsNumber}
-        currentStepPosition={currentStepPosition(currentRoutes)}
-        step={step}
-        catchline={
+      <FunnelFlow
+        totalSteps={currentRoutes.length}
+        currentStep={currentStepPosition(currentRoutes)}
+        currentTitle={
           firstStep
             ? 'Just a few questions'
             : `/${step}` === ONBOARDING_PROJECT_URL
-            ? 'Organization and Project Creation'
-            : 'Select your plan'
+              ? 'Organization and Project Creation'
+              : 'Select your plan'
         }
+        portal
       >
-        {children}
-      </LayoutOnboarding>
+        <FunnelFlowBody
+          helpSectionClassName="!p-0 !bg-transparent !border-transparent"
+          helpSection={stepProject && <OnboardingRightContent step={step} />}
+          customContentWidth={stepPricing ? 'max-w-[1096px]' : undefined}
+        >
+          {children}
+        </FunnelFlowBody>
+        <AssistantTrigger />
+      </FunnelFlow>
     </ContextOnboarding.Provider>
   )
 }

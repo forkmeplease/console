@@ -1,80 +1,60 @@
-import { act, fireEvent, render } from '__tests__/utils/setup-jest'
-import { Organization } from 'qovery-typescript-axios'
-import * as storeOrganization from '@qovery/domains/organization'
+import { type Organization } from 'qovery-typescript-axios'
+import * as organizationsDomain from '@qovery/domains/organizations/feature'
+import { organizationFactoryMock } from '@qovery/shared/factories'
+import { renderWithProviders, screen } from '@qovery/shared/util-tests'
 import PageOrganizationGeneralFeature, { handleSubmit } from './page-organization-general-feature'
 
 import SpyInstance = jest.SpyInstance
 
-const mockOrganization: Organization = storeOrganization.organizationFactoryMock(1)[0]
+const useOrganizationSpy: SpyInstance = jest.spyOn(organizationsDomain, 'useOrganization')
+const useEditOrganizationSpy: SpyInstance = jest.spyOn(organizationsDomain, 'useEditOrganization')
 
-jest.mock('@qovery/domains/organization', () => {
-  return {
-    ...jest.requireActual('@qovery/domains/organization'),
-    editOrganization: jest.fn(),
-    selectOrganizationById: () => {
-      const currentMockOrganization = mockOrganization
-      mockOrganization.description = 'description'
-      mockOrganization.website_url = 'https://qovery.com'
-      mockOrganization.logo_url = 'my-logo'
-      return currentMockOrganization
-    },
-  }
-})
-
-const mockDispatch = jest.fn()
-jest.mock('react-redux', () => ({
-  ...jest.requireActual('react-redux'),
-  useDispatch: () => mockDispatch,
-}))
+const mockOrganization: Organization = organizationFactoryMock(1)[0]
 
 jest.mock('react-router-dom', () => ({
-  ...(jest.requireActual('react-router-dom') as any),
+  ...jest.requireActual('react-router-dom'),
   useParams: () => ({ organizationId: '0' }),
 }))
 
 describe('PageOrganizationGeneral', () => {
+  beforeEach(() => {
+    useEditOrganizationSpy.mockReturnValue({
+      mutateAsync: jest.fn(),
+    })
+    useOrganizationSpy.mockReturnValue({
+      data: mockOrganization,
+    })
+  })
+
   it('should render successfully', () => {
-    const { baseElement } = render(<PageOrganizationGeneralFeature />)
+    const { baseElement } = renderWithProviders(<PageOrganizationGeneralFeature />)
     expect(baseElement).toBeTruthy()
   })
 
   it('should dispatch editOrganization if form is submitted', async () => {
-    const editOrganizationSpy: SpyInstance = jest.spyOn(storeOrganization, 'editOrganization')
-    mockDispatch.mockImplementation(() => ({
-      unwrap: () =>
-        Promise.resolve({
-          data: {},
-        }),
-    }))
+    const { userEvent } = renderWithProviders(<PageOrganizationGeneralFeature />)
 
-    const { getByTestId } = render(<PageOrganizationGeneralFeature />)
+    const input = screen.getByTestId('input-name')
+    await userEvent.clear(input)
+    await userEvent.type(input, 'hello-world')
 
-    await act(() => {
-      const input = getByTestId('input-name')
-      fireEvent.input(input, { target: { value: 'hello-world' } })
-    })
+    expect(screen.getByTestId('submit-button')).toBeEnabled()
 
-    expect(getByTestId('submit-button')).not.toBeDisabled()
+    await userEvent.click(screen.getByTestId('submit-button'))
 
-    await act(() => {
-      getByTestId('submit-button').click()
-    })
-
-    const newOrganization = {
+    const organization = {
       name: 'hello-world',
-      website_url: 'https://qovery.com',
-      logo_url: 'my-logo',
-      description: 'description',
+      website_url: mockOrganization.website_url,
+      logo_url: mockOrganization.logo_url,
+      description: mockOrganization.description,
       admin_emails: ['test@test.com'],
     }
 
-    const cloneOrganization = handleSubmit(newOrganization, mockOrganization)
+    const cloneOrganization = handleSubmit(organization, mockOrganization)
 
-    expect(editOrganizationSpy.mock.calls[0][0].organizationId).toBe(mockOrganization.id)
-    expect(cloneOrganization.name).toBe('hello-world')
-    expect(cloneOrganization.description).toBe('description')
-    expect(cloneOrganization.website_url).toBe('https://qovery.com')
-    expect(cloneOrganization.logo_url).toBe('my-logo')
-    expect(editOrganizationSpy.mock.calls[0][0].data).toStrictEqual(cloneOrganization)
+    expect(useEditOrganizationSpy().mutateAsync).toHaveBeenCalledWith({
+      organizationId: '0',
+      organizationRequest: cloneOrganization,
+    })
   })
 })

@@ -1,0 +1,21 @@
+{
+  "name": "shared-util-tests",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/util-tests/src",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:util"],
+  "implicitDependencies": ["!shared-ui"],
+  "targets": {
+    "test": {
+      "options": {
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "coverage": true
+        }
+      }
+    }
+  }
+}

@@ -1,21 +1,12 @@
 import { APIVariableScopeEnum } from 'qovery-typescript-axios'
-import { DropzoneRootProps } from 'react-dropzone'
+import { useState } from 'react'
+import { type DropzoneRootProps } from 'react-dropzone'
 import { Controller, useFormContext } from 'react-hook-form'
-import { EnvironmentVariableSecretOrPublic } from '@qovery/shared/interfaces'
-import {
-  Button,
-  ButtonIcon,
-  ButtonIconStyle,
-  ButtonSize,
-  ButtonStyle,
-  Dropzone,
-  IconAwesomeEnum,
-  InputSelectSmall,
-  InputTextSmall,
-  InputToggle,
-} from '@qovery/shared/ui'
+import { type ServiceType } from '@qovery/domains/services/data-access'
+import { type EnvironmentVariableSecretOrPublic } from '@qovery/shared/interfaces'
+import { Button, Dropzone, Icon, InputSelectSmall, InputTextSmall, InputToggle } from '@qovery/shared/ui'
+import { computeAvailableScope, generateScopeLabel } from '@qovery/shared/util-js'
 import { validateKey, warningMessage } from '../../feature/import-environment-variable-modal-feature/utils/form-check'
-import { computeAvailableScope } from '../../utils/compute-available-environment-variable-scope'
 
 export interface ImportEnvironmentVariableModalProps {
   onSubmit: () => void
@@ -34,18 +25,20 @@ export interface ImportEnvironmentVariableModalProps {
   deleteKey: (key: string) => void
   overwriteEnabled: boolean
   setOverwriteEnabled: (b: boolean) => void
+  serviceType?: ServiceType
 }
 
 export function ImportEnvironmentVariableModal(props: ImportEnvironmentVariableModalProps) {
   const { control, formState, getValues, trigger } = useFormContext()
   const { keys = [], loading = false, availableScopes = computeAvailableScope(undefined, false) } = props
+  const [localScope, setLocalScope] = useState<APIVariableScopeEnum>(APIVariableScopeEnum.ENVIRONMENT)
 
   // write a regex pattern that rejects spaces
   const pattern = /^[^\s]+$/
 
   return (
     <div className="p-6">
-      <h2 className="h4 text-text-600 mb-6 max-w-sm">Import variables</h2>
+      <h2 className="h4 mb-6 max-w-sm text-neutral-400">Import variables from .env file</h2>
 
       {props.showDropzone ? (
         <div {...props.dropzoneGetRootProps({ className: 'dropzone' })}>
@@ -66,27 +59,30 @@ export function ImportEnvironmentVariableModal(props: ImportEnvironmentVariableM
           </div>
 
           <form onSubmit={props.onSubmit}>
-            <div className="grid mb-3" style={{ gridTemplateColumns: '6fr 6fr 204px 2fr 1fr' }}>
-              <span className="text-sm text-text-600 font-medium">Variable</span>
-              <span className="text-sm text-text-600 font-medium">Value</span>
-              <span className="text-sm text-text-600 font-medium">Scope</span>
-              <span className="text-sm text-text-600 font-medium pl-1.5">Secret</span>
+            <div className="mb-3 grid" style={{ gridTemplateColumns: '6fr 6fr 204px 2fr 1fr' }}>
+              <span className="text-sm font-medium text-neutral-400">Variable</span>
+              <span className="text-sm font-medium text-neutral-400">Value</span>
+              <span className="text-sm font-medium text-neutral-400">Scope</span>
+              <span className="pl-1.5 text-sm font-medium text-neutral-400">Secret</span>
             </div>
 
-            <div className="flex items-center bg-element-light-lighter-400 rounded justify-between px-4 py-2 mb-3">
-              <p className="font-medium text-text-600 text-ssm">Apply for all</p>
+            <div className="mb-3 flex items-center justify-between rounded bg-neutral-200 px-4 py-2">
+              <p className="text-ssm font-medium text-neutral-400">Apply for all</p>
               <div className="flex gap-4">
                 <InputSelectSmall
-                  className="w-[188px]"
+                  className="w-32"
+                  inputClassName="font-normal bg-white"
                   dataTestId="select-scope-for-all"
                   name="search"
-                  items={availableScopes.map((s) => ({ value: s, label: s.toLowerCase() }))}
+                  defaultValue={localScope}
+                  items={availableScopes.map((s) => ({ value: s, label: generateScopeLabel(s) }))}
                   onChange={(value?: string) => {
                     props.changeScopeForAll(value as APIVariableScopeEnum)
+                    setLocalScope(value as APIVariableScopeEnum)
                     trigger().then()
                   }}
                 />
-                <div className="flex items-center justify-center mr-6 w-14 ml-1">
+                <div className="ml-1 mr-6 flex w-14 items-center justify-center">
                   <InputToggle
                     dataTestId="toggle-for-all"
                     small
@@ -100,7 +96,7 @@ export function ImportEnvironmentVariableModal(props: ImportEnvironmentVariableM
               <div
                 key={key}
                 data-testid="form-row"
-                className="grid mb-3"
+                className="mb-3 grid"
                 style={{ gridTemplateColumns: '6fr 6fr 204px 2fr 1fr' }}
               >
                 <Controller
@@ -117,7 +113,7 @@ export function ImportEnvironmentVariableModal(props: ImportEnvironmentVariableM
                   }}
                   render={({ field, fieldState: { error } }) => (
                     <InputTextSmall
-                      className="shrink-0 grow flex-1 mr-3"
+                      className="mr-3 flex-1 shrink-0 grow"
                       name={field.name}
                       onChange={field.onChange}
                       value={field.value}
@@ -142,13 +138,15 @@ export function ImportEnvironmentVariableModal(props: ImportEnvironmentVariableM
                   }}
                   render={({ field, fieldState: { error } }) => (
                     <InputTextSmall
-                      className="shrink-0 grow flex-1 mr-3"
+                      className="mr-3 flex-1 shrink-0 grow"
                       data-testid="value"
                       name={field.name}
                       onChange={field.onChange}
                       value={field.value}
                       error={error?.message}
                       errorMessagePosition="left"
+                      type="password"
+                      hasShowPasswordButton={true}
                     />
                   )}
                 />
@@ -156,7 +154,7 @@ export function ImportEnvironmentVariableModal(props: ImportEnvironmentVariableM
                 <Controller
                   name={key + '_scope'}
                   control={control}
-                  render={({ field, fieldState: { error } }) => (
+                  render={({ field }) => (
                     <InputSelectSmall
                       data-testid="scope"
                       className="w-[188px]"
@@ -166,12 +164,12 @@ export function ImportEnvironmentVariableModal(props: ImportEnvironmentVariableM
                         field.onChange(e)
                         trigger(key + '_key').then()
                       }}
-                      items={availableScopes.map((s) => ({ value: s, label: s.toLowerCase() }))}
+                      items={availableScopes.map((s) => ({ value: s, label: generateScopeLabel(s) }))}
                     />
                   )}
                 />
 
-                <div className="flex items-center justify-center w-14 ml-1">
+                <div className="ml-1 flex w-14 items-center justify-center">
                   <Controller
                     name={key + '_secret'}
                     control={control}
@@ -179,33 +177,23 @@ export function ImportEnvironmentVariableModal(props: ImportEnvironmentVariableM
                   />
                 </div>
 
-                <div className="flex items-center h-full w-full grow">
-                  <ButtonIcon
-                    icon={IconAwesomeEnum.CROSS}
-                    style={ButtonIconStyle.STROKED}
-                    size={ButtonSize.TINY}
-                    onClick={() => props.deleteKey(key)}
-                    className="text-text-400 hover:text-text-500 !w-8 !h-8"
-                    iconClassName="!text-xs"
-                  />
+                <div className="flex h-full w-full grow items-center">
+                  <Button type="button" variant="plain" size="md" onClick={() => props.deleteKey(key)}>
+                    <Icon className="text-base" iconName="trash-can" iconStyle="regular" />
+                  </Button>
                 </div>
               </div>
             ))}
 
-            <div className="flex gap-3 justify-end mt-6">
-              <Button
-                className="btn--no-min-w"
-                style={ButtonStyle.STROKED}
-                size={ButtonSize.XLARGE}
-                onClick={() => props.closeModal()}
-              >
+            <div className="mt-6 flex justify-end gap-3">
+              <Button type="button" color="neutral" variant="plain" size="lg" onClick={() => props.closeModal()}>
                 Cancel
               </Button>
               <Button
-                dataTestId="submit-button"
-                className="btn--no-min-w"
+                data-testid="submit-button"
                 type="submit"
-                size={ButtonSize.XLARGE}
+                size="lg"
+                variant="solid"
                 disabled={!formState.isValid}
                 loading={loading}
               >

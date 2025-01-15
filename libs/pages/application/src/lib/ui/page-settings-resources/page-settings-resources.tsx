@@ -1,61 +1,33 @@
-import { FormEventHandler } from 'react'
+import { type FormEventHandler } from 'react'
 import { useFormContext } from 'react-hook-form'
-import { SettingResources } from '@qovery/shared/console-shared'
-import { MemorySizeEnum } from '@qovery/shared/enums'
-import { ApplicationEntity } from '@qovery/shared/interfaces'
-import { Button, ButtonSize, ButtonStyle, HelpSection } from '@qovery/shared/ui'
+import { type AnyService, type Database, type Helm } from '@qovery/domains/services/data-access'
+import { ApplicationSettingsResources, SettingsHeading } from '@qovery/shared/console-shared'
+import { Button, Section } from '@qovery/shared/ui'
 
 export interface PageSettingsResourcesProps {
   onSubmit: FormEventHandler<HTMLFormElement>
-  getMemoryUnit: (value: string | MemorySizeEnum) => string
-  memorySize: MemorySizeEnum | string
   displayWarningCpu: boolean
-  application?: ApplicationEntity
-  loading?: boolean
+  service: Exclude<AnyService, Helm | Database>
+  loading: boolean
 }
 
 export function PageSettingsResources(props: PageSettingsResourcesProps) {
-  const { onSubmit, loading, getMemoryUnit, application, memorySize, displayWarningCpu } = props
+  const { onSubmit, loading, service, displayWarningCpu } = props
   const { formState } = useFormContext()
 
-  if (!application) return null
-
   return (
-    <div className="flex flex-col justify-between w-full">
-      <div className="p-8 max-w-content-with-navigation-left">
-        <h2 className="h5 mb-8 text-text-700">Resources</h2>
-        <form onSubmit={onSubmit}>
-          <SettingResources
-            getMemoryUnit={getMemoryUnit}
-            memorySize={memorySize}
-            displayWarningCpu={displayWarningCpu}
-            application={application}
-          />
+    <div className="flex w-full flex-col justify-between">
+      <Section className="max-w-content-with-navigation-left p-8">
+        <SettingsHeading title="Resources" description="Manage the resources assigned to the service." />
+        <form className="space-y-10" onSubmit={onSubmit}>
+          <ApplicationSettingsResources displayWarningCpu={displayWarningCpu} service={service} />
           <div className="flex justify-end">
-            <Button
-              dataTestId="submit-button"
-              className="btn--no-min-w"
-              size={ButtonSize.LARGE}
-              style={ButtonStyle.BASIC}
-              type="submit"
-              disabled={!formState.isValid}
-              loading={loading}
-            >
+            <Button type="submit" size="lg" loading={loading} disabled={!formState.isValid}>
               Save
             </Button>
           </div>
         </form>
-      </div>
-      <HelpSection
-        description="Need help? You may find these links useful"
-        links={[
-          {
-            link: 'https://hub.qovery.com/docs/using-qovery/configuration/application/#resources',
-            linkLabel: 'How to configure my application',
-            external: true,
-          },
-        ]}
-      />
+      </Section>
     </div>
   )
 }

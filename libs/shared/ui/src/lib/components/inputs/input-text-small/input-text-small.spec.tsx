@@ -1,7 +1,5 @@
-import { render } from '__tests__/utils/setup-jest'
-import { fireEvent, screen } from '@testing-library/react'
-
-import InputTextSmall, { InputTextSmallProps } from './input-text-small'
+import { fireEvent, render, screen } from '__tests__/utils/setup-jest'
+import InputTextSmall, { type InputTextSmallProps } from './input-text-small'
 
 describe('InputTextSmall', () => {
   let props: InputTextSmallProps
@@ -24,7 +22,7 @@ describe('InputTextSmall', () => {
 
     let inputContainer = screen.queryByTestId('input') as HTMLDivElement
 
-    expect(inputContainer.className).toContain('input--error')
+    expect(inputContainer).toHaveClass('input--error')
 
     props.error = ''
 
@@ -35,7 +33,7 @@ describe('InputTextSmall', () => {
 
     fireEvent.change(input, { target: { value: 'some new text value' } })
 
-    expect(inputContainer.className).not.toContain('input--error')
+    expect(inputContainer).not.toHaveClass('input--error')
   })
 
   it('should set the text value when the input event is emitted', async () => {
@@ -45,7 +43,7 @@ describe('InputTextSmall', () => {
 
     fireEvent.change(input, { target: { value: 'some new text value' } })
 
-    expect((input as HTMLInputElement).value).toBe('some new text value')
+    expect(input as HTMLInputElement).toHaveValue('some new text value')
   })
 
   describe('with error on left', () => {
@@ -58,10 +56,10 @@ describe('InputTextSmall', () => {
       render(<InputTextSmall {...props} />)
 
       const warningIcon = screen.getByTestId('warning-icon-left')
-      expect(warningIcon).toBeTruthy()
+      expect(warningIcon).toBeInTheDocument()
 
-      expect(screen.getByTestId('input').className).toContain('input--error')
-      expect(screen.queryByText('some error')).toBeNull()
+      expect(screen.getByTestId('input')).toHaveClass('input--error')
+      expect(screen.queryByText('some error')).not.toBeInTheDocument()
       expect(screen.getByTestId('input-small-wrapper')).toHaveClass('flex')
     })
   })
@@ -76,10 +74,10 @@ describe('InputTextSmall', () => {
       render(<InputTextSmall {...props} />)
 
       const warningIcon = screen.getByTestId('warning-icon-left')
-      expect(warningIcon).toBeTruthy()
+      expect(warningIcon).toBeInTheDocument()
 
-      expect(screen.getByTestId('input').className).not.toContain('input--error')
-      expect(screen.queryByText('some error')).toBeNull()
+      expect(screen.getByTestId('input')).not.toHaveClass('input--error')
+      expect(screen.queryByText('some error')).not.toBeInTheDocument()
       expect(screen.getByTestId('input-small-wrapper')).toHaveClass('flex')
     })
   })
@@ -91,6 +89,18 @@ describe('InputTextSmall', () => {
 
     fireEvent.change(input, { target: { value: 'some new text value' } })
 
-    expect((input as HTMLInputElement).value).toBe('some new text value')
+    expect(input as HTMLInputElement).toHaveValue('some new text value')
+  })
+
+  it('should have a show hide button and button should toggle input type', async () => {
+    render(<InputTextSmall {...props} hasShowPasswordButton={true} />)
+    const button = screen.getByTestId('show-password-button')
+    const icon = button.querySelector('.icon-solid-eye-slash')
+    expect(icon).toBeTruthy()
+
+    const input = screen.getByRole('textbox')
+
+    fireEvent.click(button)
+    expect(input).toHaveAttribute('type', 'password')
   })
 })

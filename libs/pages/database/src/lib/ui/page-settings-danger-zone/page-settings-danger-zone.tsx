@@ -1,18 +1,17 @@
-import { EnvironmentModeEnum } from 'qovery-typescript-axios'
-import { DatabaseEntity } from '@qovery/shared/interfaces'
-import { BlockContentDelete, HelpSection } from '@qovery/shared/ui'
+import { type EnvironmentModeEnum } from 'qovery-typescript-axios'
+import { BlockContentDelete } from '@qovery/shared/ui'
 
 export interface PageSettingsDangerZoneProps {
   deleteDatabase: () => void
-  database?: DatabaseEntity
+  databaseName?: string
   environmentMode?: EnvironmentModeEnum
 }
 
 export function PageSettingsDangerZone(props: PageSettingsDangerZoneProps) {
-  const { deleteDatabase, database, environmentMode } = props
+  const { deleteDatabase, databaseName, environmentMode } = props
   return (
-    <div className="flex flex-col justify-between w-full">
-      <div className="p-8 max-w-content-with-navigation-left">
+    <div className="flex w-full flex-col justify-between">
+      <div className="max-w-content-with-navigation-left p-8">
         <BlockContentDelete
           title="Delete database"
           ctaLabel="Delete database"
@@ -20,21 +19,10 @@ export function PageSettingsDangerZone(props: PageSettingsDangerZoneProps) {
           modalConfirmation={{
             mode: environmentMode,
             title: 'Delete database',
-            description: 'To confirm the deletion of your database, please type the name of the database:',
-            name: database?.name,
+            name: databaseName,
           }}
         />
       </div>
-      <HelpSection
-        description="Need help? You may find these links useful"
-        links={[
-          {
-            link: 'https://hub.qovery.com/docs/using-qovery/configuration/database/#delete-your-database-instance',
-            linkLabel: 'How to delete my database',
-            external: true,
-          },
-        ]}
-      />
     </div>
   )
 }

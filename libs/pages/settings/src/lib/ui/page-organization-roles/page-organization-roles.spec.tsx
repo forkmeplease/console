@@ -1,10 +1,14 @@
-import { render } from '@testing-library/react'
-import { availableRolesMock, customRolesMock } from '@qovery/domains/organization'
-import PageOrganizationRoles, { PageOrganizationRolesProps, isDefaultRole, rolesSort } from './page-organization-roles'
+import { availableRolesMock, customRolesMock } from '@qovery/shared/factories'
+import { renderWithProviders, screen } from '@qovery/shared/util-tests'
+import PageOrganizationRoles, {
+  type PageOrganizationRolesProps,
+  isDefaultRole,
+  rolesSort,
+} from './page-organization-roles'
 
 const mockedUsedNavigate = jest.fn()
 jest.mock('react-router-dom', () => ({
-  ...(jest.requireActual('react-router-dom') as any),
+  ...jest.requireActual('react-router-dom'),
   useNavigate: () => mockedUsedNavigate,
 }))
 
@@ -18,7 +22,7 @@ describe('PageOrganizationRoles', () => {
     roles: customRoles,
   }
   it('should render successfully', () => {
-    const { baseElement } = render(<PageOrganizationRoles {...props} />)
+    const { baseElement } = renderWithProviders(<PageOrganizationRoles {...props} />)
     expect(baseElement).toBeTruthy()
   })
 
@@ -26,31 +30,33 @@ describe('PageOrganizationRoles', () => {
     props.roles = []
     props.loading = true
 
-    const { getByTestId } = render(<PageOrganizationRoles {...props} />)
+    renderWithProviders(<PageOrganizationRoles {...props} />)
 
-    expect(getByTestId('roles-loader'))
+    screen.getByTestId('roles-loader')
   })
 
   it('should have list of roles', () => {
     props.roles = [customRoles[0]]
     props.loading = false
 
-    const { getByTestId } = render(<PageOrganizationRoles {...props} />)
+    renderWithProviders(<PageOrganizationRoles {...props} />)
 
-    expect(getByTestId(`role-${customRoles[0].id}`))
-    expect(getByTestId(`role-${customRoles[0].id}`).textContent).toBe(`${customRoles[0].name}Custom Role`)
-    expect(getByTestId(`role-actions-${customRoles[0].id}`))
+    screen.getByTestId(`role-${customRoles[0].id}`)
+    expect(screen.getByTestId(`role-${customRoles[0].id}`)).toHaveTextContent(`${customRoles[0].name}Custom Role`)
+    screen.getByTestId(`role-actions-${customRoles[0].id}`)
   })
 
   it('should have list of custom roles', () => {
     props.roles = [availableRolesMock[0]]
     props.loading = false
 
-    const { getByTestId } = render(<PageOrganizationRoles {...props} />)
+    renderWithProviders(<PageOrganizationRoles {...props} />)
 
-    expect(getByTestId(`role-${availableRolesMock[0].id}`))
-    expect(getByTestId(`role-${availableRolesMock[0].id}`).textContent).toBe(`${availableRolesMock[0].name}Basic Role`)
-    expect(getByTestId(`role-doc-${customRoles[0].id}`))
+    screen.getByTestId(`role-${availableRolesMock[0].id}`)
+    expect(screen.getByTestId(`role-${availableRolesMock[0].id}`)).toHaveTextContent(
+      `${availableRolesMock[0].name}Basic Role`
+    )
+    screen.getByTestId(`role-doc-${customRoles[0].id}`)
   })
 
   it('should have function to detect if is default role', () => {

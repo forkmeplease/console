@@ -2,16 +2,16 @@ import {
   act,
   findAllByTestId,
   findByDisplayValue,
-  findByTestId,
   findByText,
   fireEvent,
   render,
   waitFor,
-} from '@testing-library/react'
+} from '__tests__/utils/setup-jest'
 import { StorageTypeEnum } from 'qovery-typescript-axios'
-import { PageSettingsStorage, PageSettingsStorageProps } from './page-settings-storage'
+import { PageSettingsStorage, type PageSettingsStorageProps } from './page-settings-storage'
 
 const props: PageSettingsStorageProps = {
+  deploymentState: 'READY',
   storages: [
     { type: StorageTypeEnum.FAST_SSD, size: 20, mount_point: '/dir2', id: 'fac3863d-06b3-4540-97cc-95be6f365833' },
     { type: StorageTypeEnum.FAST_SSD, size: 5, mount_point: '/dir', id: '3282c32b-410e-4107-a908-54cbf885d5c6' },
@@ -57,12 +57,6 @@ describe('PageSettingsStorage', () => {
       // todo uncomment when select component is fixed
       // await findByDisplayValue(formRows[0], 'FAST_SSD')
     })
-  })
-
-  it('should have an help section', async () => {
-    const { baseElement } = render(<PageSettingsStorage {...props} />)
-
-    await findByTestId(baseElement, 'help-section')
   })
 
   it('should have an add button and a click handler', async () => {

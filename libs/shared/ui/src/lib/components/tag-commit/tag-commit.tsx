@@ -1,23 +1,26 @@
-import React, { useEffect, useState } from 'react'
+import { type MouseEvent, useEffect, useState } from 'react'
 import Icon from '../icon/icon'
 import Tag from '../tag/tag'
 import Tooltip from '../tooltip/tooltip'
 
 export interface TagCommitProps {
   commitId?: string
+  withBackground?: boolean
+  commitDeltaCount?: number
 }
 
+// TODO: This should be a button
 export function TagCommit(props: TagCommitProps) {
-  const { commitId = '' } = props
+  const { commitId = '', withBackground, commitDeltaCount } = props
   const [hover, setHover] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  let displayCopy: ReturnType<typeof setTimeout>
+  let displayCopy: ReturnType<typeof setTimeout> | undefined = undefined
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = (e: MouseEvent) => {
     e.preventDefault()
     setCopied(true)
-    navigator.clipboard.writeText(commitId)
+    if (navigator.clipboard) navigator.clipboard.writeText(commitId)
     displayCopy = setTimeout(() => {
       setCopied(false)
     }, 1000)
@@ -25,26 +28,39 @@ export function TagCommit(props: TagCommitProps) {
 
   useEffect(() => {
     return () => clearTimeout(displayCopy)
-  }, [])
+  }, [displayCopy])
 
   const contentTag = (
-    <Tag className="border border-element-light-lighter-500 text-text-400 font-medium h-7 hover:bg-element-light-lighter-400 w-[80px] flex items-center justify-center">
+    <Tag
+      data-testid="tag-commit"
+      className={`flex items-center justify-center border font-medium ${withBackground ? 'bg-white dark:bg-transparent' : ''} ${
+        commitDeltaCount
+          ? 'border-orange-500 text-orange-500'
+          : 'w-[90px] border-neutral-250 text-neutral-350 hover:bg-neutral-200 dark:text-neutral-50 dark:hover:bg-neutral-400'
+      }`}
+    >
       {!hover ? (
-        <div className="w-4 mr-1">
-          <Icon name="icon-solid-code-commit" className="mr-1" />
+        <div className="mr-1 w-4">
+          <Icon iconName="code-commit" iconStyle="regular" className="mr-1" />
         </div>
       ) : (
-        <div className="w-4 mr-1">
-          <Icon name="icon-solid-copy" className="mr-1" />
+        <div className="mr-1 w-4">
+          <Icon iconName="copy" className="mr-1" />
         </div>
       )}
       {commitId.substring(0, 7)}
+      {commitDeltaCount ? (
+        <span className="ml-1 inline-block h-4 rounded-[34px] bg-orange-500 px-1 text-white">{commitDeltaCount}</span>
+      ) : null}
     </Tag>
   )
 
   const copyTag = (
-    <Tag className="bg-success-500 text-white font-medium h-7 w-[70px] flex items-center justify-center">
-      <Icon name="icon-solid-check" className="mr-1 w-4" />
+    <Tag
+      data-testid="tag-commit"
+      className="flex h-7 w-[70px] items-center justify-center bg-green-500 font-medium text-white"
+    >
+      <Icon iconName="check" iconStyle="regular" className="mr-1 w-4" />
       Copied
     </Tag>
   )
@@ -52,6 +68,7 @@ export function TagCommit(props: TagCommitProps) {
   return (
     <Tooltip content="Copy">
       <div
+        data-testid="tag-commit"
         className="block w-fit cursor-pointer"
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}

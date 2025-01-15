@@ -1,17 +1,17 @@
-import { useEffect, useState } from 'react'
-import { DeploymentService } from '@qovery/shared/interfaces'
-import { BaseLink, HelpSection, Table, TableRowDeployment } from '@qovery/shared/ui'
+import { memo, useEffect, useState } from 'react'
+import { type DeploymentServiceLegacy } from '@qovery/shared/interfaces'
+import { EmptyState, Table, type TableFilterProps, TableRowDeployment } from '@qovery/shared/ui'
 
 export interface PageDeploymentsProps {
-  deployments?: DeploymentService[]
-  listHelpfulLinks: BaseLink[]
+  deployments?: DeploymentServiceLegacy[]
   isLoading?: boolean
 }
 
-export function PageDeployments(props: PageDeploymentsProps) {
-  const { deployments = [], listHelpfulLinks, isLoading } = props
+export function PageDeploymentsMemo(props: PageDeploymentsProps) {
+  const { deployments = [], isLoading } = props
 
-  const [data, setData] = useState<DeploymentService[]>([])
+  const [data, setData] = useState<DeploymentServiceLegacy[]>([])
+  const [filter, setFilter] = useState<TableFilterProps[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -67,37 +67,62 @@ export function PageDeployments(props: PageDeploymentsProps) {
     },
     {
       title: 'Version',
-      className: 'px-4 py-2 border-b-element-light-lighter-400 border-l h-full bg-white',
+      className: 'px-4 py-2 border-b-neutral-200 border-l h-full bg-white',
     },
   ]
 
-  return (
-    <>
-      <Table
-        dataHead={tableHead}
-        defaultData={deployments}
-        filterData={data}
-        setFilterData={setData}
-        className="mt-2 rounded-sm flex-grow overflow-y-auto min-h-0"
-      >
-        <div>
-          {data?.map((currentData, index) => (
-            <TableRowDeployment
-              id={currentData.id}
-              data={currentData as DeploymentService}
-              key={index}
-              dataHead={tableHead}
-              isLoading={loading}
-              startGroup={currentData?.execution_id !== data[index - 1]?.execution_id && index !== 0 ? true : false}
-            />
-          ))}
-        </div>
-      </Table>
-      <div className="bg-white rounded-b flex flex-col justify-end w-full">
-        <HelpSection description="Need help? You may find these links useful" links={listHelpfulLinks} />
+  if (!isLoading && deployments.length === 0)
+    return (
+      <div className="mt-2 h-full rounded-t-sm bg-neutral-50">
+        <EmptyState
+          className="m-auto mt-12 w-[420px]"
+          title="No deployment yet"
+          description="You need to deploy a service to see this tab."
+        />
       </div>
-    </>
+    )
+
+  return (
+    <Table
+      dataHead={tableHead}
+      data={deployments}
+      setFilter={setFilter}
+      filter={filter}
+      setDataSort={setData}
+      defaultSortingKey="updated_at"
+    >
+      <div className="bg-neutral-200">
+        {data?.map((currentData, index) => (
+          <TableRowDeployment
+            key={index}
+            data={currentData as DeploymentServiceLegacy}
+            filter={filter}
+            dataHead={tableHead}
+            isLoading={loading}
+            startGroup={currentData?.execution_id !== data[index - 1]?.execution_id && index !== 0 ? true : false}
+          />
+        ))}
+      </div>
+    </Table>
   )
 }
+
+export const PageDeployments = memo(PageDeploymentsMemo, (prevProps, nextProps) => {
+  // Stringify is necessary to avoid Redux selector behavior
+  return (
+    JSON.stringify(
+      prevProps.deployments?.map((service) => ({
+        id: service.id,
+        status: service.status,
+      }))
+    ) ===
+    JSON.stringify(
+      nextProps.deployments?.map((service) => ({
+        id: service.id,
+        status: service.status,
+      }))
+    )
+  )
+})
 
 export default PageDeployments

@@ -1,8 +1,7 @@
-import { findByLabelText, findByTestId, waitFor } from '@testing-library/react'
-import { render } from '__tests__/utils/setup-jest'
+import { findByLabelText, findByTestId, render, waitFor } from '__tests__/utils/setup-jest'
 import { wrapWithReactHookForm } from '__tests__/utils/wrap-with-react-hook-form'
 import { StorageTypeEnum } from 'qovery-typescript-axios'
-import StorageModal, { StorageModalProps } from './storage-modal'
+import StorageModal, { type StorageModalProps } from './storage-modal'
 
 const props: StorageModalProps = {
   onClose: jest.fn(),
@@ -24,7 +23,7 @@ describe('StorageModal', () => {
       })
     )
 
-    const sizeInput = await findByLabelText(baseElement, 'Size in GB')
+    const sizeInput = await findByLabelText(baseElement, 'Size in GiB')
     const pathInput = await findByLabelText(baseElement, 'Mounting Path')
     findByLabelText(baseElement, 'Type')
 
@@ -45,7 +44,7 @@ describe('StorageModal', () => {
 
     await waitFor(() => {
       button.click()
-      expect(button).not.toBeDisabled()
+      expect(button).toBeEnabled()
       expect(spy).toHaveBeenCalled()
     })
   })

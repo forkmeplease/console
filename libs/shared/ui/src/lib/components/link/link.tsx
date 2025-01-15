@@ -1,45 +1,103 @@
-import { IconEnum } from '@qovery/shared/enums'
+import { type VariantProps, cva } from 'class-variance-authority'
+import { type ComponentPropsWithoutRef, forwardRef } from 'react'
+import { Link as ReactLink, type LinkProps as ReactLinkProps } from 'react-router-dom'
+import { match } from 'ts-pattern'
+import { twMerge } from '@qovery/shared/util-js'
+import { buttonVariants } from '../button-primitive/button-primitive'
 import Icon from '../icon/icon'
 
-export interface BaseLink {
-  link: string
-  linkLabel?: string
-  external?: boolean
-}
+export const linkVariants = cva(
+  ['cursor-pointer', 'transition', 'duration-100', 'font-medium', 'inline-flex', 'items-center', 'gap-1'],
+  {
+    variants: {
+      color: {
+        brand: ['text-brand-500', 'hover:text-brand-600 dark:hover:text-brand-400'],
+        red: ['text-red-500', 'hover:text-red-600'],
+        sky: ['text-sky-500', 'hover:text-sky-600'],
+        current: ['text-current', 'hover:brightness-75'],
+      },
+      size: {
+        xs: ['text-xs'],
+        sm: ['text-sm'],
+        ssm: ['text-ssm'],
+      },
+      underline: {
+        true: ['hover:underline'],
+        false: [],
+      },
+    },
+    defaultVariants: {
+      color: 'sky',
+      size: 'sm',
+      underline: false,
+    },
+  }
+)
 
-export interface LinkProps extends BaseLink {
-  className?: string
-  size?: string
-  iconRight?: IconEnum | string
-  iconRightClassName?: string
-  iconLeft?: IconEnum | string
-  iconLeftClassName?: string
-}
+const iconVariants = cva([], {
+  variants: {
+    size: {
+      xs: ['text-2xs', 'leading-4'],
+      sm: ['text-xs', 'leading-5'],
+      ssm: ['text-ssm', 'leading-6'],
+    },
+  },
+  defaultVariants: {
+    size: 'sm',
+  },
+})
 
-export function Link(props: LinkProps) {
-  const {
-    link,
-    linkLabel,
-    external = false,
-    className = '',
-    size = 'text-sm',
-    iconLeft,
-    iconRight,
-    iconLeftClassName = 'text-xs leading-5',
-    iconRightClassName = 'ml-0.5 text-xs leading-5 ',
-  } = props
-  return (
-    <a
-      className={`${className} ${size} text-accent2-500 inline-flex flex-center gap-1 hover:underline`}
-      href={link}
-      target={external ? '_blank' : '_self'}
-      rel="noreferrer"
-    >
-      {iconLeft && <Icon name={iconLeft} className={iconLeftClassName} />}
-      {linkLabel}
-      {iconRight && <Icon name={iconRight} className={iconRightClassName} />}
-    </a>
-  )
-}
+export type ExternalLinkProps =
+  | ((Omit<ComponentPropsWithoutRef<'a'>, 'color'> & VariantProps<typeof linkVariants>) & { withIcon?: boolean })
+  | (Omit<ComponentPropsWithoutRef<'a'>, 'color'> & VariantProps<typeof buttonVariants> & { as: 'button' })
 
-export default Link
+export const ExternalLink = forwardRef<HTMLAnchorElement, ExternalLinkProps>(
+  function ExternalLink(props, forwardedRef) {
+    return match(props)
+      .with({ as: 'button' }, ({ className, children, color, radius, size, variant, as, ...rest }) => (
+        <a
+          ref={forwardedRef}
+          className={twMerge(buttonVariants({ color, radius, size, variant }), className)}
+          target="_blank"
+          rel="noopener noreferrer"
+          {...rest}
+        >
+          {children}
+        </a>
+      ))
+      .otherwise(({ children, color, size, className, withIcon = true, underline, ...rest }) => (
+        <a
+          ref={forwardedRef}
+          className={twMerge(linkVariants({ color, size, underline }), className)}
+          target="_blank"
+          rel="noopener noreferrer"
+          {...rest}
+        >
+          {children}
+          {withIcon && <Icon iconName="arrow-up-right-from-square" className={iconVariants({ size })} />}
+        </a>
+      ))
+  }
+)
+
+export type LinkProps =
+  | (Omit<ReactLinkProps, 'color'> & VariantProps<typeof linkVariants>)
+  | (Omit<ReactLinkProps, 'color'> & VariantProps<typeof buttonVariants> & { as: 'button' })
+
+export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(props, forwardedRef) {
+  return match(props)
+    .with({ as: 'button' }, ({ className, children, color, radius, size, variant, as, ...rest }) => (
+      <ReactLink
+        ref={forwardedRef}
+        className={twMerge(buttonVariants({ color, radius, size, variant }), className)}
+        {...rest}
+      >
+        {children}
+      </ReactLink>
+    ))
+    .otherwise(({ className, children, color, size, underline, ...rest }) => (
+      <ReactLink ref={forwardedRef} className={twMerge(linkVariants({ color, size, underline }), className)} {...rest}>
+        {children}
+      </ReactLink>
+    ))
+})

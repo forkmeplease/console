@@ -1,18 +1,25 @@
-import { useSelector } from 'react-redux'
 import { Navigate, Route, Routes, useParams } from 'react-router-dom'
-import { selectProjectsEntitiesByOrgId } from '@qovery/domains/projects'
+import { useProjects } from '@qovery/domains/projects/feature'
+import { IconEnum } from '@qovery/shared/enums'
 import {
+  SETTINGS_API_URL,
+  SETTINGS_BILLING_SUMMARY_URL,
   SETTINGS_BILLING_URL,
-  SETTINGS_CLUSTER_URL,
   SETTINGS_CONTAINER_REGISTRIES_URL,
   SETTINGS_DANGER_ZONE_URL,
   SETTINGS_GENERAL_URL,
+  SETTINGS_GIT_REPOSITORY_ACCESS_URL,
+  SETTINGS_HELM_REPOSITORIES_URL,
+  SETTINGS_LABELS_ANNOTATIONS_URL,
   SETTINGS_MEMBERS_URL,
+  SETTINGS_PROJECT_DANGER_ZONE_URL,
+  SETTINGS_PROJECT_GENERAL_URL,
+  SETTINGS_PROJECT_URL,
   SETTINGS_ROLES_URL,
   SETTINGS_URL,
-} from '@qovery/shared/router'
-import { IconAwesomeEnum } from '@qovery/shared/ui'
-import { RootState } from '@qovery/store'
+  SETTINGS_WEBHOOKS,
+} from '@qovery/shared/routes'
+import { ErrorBoundary, IconAwesomeEnum, type NavigationLeftLinkProps } from '@qovery/shared/ui'
 import { ROUTER_SETTINGS } from './router/router'
 import { Container } from './ui/container/container'
 
@@ -20,10 +27,9 @@ export function PageSettings() {
   const { organizationId = '' } = useParams()
 
   const pathSettings = SETTINGS_URL(organizationId)
+  const { data: projects = [] } = useProjects({ organizationId })
 
-  const projects = useSelector((state: RootState) => selectProjectsEntitiesByOrgId(state, organizationId))
-
-  const organizationLinks = [
+  const organizationLinks: NavigationLeftLinkProps[] = [
     {
       title: 'General',
       icon: IconAwesomeEnum.WHEEL,
@@ -44,9 +50,23 @@ export function PageSettings() {
       ],
     },
     {
-      title: 'Biling & plans',
+      title: 'Billing & plans',
       icon: IconAwesomeEnum.CREDIT_CARD,
-      url: pathSettings + SETTINGS_BILLING_URL,
+      subLinks: [
+        {
+          title: 'Summary',
+          url: pathSettings + SETTINGS_BILLING_SUMMARY_URL,
+        },
+        {
+          title: 'Billing details',
+          url: pathSettings + SETTINGS_BILLING_URL,
+        },
+      ],
+    },
+    {
+      title: 'Labels & annotations',
+      iconName: 'tags',
+      url: pathSettings + SETTINGS_LABELS_ANNOTATIONS_URL,
     },
     {
       title: 'Container registries',
@@ -54,9 +74,24 @@ export function PageSettings() {
       url: pathSettings + SETTINGS_CONTAINER_REGISTRIES_URL,
     },
     {
-      title: 'Cluster',
-      icon: IconAwesomeEnum.CLOUD,
-      url: pathSettings + SETTINGS_CLUSTER_URL,
+      title: 'Helm repositories',
+      icon: IconEnum.HELM_OFFICIAL,
+      url: pathSettings + SETTINGS_HELM_REPOSITORIES_URL,
+    },
+    {
+      title: 'Git repositories access',
+      icon: IconAwesomeEnum.KEY,
+      url: pathSettings + SETTINGS_GIT_REPOSITORY_ACCESS_URL,
+    },
+    {
+      title: 'Webhook',
+      icon: IconAwesomeEnum.TOWER_BROADCAST,
+      url: pathSettings + SETTINGS_WEBHOOKS,
+    },
+    {
+      title: 'API Token',
+      icon: IconAwesomeEnum.CLOUD_ARROW_UP,
+      url: pathSettings + SETTINGS_API_URL,
     },
     {
       title: 'Danger zone',
@@ -70,40 +105,24 @@ export function PageSettings() {
     subLinks: [
       {
         title: 'General',
-        onClick: () =>
-          window.open(
-            `https://console.qovery.com/platform/organization/${organizationId}/projects/${project.id}/environments`
-          ),
+        url: pathSettings + SETTINGS_PROJECT_URL(project.id) + SETTINGS_PROJECT_GENERAL_URL,
       },
       {
         title: 'Danger zone',
-        onClick: () =>
-          window.open(
-            `https://console.qovery.com/platform/organization/${organizationId}/projects/${project.id}/environments`
-          ),
+        url: pathSettings + SETTINGS_PROJECT_URL(project.id) + SETTINGS_PROJECT_DANGER_ZONE_URL,
       },
     ],
   }))
 
-  const accountLinks = [
-    {
-      title: 'General',
-      icon: IconAwesomeEnum.WHEEL,
-      onClick: () => window.open('https://console.qovery.com/platform/organization/user/settings/general'),
-    },
-    {
-      title: 'Git permission',
-      icon: IconAwesomeEnum.CODE_BRANCH,
-      onClick: () =>
-        window.open(`https://console.qovery.com/platform/organization/${organizationId}/settings/git-permission`),
-    },
-  ]
-
   return (
-    <Container organizationLinks={organizationLinks} projectLinks={projectLinks} accountLinks={accountLinks}>
+    <Container organizationLinks={organizationLinks} projectLinks={projectLinks}>
       <Routes>
         {ROUTER_SETTINGS.map((route) => (
-          <Route key={route.path} path={route.path} element={route.component} />
+          <Route
+            key={route.path}
+            path={route.path}
+            element={<ErrorBoundary key={route.path}>{route.component}</ErrorBoundary>}
+          />
         ))}
         <Route path="*" element={<Navigate replace to={pathSettings + SETTINGS_GENERAL_URL} />} />
       </Routes>

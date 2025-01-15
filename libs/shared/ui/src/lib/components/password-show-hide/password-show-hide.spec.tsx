@@ -1,6 +1,5 @@
-import PasswordShowHide, { PasswordShowHideProps } from './password-show-hide'
-import { render } from '__tests__/utils/setup-jest'
-import { act, screen } from '@testing-library/react'
+import { act, render, screen } from '__tests__/utils/setup-jest'
+import PasswordShowHide, { type PasswordShowHideProps } from './password-show-hide'
 
 const defaultProps: PasswordShowHideProps = {
   value: 'test value',
@@ -16,9 +15,7 @@ describe('PasswordShowHide', () => {
   it('should show the value in password stars format', () => {
     const { baseElement } = render(<PasswordShowHide {...defaultProps} />)
 
-    const input = screen.getByTestId('input')
-    expect(input.getAttribute('type')).toBe('password')
-
+    screen.getByTestId('hide_value')
     expect(baseElement).toBeTruthy()
   })
 
@@ -40,8 +37,7 @@ describe('PasswordShowHide', () => {
   it('should disabled the tooltip showing the whole value if we are in password mode', () => {
     const { baseElement } = render(<PasswordShowHide {...defaultProps} />)
 
-    const input = screen.getByTestId('input')
-    expect(input).toBeDisabled()
+    screen.getByTestId('hide_value')
 
     expect(baseElement).toBeTruthy()
   })
@@ -55,15 +51,6 @@ describe('PasswordShowHide', () => {
 
     const value = screen.getByTestId('visible_value')
     expect(value).toBeVisible()
-
-    expect(baseElement).toBeTruthy()
-  })
-
-  it('should not be possible to edit the value', () => {
-    const { baseElement } = render(<PasswordShowHide {...defaultProps} />)
-
-    const input = screen.getByTestId('input')
-    expect(input.hasAttribute('readonly')).toBeTruthy()
 
     expect(baseElement).toBeTruthy()
   })

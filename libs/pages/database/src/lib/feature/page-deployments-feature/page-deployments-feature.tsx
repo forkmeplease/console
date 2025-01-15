@@ -1,57 +1,29 @@
-import { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { type DeploymentHistoryDatabase } from 'qovery-typescript-axios'
 import { useParams } from 'react-router-dom'
-import {
-  databaseDeploymentsFactoryMock,
-  databasesLoadingStatus,
-  fetchDatabaseDeployments,
-  getDatabasesState,
-} from '@qovery/domains/database'
-import { DatabaseEntity } from '@qovery/shared/interfaces'
-import { BaseLink } from '@qovery/shared/ui'
-import { useDocumentTitle } from '@qovery/shared/utils'
-import { AppDispatch, RootState } from '@qovery/store'
+import { useDeploymentHistory, useService, useServiceType } from '@qovery/domains/services/feature'
+import { databaseDeploymentsFactoryMock } from '@qovery/shared/factories'
+import { useDocumentTitle } from '@qovery/shared/util-hooks'
 import { PageDeployments } from '../../ui/page-deployments/page-deployments'
 
 export function PageDeploymentsFeature() {
   useDocumentTitle('Database Deployments - Qovery')
 
-  const { databaseId = '' } = useParams()
-  const dispatch = useDispatch<AppDispatch>()
-
-  const database = useSelector<RootState, DatabaseEntity | undefined>(
-    (state) => getDatabasesState(state).entities[databaseId]
-  )
+  const { databaseId = '', environmentId = '' } = useParams()
+  const { data: serviceType } = useServiceType({ serviceId: databaseId, environmentId })
+  const { data: deploymentHistory, isLoading: isDeploymentHistoryLoading } = useDeploymentHistory({
+    serviceId: databaseId,
+    serviceType,
+  })
+  const { isLoading: isLoadingDatabase } = useService({ serviceId: databaseId, serviceType: 'DATABASE' })
 
   const loadingDatabasesDeployments = databaseDeploymentsFactoryMock(3)
-
-  const loadingStatus = useSelector<RootState>((state) => databasesLoadingStatus(state))
-  const loadingStatusDeployments = database?.deployments?.loadingStatus
-  const isLoading = loadingStatus !== 'loaded' || loadingStatusDeployments !== 'loaded'
-
-  const listHelpfulLinks: BaseLink[] = [
-    {
-      link: 'https://hub.qovery.com/docs/using-qovery/configuration/database',
-      linkLabel: 'How to configure my database',
-      external: true,
-    },
-  ]
-
-  useEffect(() => {
-    if (database && (!database.deployments?.loadingStatus || database.deployments.loadingStatus === 'not loaded')) {
-      dispatch(fetchDatabaseDeployments({ databaseId }))
-    }
-
-    const pullDeployments = setInterval(() => dispatch(fetchDatabaseDeployments({ databaseId, silently: true })), 2500)
-
-    return () => clearInterval(pullDeployments)
-  }, [dispatch, databaseId, database])
+  const isLoading = isLoadingDatabase || isDeploymentHistoryLoading
 
   return (
     <PageDeployments
-      databaseId={database?.id}
-      deployments={!isLoading ? database?.deployments?.items : loadingDatabasesDeployments}
-      listHelpfulLinks={listHelpfulLinks}
+      deployments={
+        !isLoading ? ((deploymentHistory?.results ?? []) as DeploymentHistoryDatabase[]) : loadingDatabasesDeployments
+      }
       isLoading={isLoading}
     />
   )

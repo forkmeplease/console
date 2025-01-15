@@ -1,6 +1,6 @@
 import {
   OrganizationCustomRoleClusterPermission,
-  OrganizationCustomRoleClusterPermissions,
+  type OrganizationCustomRoleClusterPermissionsInner,
 } from 'qovery-typescript-axios'
 import { useState } from 'react'
 import { useFormContext } from 'react-hook-form'
@@ -9,7 +9,7 @@ import RowCluster from '../row-cluster/row-cluster'
 import Table from '../table/table'
 
 export interface TableClustersProps {
-  clusters: OrganizationCustomRoleClusterPermissions[]
+  clusters: OrganizationCustomRoleClusterPermissionsInner[]
 }
 
 export function TableClusters(props: TableClustersProps) {
@@ -38,8 +38,8 @@ export function TableClusters(props: TableClustersProps) {
         },
       ]}
     >
-      <div className="flex items-center h-10 bg-element-light-lighter-300 border-element-light-lighter-400 border-b">
-        <div className="flex-auto flex items-center h-full px-4 w-1/4 border-r border-element-light-lighter-500 font-medium">
+      <div className="flex h-10 items-center border-b border-neutral-200 bg-neutral-150">
+        <div className="flex h-full w-1/4 flex-auto items-center border-r border-neutral-250 px-4 font-medium">
           Clusters
         </div>
         {Object.keys(OrganizationCustomRoleClusterPermission)
@@ -47,7 +47,7 @@ export function TableClusters(props: TableClustersProps) {
           .map((permission: string) => (
             <div
               key={permission}
-              className="flex-1 flex items-center justify-center h-full px-4 border-r border-element-light-lighter-500 last:border-0"
+              className="flex h-full flex-1 items-center justify-center border-r border-neutral-250 px-4 last:border-0"
             >
               <InputCheckbox
                 dataTestId={`checkbox-${permission}`}
@@ -61,7 +61,7 @@ export function TableClusters(props: TableClustersProps) {
                     globalCheck !== permission ? permission : OrganizationCustomRoleClusterPermission.VIEWER
                   setGlobalCheck(newValue)
                   // set value for nextPermission if admin is uncheck
-                  clusters.forEach((cluster: OrganizationCustomRoleClusterPermissions) => {
+                  clusters.forEach((cluster: OrganizationCustomRoleClusterPermissionsInner) => {
                     const key = `cluster_permissions.${cluster.cluster_id}`
                     setValue(key, newValue)
                   })
@@ -71,7 +71,7 @@ export function TableClusters(props: TableClustersProps) {
           ))}
       </div>
       <div>
-        {clusters.map((cluster: OrganizationCustomRoleClusterPermissions) => (
+        {clusters.map((cluster: OrganizationCustomRoleClusterPermissionsInner) => (
           <RowCluster key={cluster.cluster_id} cluster={cluster} setGlobalCheck={setGlobalCheck} />
         ))}
       </div>

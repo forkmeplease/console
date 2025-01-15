@@ -1,6 +1,6 @@
-import { render } from '@testing-library/react'
 import { wrapWithReactHookForm } from '__tests__/utils/wrap-with-react-hook-form'
-import InputSizeUnit, { InputSizeUnitProps } from './input-size-unit'
+import { renderWithProviders, screen } from '@qovery/shared/util-tests'
+import InputSizeUnit, { type InputSizeUnitProps } from './input-size-unit'
 
 const props: InputSizeUnitProps = {
   name: 'memory',
@@ -12,21 +12,21 @@ const props: InputSizeUnitProps = {
 
 describe('InputSizeUnit', () => {
   it('should render successfully', () => {
-    const { baseElement } = render(wrapWithReactHookForm(<InputSizeUnit {...props} />))
+    const { baseElement } = renderWithProviders(wrapWithReactHookForm(<InputSizeUnit {...props} />))
     expect(baseElement).toBeTruthy()
   })
 
   it('should render current consumption for memory with GB', () => {
     props.currentSize = 1024
 
-    const { getByTestId } = render(wrapWithReactHookForm(<InputSizeUnit {...props} />))
-    expect(getByTestId('current-consumption').textContent).toBe('Current consumption: 1 GB')
+    renderWithProviders(wrapWithReactHookForm(<InputSizeUnit {...props} />))
+    expect(screen.getByTestId('current-consumption')).toHaveTextContent('Current consumption: 1 GB')
   })
 
   it('should render current consumption for memory with MB', () => {
     props.currentSize = 100
 
-    const { getByTestId } = render(wrapWithReactHookForm(<InputSizeUnit {...props} />))
-    expect(getByTestId('current-consumption').textContent).toBe('Current consumption: 100 MB')
+    renderWithProviders(wrapWithReactHookForm(<InputSizeUnit {...props} />))
+    expect(screen.getByTestId('current-consumption')).toHaveTextContent('Current consumption: 100 MB')
   })
 })

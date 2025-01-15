@@ -1,8 +1,8 @@
-import { render, screen } from '__tests__/utils/setup-jest'
 import { ClusterLogsStepEnum } from 'qovery-typescript-axios'
-import { clusterLogFactoryMock } from '@qovery/domains/organization'
 import { LogsType } from '@qovery/shared/enums'
-import Row, { RowProps } from './row'
+import { clusterLogFactoryMock } from '@qovery/shared/factories'
+import { renderWithProviders, screen } from '@qovery/shared/util-tests'
+import Row, { type RowProps } from './row'
 
 describe('Row', () => {
   const props: RowProps = {
@@ -12,7 +12,7 @@ describe('Row', () => {
   }
 
   it('should render successfully', () => {
-    const { baseElement } = render(<Row {...props} />)
+    const { baseElement } = renderWithProviders(<Row {...props} />)
     expect(baseElement).toBeTruthy()
   })
 
@@ -21,11 +21,11 @@ describe('Row', () => {
       type: LogsType.WARNING,
     }
 
-    render(<Row {...props} />)
+    renderWithProviders(<Row {...props} />)
 
     const index = screen.getByTestId('index')
 
-    expect(index).toHaveClass('bg-element-light-darker-300 text-text-400 group-hover:bg-element-light-darker-200')
+    expect(index).toHaveClass('bg-neutral-600 text-neutral-350 group-hover:bg-neutral-550')
   })
 
   it('should have error index color', () => {
@@ -33,11 +33,11 @@ describe('Row', () => {
       type: LogsType.ERROR,
     }
 
-    render(<Row {...props} />)
+    renderWithProviders(<Row {...props} />)
 
     const index = screen.getByTestId('index')
 
-    expect(index).toHaveClass('bg-element-light-darker-300 text-text-400 group-hover:bg-element-light-darker-200')
+    expect(index).toHaveClass('bg-neutral-600 text-neutral-350 group-hover:bg-neutral-550')
   })
 
   it('should have real error index color', () => {
@@ -46,11 +46,11 @@ describe('Row', () => {
       step: ClusterLogsStepEnum.DELETE_ERROR,
     }
 
-    render(<Row {...props} />)
+    renderWithProviders(<Row {...props} />)
 
     const index = screen.getByTestId('index')
 
-    expect(index).toHaveClass('bg-error-500 text-text-800 group-hover:bg-error-600')
+    expect(index).toHaveClass('bg-red-500 text-neutral-800 group-hover:bg-red-600')
   })
 
   it('should have success index color', () => {
@@ -58,11 +58,11 @@ describe('Row', () => {
       step: ClusterLogsStepEnum.CREATED,
     }
 
-    render(<Row {...props} />)
+    renderWithProviders(<Row {...props} />)
 
     const index = screen.getByTestId('index')
 
-    expect(index).toHaveClass('bg-success-500 text-text-800 group-hover:bg-success-600')
+    expect(index).toHaveClass('bg-green-500 text-neutral-800 group-hover:bg-green-600')
   })
 
   it('should have warning cell date color', () => {
@@ -70,11 +70,11 @@ describe('Row', () => {
       type: LogsType.WARNING,
     }
 
-    render(<Row {...props} />)
+    renderWithProviders(<Row {...props} />)
 
     const cellDate = screen.getByTestId('cell-date')
 
-    expect(cellDate).toHaveClass('py-1 px-2 text-warning-500')
+    expect(cellDate).toHaveClass('py-1 px-2 text-yellow-500')
   })
 
   it('should have error cell date color', () => {
@@ -82,11 +82,11 @@ describe('Row', () => {
       type: LogsType.ERROR,
     }
 
-    render(<Row {...props} />)
+    renderWithProviders(<Row {...props} />)
 
     const cellDate = screen.getByTestId('cell-date')
 
-    expect(cellDate).toHaveClass('py-1 px-2 text-error-500')
+    expect(cellDate).toHaveClass('py-1 px-2 text-red-500')
   })
 
   it('should have success cell date color', () => {
@@ -94,11 +94,11 @@ describe('Row', () => {
       step: ClusterLogsStepEnum.CREATED,
     }
 
-    render(<Row {...props} />)
+    renderWithProviders(<Row {...props} />)
 
     const cellDate = screen.getByTestId('cell-date')
 
-    expect(cellDate).toHaveClass('py-1 px-2 text-success-500')
+    expect(cellDate).toHaveClass('py-1 px-2 text-green-500')
   })
 
   it('should have cell message', () => {
@@ -109,11 +109,8 @@ describe('Row', () => {
       },
     }
 
-    render(<Row {...props} />)
-
-    const cellMsg = screen.getByTestId('cell-msg')
-
-    expect(cellMsg?.textContent).toBe(`${ClusterLogsStepEnum.CREATED} - hello world`)
+    const { container } = renderWithProviders(<Row {...props} />)
+    expect(container).toMatchSnapshot()
   })
 
   it('should have cell error message', () => {
@@ -125,10 +122,7 @@ describe('Row', () => {
       },
     }
 
-    render(<Row {...props} />)
-
-    const cellMsg = screen.getByTestId('cell-msg')
-
-    expect(cellMsg?.textContent).toBe(`${ClusterLogsStepEnum.DELETE_ERROR} - error message`)
+    const { container } = renderWithProviders(<Row {...props} />)
+    expect(container).toMatchSnapshot()
   })
 })

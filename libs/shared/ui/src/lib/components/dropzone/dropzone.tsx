@@ -1,25 +1,28 @@
+import { twMerge } from '@qovery/shared/util-js'
 import Icon from '../icon/icon'
-import { IconAwesomeEnum } from '../icon/icon-awesome.enum'
 
 export interface DropzoneProps {
   isDragActive: boolean
   className?: string
+  typeFile?: string
 }
 
-export function Dropzone(props: DropzoneProps) {
-  const classNamesDragIsActive = props.isDragActive ? '' : 'border-dashed'
+export function Dropzone({ isDragActive, typeFile = '.env', className }: DropzoneProps) {
+  const classNamesDragIsActive = isDragActive ? '' : 'border-dashed'
 
   return (
     <div
-      className={`flex w-full items-center justify-center min-h-[144px] rounded bg-element-light-lighter-300 border border-element-light-lighter-600 hover:border-element-light-lighter-700 transition-all ease-in-out duration-150 cursor-pointer text-text-400 text-xs ${classNamesDragIsActive} ${
-        props.className || ''
-      }`}
+      className={twMerge(
+        `flex min-h-[140px] w-full cursor-pointer items-center justify-center rounded border border-neutral-250 bg-neutral-100 text-xs text-neutral-350 transition-all duration-150 ease-in-out hover:border-neutral-300`,
+        classNamesDragIsActive,
+        className
+      )}
     >
-      <div className="flex items-center h-full justify-center flex-col text-center">
-        <Icon name={IconAwesomeEnum.FILE_ARROW_DOWN} className="text-xl mb-2" />
-        {!props.isDragActive ? (
+      <div className="flex h-full flex-col items-center justify-center text-center">
+        <Icon iconName="file-arrow-down" className="mb-2 text-xl" />
+        {!isDragActive ? (
           <p>
-            Click to import your .env file or
+            Click to import your {typeFile} file or
             <br />
             drag and drop it
           </p>

@@ -1,86 +1,62 @@
-import { useEffect, useState } from 'react'
-import { FieldValues, FormProvider, useForm } from 'react-hook-form'
-import { useDispatch, useSelector } from 'react-redux'
+import { type FieldValues, FormProvider, useForm } from 'react-hook-form'
 import { useParams } from 'react-router-dom'
-import { editDatabase, selectDatabaseById } from '@qovery/domains/database'
-import { MemorySizeEnum } from '@qovery/shared/enums'
-import { DatabaseEntity } from '@qovery/shared/interfaces'
-import { convertCpuToVCpu } from '@qovery/shared/utils'
-import { AppDispatch, RootState } from '@qovery/store'
+import { useEnvironment } from '@qovery/domains/environments/feature'
+import { type Database } from '@qovery/domains/services/data-access'
+import { useDeploymentStatus, useEditService, useService } from '@qovery/domains/services/feature'
+import { DEPLOYMENT_LOGS_VERSION_URL, ENVIRONMENT_LOGS_URL } from '@qovery/shared/routes'
+import { buildEditServicePayload } from '@qovery/shared/util-services'
 import PageSettingsResources from '../../ui/page-settings-resources/page-settings-resources'
 
-export const handleSubmit = (
-  data: FieldValues,
-  database: DatabaseEntity,
-  memorySize: MemorySizeEnum | string,
-  storageSize: MemorySizeEnum | string
-) => {
+export const handleSubmit = (data: FieldValues, database: Database) => {
   const cloneDatabase = Object.assign({}, database)
-  const currentMemory = Number(data['memory'])
-  const currentStorage = Number(data['storage'])
 
-  cloneDatabase.cpu = convertCpuToVCpu(data['cpu'][0], true)
-  cloneDatabase.memory = memorySize === MemorySizeEnum.GB ? currentMemory * 1024 : currentMemory
-  cloneDatabase.storage = storageSize === MemorySizeEnum.GB ? currentStorage * 1024 : currentStorage
+  cloneDatabase.cpu = data['cpu']
+  cloneDatabase.memory = Number(data['memory'])
+  cloneDatabase.storage = Number(data['storage'])
+  cloneDatabase.instance_type = data['instance_type']
 
   return cloneDatabase
 }
 
 export function PageSettingsResourcesFeature() {
-  const { databaseId = '' } = useParams()
+  const { databaseId = '', environmentId = '' } = useParams()
 
-  const [loading, setLoading] = useState(false)
-  const dispatch = useDispatch<AppDispatch>()
+  const { data: environment } = useEnvironment({ environmentId })
+  const { data: database } = useService({ serviceId: databaseId, serviceType: 'DATABASE' })
+  const { data: deploymentStatus } = useDeploymentStatus({ environmentId, serviceId: databaseId })
 
-  const database = useSelector<RootState, DatabaseEntity | undefined>((state) => selectDatabaseById(state, databaseId))
+  const { mutate: editService, isLoading: isLoadingEditService } = useEditService({
+    environmentId,
+    logsLink:
+      ENVIRONMENT_LOGS_URL(environment?.organization.id, environment?.project.id, environment?.id) +
+      DEPLOYMENT_LOGS_VERSION_URL(database?.id, deploymentStatus?.execution_id),
+  })
 
   const methods = useForm({
     mode: 'onChange',
     defaultValues: {
       memory: database?.memory,
       storage: database?.storage,
-      cpu: [convertCpuToVCpu(database?.cpu) || 1],
+      cpu: database?.cpu || 10,
+      instance_type: database?.instance_type,
     },
   })
 
-  const [memorySize, setMemorySize] = useState<MemorySizeEnum | string>(MemorySizeEnum.MB)
-  const [storageSize, setStorageSize] = useState<MemorySizeEnum | string>(MemorySizeEnum.MB)
-
-  useEffect(() => {
-    methods.reset({
-      memory: database?.memory,
-      storage: database?.storage,
-      cpu: [convertCpuToVCpu(database?.cpu) || 1],
-    })
-  }, [methods, database?.memory, database?.storage, database?.cpu])
-
   const onSubmit = methods.handleSubmit((data) => {
     if (!database) return
-
-    setLoading(true)
-    const cloneDatabase = handleSubmit(data, database, memorySize, storageSize)
-
-    dispatch(
-      editDatabase({
-        databaseId: databaseId,
-        data: cloneDatabase,
-      })
-    )
-      .unwrap()
-      .then(() => setLoading(false))
-      .catch(() => setLoading(false))
+    editService({
+      serviceId: databaseId,
+      payload: buildEditServicePayload({ service: database, request: handleSubmit(data, database) }),
+    })
   })
 
   return (
     <FormProvider {...methods}>
       <PageSettingsResources
         onSubmit={onSubmit}
-        loading={loading}
+        loading={isLoadingEditService}
         database={database}
-        storageSize={storageSize}
-        memorySize={memorySize}
-        getMemoryUnit={(value: string | MemorySizeEnum) => setMemorySize(value)}
-        getStorageUnit={(value: string | MemorySizeEnum) => setStorageSize(value)}
+        clusterId={environment?.cluster_id}
       />
     </FormProvider>
   )

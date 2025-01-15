@@ -1,21 +1,24 @@
 {
+  "name": "shared-utils",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/shared/utils/src",
   "projectType": "library",
   "tags": [],
   "targets": {
     "lint": {
-      "executor": "@nrwl/linter:eslint",
-      "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["libs/shared/utils/**/*.{ts,tsx,js,jsx}"]
+        "exclude": ["libs/shared/utils/**/*.spec.ts", "libs/shared/utils/**/*.stories.ts"]
       }
     },
     "test": {
-      "executor": "@nrwl/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/libs/shared/utils"],
       "options": {
-        "jestConfig": "libs/shared/utils/jest.config.ts",
         "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "coverage": true
+        }
       }
     }
   }

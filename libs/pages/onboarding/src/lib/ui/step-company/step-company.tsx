@@ -1,13 +1,18 @@
-import { Dispatch, SetStateAction } from 'react'
-import { Control, Controller } from 'react-hook-form'
-import { Value } from '@qovery/shared/interfaces'
-import { Button, ButtonSize, ButtonStyle, InputSelect, InputText } from '@qovery/shared/ui'
+import { type CompanySizeEnum } from 'qovery-typescript-axios'
+import { type Dispatch, type SetStateAction } from 'react'
+import { type Control, Controller } from 'react-hook-form'
+import { type Value } from '@qovery/shared/interfaces'
+import { Button, Icon, InputSelect, InputText } from '@qovery/shared/ui'
 
 export interface StepCompanyProps {
   dataSize: Array<Value>
   dataRole: Array<Value>
   onSubmit: () => void
-  control: Control<any, any>
+  control: Control<{
+    company_name?: string
+    company_size?: CompanySizeEnum
+    user_role?: string
+  }>
   setStepCompany: Dispatch<SetStateAction<boolean>>
 }
 
@@ -16,8 +21,8 @@ export function StepCompany(props: StepCompanyProps) {
 
   return (
     <div className="pb-10">
-      <h1 className="h3 text-text-700 mb-3">About your company</h1>
-      <p className="text-sm mb-10 text-text-500">We need some information to proceed with your account creation.</p>
+      <h1 className="h3 mb-3 text-neutral-400">About your company</h1>
+      <p className="mb-10 text-sm text-neutral-400">We need some information to proceed with your account creation.</p>
       <form onSubmit={onSubmit}>
         <Controller
           name="company_name"
@@ -64,16 +69,19 @@ export function StepCompany(props: StepCompanyProps) {
             />
           )}
         />
-        <div className="mt-10 pt-5 flex justify-between border-t border-element-light-lighter-400">
+        <div className="mt-10 flex justify-between border-t border-neutral-200 pt-5">
           <Button
+            type="button"
+            color="neutral"
+            variant="surface"
+            size="lg"
+            className="gap-2"
             onClick={() => setStepCompany(false)}
-            size={ButtonSize.XLARGE}
-            style={ButtonStyle.STROKED}
-            iconLeft="icon-solid-arrow-left"
           >
+            <Icon name="icon-solid-arrow-left" />
             Back
           </Button>
-          <Button size={ButtonSize.XLARGE} style={ButtonStyle.BASIC} type="submit">
+          <Button type="submit" size="lg">
             Continue
           </Button>
         </div>

@@ -1,7 +1,7 @@
 .input-select__control .input-select__input-container {
   @apply text-sm;
   margin: 0;
-  color: theme('colors.text.700');
+  color: theme('colors.neutral.400');
 }
 
 .input-select__control {
@@ -13,33 +13,39 @@
 }
 
 .input-select__value-container {
-  overflow: visible !important;
   padding: 0 !important;
   cursor: pointer;
   display: flex !important;
-  @apply mt-2 top-1;
+  flex-wrap: nowrap !important;
+  white-space: nowrap;
+  @apply top-1 mt-2;
+}
+
+.input--has-icon .input-select__control {
+  padding-left: theme('spacing.8');
+  transition-property: transform;
 }
 
 // state
 .input-select--error {
-  @apply border-error-500;
+  @apply border-red-500;
   box-shadow: 0 2px 2px rgba(0, 0, 0, 0.05);
   &:hover {
-    @apply border-error-500;
+    @apply border-red-500;
   }
 }
 
 .input-select--focused {
   & > label {
-    @apply text-xs translate-y-0;
+    @apply translate-y-0 text-xs;
   }
 }
 
 .input-select--disabled {
-  @apply bg-element-light-lighter-200 border-element-light-lighter-500 pointer-events-none;
+  @apply pointer-events-none border-neutral-250 bg-neutral-100;
 
   & > label {
-    @apply text-text-400;
+    @apply text-neutral-350;
   }
 }
 
@@ -62,7 +68,8 @@
 }
 
 // option
-.input-select__option {
+.input-select__option,
+.input-select__button {
   display: flex !important;
   background: #fff !important;
   padding: 8px !important;
@@ -70,11 +77,11 @@
   @apply items-center gap-2 rounded-sm;
 
   label {
-    @apply static translate-y-0 font-medium text-ssm text-text-600;
+    @apply static translate-y-0 text-ssm font-medium text-neutral-400;
   }
 
   .input-select__checkbox {
-    @apply bg-white border-2 border-element-light-lighter-700 rounded-sm w-4 h-4 flex items-center justify-center;
+    @apply flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border-2 border-neutral-350 bg-white;
   }
 
   &:hover {
@@ -82,15 +89,21 @@
   }
 }
 
+.input-select__option--is-disabled {
+  label {
+    @apply text-neutral-300;
+  }
+}
+
 .input-select__option--is-selected {
   background: theme('colors.white');
 
   label {
-    @apply text-text-600;
+    @apply text-neutral-400;
   }
 
   .input-select__checkbox {
-    @apply bg-brand-500 border-0;
+    @apply border-0 bg-brand-500;
   }
 }
 
@@ -100,6 +113,10 @@
 
 .input-select__option--is-focused,
 .input-select__option--is-focused.input-select__option--is-selected,
+.input-select__button:hover,
 .input-select__option--is-focused:hover {
-  background: theme('colors.element.light.lighter.300') !important;
+  background: theme('colors.brand.50') !important;
+  label {
+    color: theme('colors.brand.500') !important;
+  }
 }

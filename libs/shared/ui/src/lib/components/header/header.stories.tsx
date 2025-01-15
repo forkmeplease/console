@@ -1,40 +1,58 @@
-import { Meta, Story } from '@storybook/react'
+import { type Meta } from '@storybook/react'
 import { IconEnum } from '@qovery/shared/enums'
-import { ButtonIcon, ButtonIconStyle, Header, HeaderProps, Icon, Tag } from '@qovery/shared/ui'
+import Button from '../button/button'
+import Icon from '../icon/icon'
+import { Section } from '../section/section'
+import Tag from '../tag/tag'
+import { Header } from './header'
 
-export default {
+const Story: Meta<typeof Header> = {
   component: Header,
   title: 'Header',
-} as Meta
+  decorators: [
+    (Story) => (
+      <Section>
+        <Story />
+      </Section>
+    ),
+  ],
+}
+
+export default Story
 
 const buttons = (
   <>
-    <ButtonIcon icon="icon-solid-terminal" style={ButtonIconStyle.STROKED} />
-    <ButtonIcon icon="icon-solid-scroll" style={ButtonIconStyle.STROKED} />
-    <ButtonIcon icon="icon-solid-clock-rotate-left" style={ButtonIconStyle.STROKED} />
+    <Button type="button" variant="outline" color="neutral" size="md">
+      <Icon iconName="terminal" />
+    </Button>
+    <Button type="button" variant="outline" color="neutral" size="md">
+      <Icon iconName="scroll" />
+    </Button>
+    <Button type="button" variant="outline" color="neutral" size="md">
+      <Icon iconName="clock-rotate-left" />
+    </Button>
   </>
 )
 
 const actions = (
   <>
     <Tag className="bg-brand-50 text-brand-500">PROD</Tag>
-    <div className="border border-element-light-lighter-400 bg-white h-6 px-2 rounded text-xs items-center inline-flex font-medium gap-2">
+    <div className="inline-flex h-6 items-center gap-2 rounded border border-neutral-200 bg-white px-2 text-xs font-medium">
       <Icon name={IconEnum.AWS} width="16" />
       <p className="max-w-[54px] truncate">community-test</p>
     </div>
-    <Tag className="bg-element-light-lighter-300 gap-2">
-      <span className="w-2 h-2 rounded-lg bg-progressing-300"></span>
-      <span className="w-2 h-2 rounded-lg bg-accent3-500"></span>
+    <Tag className="gap-2 bg-neutral-150">
+      <span className="h-2 w-2 rounded-lg bg-orange-300"></span>
+      <span className="h-2 w-2 rounded-lg bg-teal-500"></span>
     </Tag>
   </>
 )
 
-const Template: Story<HeaderProps> = (args) => <Header {...args} />
-
-export const Primary = Template.bind({})
-Primary.args = {
-  title: 'Environments',
-  icon: IconEnum.ENVIRONMENT,
-  buttons: buttons,
-  actions: actions,
+export const Primary = {
+  args: {
+    title: 'Environments',
+    icon: IconEnum.ENVIRONMENT,
+    buttons: buttons,
+    actions: actions,
+  },
 }

@@ -1,17 +1,11 @@
 import { render } from '__tests__/utils/setup-jest'
-import { deploymentRulesFactoryMock } from '@qovery/domains/projects'
-import PageDeploymentRules, { PageDeploymentRulesProps } from './page-deployment-rules'
+import { deploymentRulesFactoryMock } from '@qovery/shared/factories'
+import PageDeploymentRules, { type PageDeploymentRulesProps } from './page-deployment-rules'
 
 let props: PageDeploymentRulesProps
 
 beforeEach(() => {
   props = {
-    listHelpfulLinks: [
-      {
-        link: 'my-link.com',
-        linkLabel: 'hello',
-      },
-    ],
     deploymentRules: deploymentRulesFactoryMock(2),
     isLoading: 'loading',
     updateDeploymentRulesOrder: jest.fn(),

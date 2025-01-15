@@ -1,6 +1,5 @@
-import { useParams } from 'react-router-dom'
-import { Link } from 'react-router-dom'
-import { ENVIRONMENTS_URL } from '@qovery/shared/router'
+import { Link, useParams } from 'react-router-dom'
+import { ENVIRONMENTS_URL } from '@qovery/shared/routes'
 
 export function Overview() {
   const { organizationId, projectId } = useParams()
@@ -9,7 +8,7 @@ export function Overview() {
     <div>
       <h2 className="text-3xl font-extrabold text-brand-500">Overview</h2>
       <ul className="mt-8">
-        <Link className="link text-accent2-500" to={`${ENVIRONMENTS_URL(organizationId, projectId)}/general`}>
+        <Link className="link text-sky-500" to={`${ENVIRONMENTS_URL(organizationId, projectId)}/general`}>
           Go to environments
         </Link>
       </ul>

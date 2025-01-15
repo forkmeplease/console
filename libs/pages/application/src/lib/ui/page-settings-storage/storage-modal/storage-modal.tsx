@@ -1,7 +1,7 @@
 import { StorageTypeEnum } from 'qovery-typescript-axios'
-import { FormEventHandler } from 'react'
+import { type FormEventHandler, useEffect } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
-import { InputSelect, InputText, ModalCrud } from '@qovery/shared/ui'
+import { InputSelect, InputText, ModalCrud, useModal } from '@qovery/shared/ui'
 
 export interface StorageModalProps {
   onClose: () => void
@@ -11,7 +11,12 @@ export interface StorageModalProps {
 }
 
 export function StorageModal(props: StorageModalProps) {
-  const { control } = useFormContext()
+  const { control, formState } = useFormContext()
+  const { enableAlertClickOutside } = useModal()
+
+  useEffect(() => {
+    enableAlertClickOutside(formState.isDirty)
+  }, [enableAlertClickOutside, formState])
 
   return (
     <ModalCrud
@@ -38,12 +43,12 @@ export function StorageModal(props: StorageModalProps) {
           }}
           render={({ field, fieldState: { error } }) => (
             <InputText
-              className="mb-6"
+              className="mb-3"
               name={field.name}
               onChange={field.onChange}
               value={field.value}
               error={error?.message}
-              label="Size in GB"
+              label="Size in GiB"
               type="number"
             />
           )}
@@ -55,13 +60,13 @@ export function StorageModal(props: StorageModalProps) {
           rules={{
             required: 'Please enter a value.',
             pattern: {
-              value: /^\/[a-zA-Z0-9]+$/i,
               message: 'The mount point must start with a slash',
+              value: /^\/.?\w+.*/,
             },
           }}
           render={({ field, fieldState: { error } }) => (
             <InputText
-              className="mb-6"
+              className="mb-3"
               name={field.name}
               onChange={field.onChange}
               value={field.value}

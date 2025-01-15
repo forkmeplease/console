@@ -1,13 +1,15 @@
 import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 import {
   SERVICES_SETTINGS_DANGER_ZONE_URL,
-  SERVICES_SETTINGS_DEPLOYMENT_URL,
   SERVICES_SETTINGS_GENERAL_URL,
+  SERVICES_SETTINGS_PIPELINE_URL,
   SERVICES_SETTINGS_PREVIEW_ENV_URL,
+  SERVICES_SETTINGS_RULES_URL,
   SERVICES_SETTINGS_URL,
   SERVICES_URL,
-} from '@qovery/shared/router'
-import { useDocumentTitle } from '@qovery/shared/utils'
+} from '@qovery/shared/routes'
+import { ErrorBoundary, IconAwesomeEnum } from '@qovery/shared/ui'
+import { useDocumentTitle } from '@qovery/shared/util-hooks'
 import { ROUTER_ENVIRONMENTS_SETTINGS } from '../../router/router'
 import PageSettings from '../../ui/page-settings/page-settings'
 
@@ -21,22 +23,31 @@ export function PageSettingsFeature() {
   const links = [
     {
       title: 'General',
-      icon: 'icon-solid-wheel',
+      icon: IconAwesomeEnum.WHEEL,
       url: pathSettings + SERVICES_SETTINGS_GENERAL_URL,
     },
     {
       title: 'Deployment',
-      icon: 'icon-solid-cart-flatbed',
-      url: pathSettings + SERVICES_SETTINGS_DEPLOYMENT_URL,
+      icon: IconAwesomeEnum.CART_FLATBED,
+      subLinks: [
+        {
+          title: 'Rules',
+          url: pathSettings + SERVICES_SETTINGS_RULES_URL,
+        },
+        {
+          title: 'Pipeline',
+          url: pathSettings + SERVICES_SETTINGS_PIPELINE_URL,
+        },
+      ],
     },
     {
       title: 'Preview Environments',
-      icon: 'icon-solid-eye',
+      icon: IconAwesomeEnum.EYE,
       url: pathSettings + SERVICES_SETTINGS_PREVIEW_ENV_URL,
     },
     {
       title: 'Danger zone',
-      icon: 'icon-solid-skull',
+      icon: IconAwesomeEnum.SKULL,
       url: pathSettings + SERVICES_SETTINGS_DANGER_ZONE_URL,
     },
   ]
@@ -45,7 +56,11 @@ export function PageSettingsFeature() {
     <PageSettings links={links}>
       <Routes>
         {ROUTER_ENVIRONMENTS_SETTINGS.map((route) => (
-          <Route key={route.path} path={route.path} element={route.component} />
+          <Route
+            key={route.path}
+            path={route.path}
+            element={<ErrorBoundary key={route.path}>{route.component}</ErrorBoundary>}
+          />
         ))}
         <Route path="*" element={<Navigate replace to={pathSettings + SERVICES_SETTINGS_GENERAL_URL} />} />
       </Routes>

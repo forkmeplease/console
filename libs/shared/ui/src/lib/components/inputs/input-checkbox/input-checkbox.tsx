@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useEffect, useState } from 'react'
+import Icon from '../../icon/icon'
 
 export interface InputCheckboxProps {
   name: string
@@ -12,8 +13,12 @@ export interface InputCheckboxProps {
   type?: string
   formValue?: string
   dataTestId?: string
+  big?: boolean
 }
 
+/*
+ * @deprecated Use Checkbox instead
+ */
 export function InputCheckbox(props: InputCheckboxProps) {
   const {
     name,
@@ -27,16 +32,18 @@ export function InputCheckbox(props: InputCheckboxProps) {
     formValue,
     id = name,
     dataTestId = 'input-checkbox',
+    big = false,
   } = props
 
   const [check, setCheck] = useState(isChecked)
+  const bigClasses = big ? 'mr-6 before:w-5 before:h-5' : 'mr-5 before:w-4 before:h-4'
 
   useEffect(() => {
     setCheck(isChecked)
   }, [isChecked])
 
   useEffect(() => {
-    setCheck(value === formValue)
+    if (formValue) setCheck(value === formValue)
   }, [formValue, value])
 
   const inputChange = (check: boolean, e: FormEvent<HTMLInputElement>) => {
@@ -45,7 +52,7 @@ export function InputCheckbox(props: InputCheckboxProps) {
   }
 
   return (
-    <div className={`flex gap-2 items-center ${className}`}>
+    <div className={`relative flex items-center gap-2 ${className}`}>
       <input
         data-testid={dataTestId}
         id={id}
@@ -55,17 +62,23 @@ export function InputCheckbox(props: InputCheckboxProps) {
         checked={check}
         disabled={disabled}
         onChange={(e) => inputChange(e.currentTarget.checked, e)}
-        className={`input-checkbox relative font-icons w-0 h-0 mr-5 appearance-none before:absolute before:flex before:justify-center before:items-center before:text-white before:w-4 before:h-4 before:top-0 before:left-0 before:-translate-y-1/2 before:rounded-sm before:bg-white ${
+        className={`input-checkbox relative h-0 w-0 appearance-none font-icons before:absolute before:left-0 before:top-0 before:flex before:-translate-y-1/2 before:items-center before:justify-center before:rounded-sm before:bg-white before:text-white dark:before:bg-neutral-500 ${bigClasses} ${
           disabled
-            ? 'before:border-element-light-lighter-500'
-            : 'before:border-element-light-lighter-700 cursor-pointer'
-        } before:border-2 before:font-black before:text-xs before:leading-none before:content-[''] before:transition-all`}
+            ? 'before:border-neutral-250 dark:before:border-neutral-350'
+            : 'cursor-pointer before:border-neutral-350'
+        } before:border-2 before:text-xs before:font-black before:leading-none before:transition-all before:content-[''] checked:before:border-brand-500 checked:before:bg-brand-500`}
       />
       {label && (
-        <label htmlFor={id} className="cursor-pointer leading-5 h-5 text-text-700 text-sm">
+        <label
+          htmlFor={id}
+          className={`h-5 cursor-pointer text-sm leading-5 text-neutral-400 dark:text-neutral-300 ${
+            big ? 'font-medium' : ''
+          } ${disabled ? '' : 'cursor-pointer'}`}
+        >
           {label}
         </label>
       )}
+      {check && <Icon iconName="check" className={`absolute text-2xs text-white ${big ? 'left-1.5' : 'left-1'}`} />}
     </div>
   )
 }

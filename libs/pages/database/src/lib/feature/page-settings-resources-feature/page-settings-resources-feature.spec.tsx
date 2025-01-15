@@ -1,108 +1,129 @@
-import { ResizeObserver } from '__tests__/utils/resize-observer'
-import { act, fireEvent, render } from '__tests__/utils/setup-jest'
-import * as storeDatabase from '@qovery/domains/database'
-import { databaseFactoryMock } from '@qovery/domains/database'
-import { MemorySizeEnum } from '@qovery/shared/enums'
-import { DatabaseEntity } from '@qovery/shared/interfaces'
+import { DatabaseModeEnum } from 'qovery-typescript-axios'
+import selectEvent from 'react-select-event'
+import { databaseFactoryMock } from '@qovery/shared/factories'
+import { renderWithProviders, screen } from '@qovery/shared/util-tests'
 import PageSettingsResourcesFeature, { handleSubmit } from './page-settings-resources-feature'
 
-import SpyInstance = jest.SpyInstance
-
-const mockDatabase: DatabaseEntity = databaseFactoryMock(1)[0]
-
-jest.mock('@qovery/domains/database', () => {
-  return {
-    ...jest.requireActual('@qovery/domains/database'),
-    editDatabase: jest.fn(),
-    getDatabasesState: () => ({
-      loadingStatus: 'loaded',
-      ids: [mockDatabase.id],
-      entities: {
-        [mockDatabase.id]: mockDatabase,
-      },
-      error: null,
-    }),
-    selectDatabaseById: () => mockDatabase,
-  }
-})
-
-const mockDispatch = jest.fn()
-jest.mock('react-redux', () => ({
-  ...jest.requireActual('react-redux'),
-  useDispatch: () => mockDispatch,
-}))
+const mockDatabase = databaseFactoryMock(1)[0]
 
 jest.mock('react-router-dom', () => ({
-  ...(jest.requireActual('react-router-dom') as any),
-  useParams: () => ({ databaseId: '0' }),
+  ...jest.requireActual('react-router-dom'),
+  useParams: () => ({ databaseId: '0', environmentId: '1' }),
+}))
+
+const mockEditService = jest.fn()
+
+jest.mock('@qovery/domains/cloud-providers/feature', () => ({
+  useCloudProviderDatabaseInstanceTypes: () => ({
+    data: [
+      {
+        name: 't2.micro',
+      },
+      {
+        name: 'db.t3.medium',
+      },
+    ],
+  }),
+}))
+
+jest.mock('@qovery/domains/services/feature', () => ({
+  useService: () => ({
+    data: mockDatabase,
+  }),
+  useEditService: () => ({
+    mutate: mockEditService,
+    isLoading: false,
+  }),
+  useDeploymentStatus: () => ({
+    data: {
+      execution_id: '1',
+    },
+  }),
 }))
 
 describe('PageSettingsResourcesFeature', () => {
-  window.ResizeObserver = ResizeObserver
+  it('should render successfully', async () => {
+    const { baseElement } = renderWithProviders(<PageSettingsResourcesFeature />)
 
-  it('should render successfully', () => {
-    const { baseElement } = render(<PageSettingsResourcesFeature />)
+    // https://react-hook-form.com/advanced-usage#TransformandParse
+    expect(await screen.findByRole('button', { name: /save/i })).toBeInTheDocument()
     expect(baseElement).toBeTruthy()
   })
 
-  it('should submit resources with converters with GB', () => {
-    const sizeMemory = MemorySizeEnum.GB
-    const sizeStorage = MemorySizeEnum.GB
-    const cpu = 3400
-    const memory = 16
-    const storage = 1024
-    const db = handleSubmit({ cpu: [cpu], memory: memory, storage: storage }, mockDatabase, sizeMemory, sizeStorage)
-
-    expect(db.cpu).toBe(cpu * 1000)
-    expect(db.memory).toBe(memory * 1024)
-    expect(db.storage).toBe(storage * 1024)
-  })
-
   it('should submit resources with converters with MB', () => {
-    const sizeMemory = MemorySizeEnum.MB
-    const sizeStorage = MemorySizeEnum.MB
     const cpu = 3400
     const memory = 512
     const storage = 1024
-    const db = handleSubmit({ cpu: [cpu], memory: memory, storage: storage }, mockDatabase, sizeMemory, sizeStorage)
+    const db = handleSubmit({ cpu: cpu, memory: memory, storage: storage }, mockDatabase)
 
-    expect(db.cpu).toBe(cpu * 1000)
+    expect(db.cpu).toBe(cpu)
     expect(db.memory).toBe(memory)
     expect(db.storage).toBe(storage)
   })
 
-  it('should dispatch editDatabase if form is submitted', async () => {
-    const editDatabaseSpy: SpyInstance = jest.spyOn(storeDatabase, 'editDatabase')
-    mockDispatch.mockImplementation(() => ({
-      unwrap: () =>
-        Promise.resolve({
-          data: {},
-        }),
-    }))
+  it('should dispatch edit database for CONTAINER if form is submitted', async () => {
+    const { userEvent } = renderWithProviders(<PageSettingsResourcesFeature />)
 
-    const { getByTestId } = render(<PageSettingsResourcesFeature />)
+    // https://react-hook-form.com/advanced-usage#TransformandParse
+    const submitButton = await screen.findByRole('button', { name: /save/i })
 
-    await act(() => {
-      fireEvent.input(getByTestId('input-memory-memory'), { target: { value: 512 } })
-      fireEvent.input(getByTestId('input-memory-storage'), { target: { value: 512 } })
-    })
+    await userEvent.clear(screen.getByLabelText(/vcpu/i))
+    await userEvent.type(screen.getByLabelText(/vcpu/i), '512')
+    await userEvent.clear(screen.getByTestId('input-memory-memory'))
+    await userEvent.type(screen.getByTestId('input-memory-memory'), '512')
+    await userEvent.clear(screen.getByTestId('input-memory-storage'))
+    await userEvent.type(screen.getByTestId('input-memory-storage'), '512')
 
-    expect(getByTestId('submit-button')).not.toBeDisabled()
+    expect(submitButton).toBeEnabled()
 
-    await act(() => {
-      getByTestId('submit-button').click()
-    })
+    await userEvent.click(submitButton)
 
-    expect(editDatabaseSpy).toHaveBeenCalledWith({
-      databaseId: mockDatabase.id,
-      data: {
-        ...mockDatabase,
-        ...{
+    expect(mockEditService).toHaveBeenCalledWith({
+      serviceId: mockDatabase.id,
+      payload: handleSubmit(
+        {
+          cpu: '512',
           memory: 512,
           storage: 512,
-          cpu: 1,
+          instance_type: 't2.micro',
+          mode: DatabaseModeEnum.CONTAINER,
         },
-      },
+        mockDatabase
+      ),
+    })
+  })
+
+  it('should dispatch edit database for MANAGED db if form is submitted', async () => {
+    mockDatabase.mode = DatabaseModeEnum.MANAGED
+    const { userEvent } = renderWithProviders(<PageSettingsResourcesFeature />)
+
+    // https://react-hook-form.com/advanced-usage#TransformandParse
+    const submitButton = await screen.findByRole('button', { name: /save/i })
+
+    const realSelect = screen.getByLabelText('Instance type')
+    await selectEvent.select(realSelect, 'db.t3.medium', {
+      container: document.body,
+    })
+
+    await userEvent.clear(screen.getByTestId('input-memory-storage'))
+    await userEvent.type(screen.getByTestId('input-memory-storage'), '510')
+
+    expect(submitButton).toBeEnabled()
+
+    await userEvent.click(submitButton)
+
+    expect(mockEditService).toHaveBeenCalledWith({
+      serviceId: mockDatabase.id,
+      payload: handleSubmit(
+        {
+          cpu: 1,
+          memory: 1024,
+          storage: 510,
+          instance_type: 'db.t3.medium',
+          mode: DatabaseModeEnum.MANAGED,
+        },
+        mockDatabase
+      ),
     })
   })
 })

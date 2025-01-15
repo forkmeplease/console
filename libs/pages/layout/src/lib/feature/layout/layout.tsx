@@ -1,88 +1,107 @@
-import { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { useNavigate, useParams } from 'react-router-dom'
-import { fetchApplications } from '@qovery/domains/application'
-import { fetchDatabases } from '@qovery/domains/database'
-import { fetchEnvironments } from '@qovery/domains/environment'
-import { fetchClusters, fetchOrganization, fetchOrganizationById } from '@qovery/domains/organization'
-import { fetchProjects } from '@qovery/domains/projects'
-import { fetchUserSignUp, selectUserSignUp } from '@qovery/domains/user'
-import { OrganizationEntity } from '@qovery/shared/interfaces'
-import { ORGANIZATION_URL } from '@qovery/shared/router'
-import { WebsocketContainer } from '@qovery/shared/websockets'
-import { AppDispatch } from '@qovery/store'
+import { useAuth0 } from '@auth0/auth0-react'
+import posthog from 'posthog-js'
+import { type PropsWithChildren, memo, useEffect } from 'react'
+import { redirect, useParams } from 'react-router-dom'
+import { useIntercom } from 'react-use-intercom'
+import { useClusters } from '@qovery/domains/clusters/feature'
+import { useEnvironment } from '@qovery/domains/environments/feature'
+import { useOrganization, useOrganizations } from '@qovery/domains/organizations/feature'
+import { ORGANIZATION_URL } from '@qovery/shared/routes'
+import { StatusWebSocketListener } from '@qovery/shared/util-web-sockets'
 import LayoutPage from '../../ui/layout-page/layout-page'
-import { setCurrentOrganizationIdOnStorage, setCurrentProjectIdOnStorage } from '../../utils/utils'
+import { setCurrentOrganizationIdOnStorage, setCurrentProjectIdOnStorage, setCurrentProvider } from '../../utils/utils'
 
 export interface LayoutProps {
-  children: React.ReactElement
-  darkMode?: boolean
+  spotlight?: boolean
   topBar?: boolean
 }
 
-export function Layout(props: LayoutProps) {
-  const { children, darkMode, topBar } = props
-  const { organizationId = '', projectId = '', environmentId = '' } = useParams()
-  const userSignUp = useSelector(selectUserSignUp)
+// XXX: Prevent web-socket invalidations when re-rendering
+const StatusWebSocketListenerMemo = memo(StatusWebSocketListener)
 
-  const dispatch = useDispatch<AppDispatch>()
-  const navigate = useNavigate()
+export function Layout(props: PropsWithChildren<LayoutProps>) {
+  const { children, spotlight, topBar } = props
+  const { organizationId = '', projectId = '', environmentId = '', versionId } = useParams()
+  const { user } = useAuth0()
+  const { update: updateIntercom } = useIntercom()
+
+  const { data: clusters = [] } = useClusters({ organizationId, enabled: !!organizationId })
+  const { data: organizations = [] } = useOrganizations()
+  const { refetch: fetchOrganization } = useOrganization({ organizationId, enabled: false })
+
+  const { data: environment } = useEnvironment({ environmentId })
 
   useEffect(() => {
-    dispatch(fetchOrganization())
-      .unwrap()
-      .then((result: OrganizationEntity[]) => {
-        const organizationIds: string[] = []
+    const organizationIds = organizations.map(({ id }) => id)
 
-        for (let i = 0; i < result.length; i++) {
-          const organization = result[i]
-          organizationIds.push(organization.id)
+    async function fetchOrganizationForQoveryTeam() {
+      try {
+        if (organizationId) {
+          await fetchOrganization()
+          redirect(ORGANIZATION_URL(organizationId))
         }
-
-        // fetch organization by id neccessary for debug by Qovery team
-        if (result.length > 0 && !organizationIds.includes(organizationId)) {
-          dispatch(fetchOrganizationById({ organizationId }))
-            .unwrap()
-            .catch(() => navigate(ORGANIZATION_URL(result[0].id)))
+      } catch (error) {
+        console.error(error)
+        redirect(ORGANIZATION_URL(organizations[0].id))
+      }
+    }
+    async function fetchOrganizationAndUpdateIntercom() {
+      try {
+        if (organizationId) {
+          const { data: currentOrganization } = await fetchOrganization()
+          updateIntercom({
+            company: currentOrganization
+              ? {
+                  companyId: currentOrganization.id,
+                  name: currentOrganization.name,
+                }
+              : undefined,
+          })
         }
-      })
-      .catch((error) => console.log(error))
-
-    dispatch(fetchUserSignUp())
-  }, [dispatch])
-
-  useEffect(() => {
-    dispatch(fetchOrganization())
-    dispatch(fetchUserSignUp())
-  }, [dispatch])
-
-  useEffect(() => {
-    if (environmentId) {
-      dispatch(fetchApplications({ environmentId }))
-      dispatch(fetchDatabases({ environmentId }))
+      } catch (error) {
+        console.error(error)
+      }
     }
-  }, [environmentId, dispatch])
 
-  useEffect(() => {
-    projectId && dispatch(fetchEnvironments({ projectId }))
-  }, [projectId, dispatch])
-
-  useEffect(() => {
-    if (organizationId) {
-      dispatch(fetchProjects({ organizationId }))
-      dispatch(fetchClusters({ organizationId }))
+    if (organizations.length > 0) {
+      // fetch organization by id neccessary for debug by Qovery team
+      if (!organizationIds.includes(organizationId)) {
+        fetchOrganizationForQoveryTeam()
+      } else {
+        fetchOrganizationAndUpdateIntercom()
+      }
     }
-  }, [dispatch, organizationId])
+  }, [updateIntercom, organizationId, organizations, fetchOrganization])
 
   useEffect(() => {
+    posthog.group('organization_id', organizationId)
     setCurrentOrganizationIdOnStorage(organizationId)
     setCurrentProjectIdOnStorage(projectId)
-  }, [organizationId, projectId])
+    setCurrentProvider(user?.sub ?? '')
+  }, [user, organizationId, projectId])
 
   return (
-    <LayoutPage user={userSignUp} darkMode={darkMode} topBar={topBar}>
+    <LayoutPage spotlight={spotlight} topBar={topBar} clusters={clusters} defaultOrganizationId={organizations[0]?.id}>
       <>
-        <WebsocketContainer />
+        {
+          /**
+           * XXX: Here we are limited by the websocket API which requires a clusterId
+           * We need to instantiate one hook per clusterId to get the complete environment statuses of the page
+           */
+          (environment ? [{ id: environment.cluster_id }] : clusters).map(
+            ({ id }) =>
+              organizationId && (
+                <StatusWebSocketListenerMemo
+                  key={id}
+                  organizationId={organizationId}
+                  clusterId={id}
+                  projectId={projectId}
+                  environmentId={environmentId}
+                  versionId={versionId}
+                />
+              )
+          )
+        }
         {children}
       </>
     </LayoutPage>

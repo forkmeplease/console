@@ -1,16 +1,17 @@
-import { FormEventHandler } from 'react'
+import { type FormEventHandler } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
+import { NeedHelp } from '@qovery/shared/assistant/feature'
 import {
   BlockContent,
   Button,
-  ButtonSize,
-  ButtonStyle,
-  HelpSection,
+  Heading,
   InputFile,
   InputTags,
   InputText,
   InputTextArea,
+  Section,
 } from '@qovery/shared/ui'
+import { dateMediumLocalFormat } from '@qovery/shared/util-dates'
 
 export interface PageOrganizationGeneralProps {
   onSubmit: FormEventHandler<HTMLFormElement>
@@ -23,11 +24,14 @@ export function PageOrganizationGeneral(props: PageOrganizationGeneralProps) {
   const { control, formState, watch } = useFormContext()
 
   return (
-    <div className="flex flex-col justify-between w-full">
-      <div className="p-8 max-w-content-with-navigation-left">
-        <h1 className="h5 mb-10 text-text-700">General</h1>
+    <div className="flex w-full flex-col justify-between">
+      <Section className="max-w-content-with-navigation-left gap-10 p-8">
+        <div className="space-y-3">
+          <Heading className="text-neutral-400">General</Heading>
+          <NeedHelp />
+        </div>
         <form onSubmit={onSubmit}>
-          <BlockContent title="Organization profil">
+          <BlockContent title="Organization profile">
             <div className="flex items-center">
               <Controller
                 name="logo_url"
@@ -37,11 +41,13 @@ export function PageOrganizationGeneral(props: PageOrganizationGeneralProps) {
                 )}
               />
               <div className="ml-3">
-                <p className="text-text-600 font-medium mb-1">{watch('name')}</p>
-                <span className="block text-xs text-text-400">Created since {created_at.split('T')[0]}</span>
+                <p className="mb-1 font-medium text-neutral-400">{watch('name')}</p>
+                <span className="block text-xs text-neutral-350">
+                  Created since {dateMediumLocalFormat(created_at)}
+                </span>
               </div>
             </div>
-            <hr className="my-5 border-0 border-b border-element-light-lighter-500 relative -left-5 w-[calc(100%+41px)]" />
+            <hr className="relative -left-5 my-5 w-[calc(100%+41px)] border-0 border-b border-neutral-250" />
             <Controller
               name="name"
               control={control}
@@ -77,6 +83,7 @@ export function PageOrganizationGeneral(props: PageOrganizationGeneralProps) {
               control={control}
               rules={{
                 pattern: {
+                  // eslint-disable-next-line no-useless-escape
                   value: /^(http(s)?:\/\/)[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/gm,
                   message: 'The url is not valid',
                 },
@@ -106,36 +113,18 @@ export function PageOrganizationGeneral(props: PageOrganizationGeneralProps) {
                 />
               )}
             />
-            <p className="text-text-400 text-xs ml-4 mt-1">
+            <p className="ml-3 mt-1 text-xs text-neutral-350">
               Indicate emails where you want to receive important communications from Qovery. (E.g. cluster upgrade,
               downtime...)
             </p>
           </BlockContent>
           <div className="flex justify-end">
-            <Button
-              dataTestId="submit-button"
-              className="btn--no-min-w"
-              size={ButtonSize.LARGE}
-              style={ButtonStyle.BASIC}
-              type="submit"
-              disabled={!formState.isValid}
-              loading={loading}
-            >
+            <Button data-testid="submit-button" size="lg" type="submit" disabled={!formState.isValid} loading={loading}>
               Save
             </Button>
           </div>
         </form>
-      </div>
-      <HelpSection
-        description="Need help? You may find these links useful"
-        links={[
-          {
-            link: 'https://hub.qovery.com/docs/using-qovery/configuration/organization/#creating-an-organization',
-            linkLabel: 'How to configure my organization',
-            external: true,
-          },
-        ]}
-      />
+      </Section>
     </div>
   )
 }

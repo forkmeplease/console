@@ -1,17 +1,20 @@
-import { Dispatch, SetStateAction, useEffect } from 'react'
+import { type CompanySizeEnum } from 'qovery-typescript-axios'
+import { type Dispatch, type SetStateAction } from 'react'
 import { useForm } from 'react-hook-form'
-import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { postUserSignUp, selectUserSignUp } from '@qovery/domains/user'
-import { Value } from '@qovery/shared/interfaces'
-import { ONBOARDING_MORE_URL, ONBOARDING_URL } from '@qovery/shared/router'
-import { AppDispatch } from '@qovery/store'
+import { useCreateUserSignUp, useUserSignUp } from '@qovery/domains/users-sign-up/feature'
+import { type Value } from '@qovery/shared/interfaces'
+import { ONBOARDING_MORE_URL, ONBOARDING_URL } from '@qovery/shared/routes'
 import { StepCompany } from '../../ui/step-company/step-company'
 
 const dataSize: Value[] = [
   {
-    label: '1-10',
-    value: '1-10',
+    label: '1',
+    value: '1',
+  },
+  {
+    label: '2-10',
+    value: '2-10',
   },
   {
     label: '11-50',
@@ -26,12 +29,24 @@ const dataSize: Value[] = [
     value: '201-500',
   },
   {
-    label: '500+',
-    value: '500+',
+    label: '501-999',
+    value: '501-999',
+  },
+  {
+    label: '1000+',
+    value: '1000+',
   },
 ]
 
 const dataRole: Value[] = [
+  {
+    label: 'DevOps',
+    value: 'devops',
+  },
+  {
+    label: 'Platform Engineer',
+    value: 'platform-engineer',
+  },
   {
     label: 'Tech Lead',
     value: 'tech-lead',
@@ -41,16 +56,20 @@ const dataRole: Value[] = [
     value: 'software-developer',
   },
   {
-    label: 'DevOps',
-    value: 'devops',
+    label: 'Engineering Manager',
+    value: 'engineering-manager',
   },
   {
-    label: 'Product/Project Manager',
-    value: 'product-project-manager',
+    label: 'VP Engineering',
+    value: 'vp-engineering',
   },
   {
     label: 'CTO',
     value: 'cto',
+  },
+  {
+    label: 'Product Manager',
+    value: 'product-manager',
   },
   {
     label: 'Founder',
@@ -69,25 +88,34 @@ export interface FormCompanyProps {
 export function FormCompany(props: FormCompanyProps) {
   const { setStepCompany } = props
   const navigate = useNavigate()
-  const dispatch = useDispatch<AppDispatch>()
-  const userSignUp = useSelector(selectUserSignUp)
-  const { handleSubmit, control, setValue } = useForm()
+  const { data: userSignUp } = useUserSignUp()
+  const { mutateAsync: createUserSignUp } = useCreateUserSignUp()
 
-  useEffect(() => {
-    setValue('company_name', userSignUp?.company_name || undefined)
-    setValue('company_size', userSignUp?.company_size || undefined)
-    setValue('user_role', userSignUp?.user_role || undefined)
-  }, [setValue, userSignUp])
+  const { handleSubmit, control } = useForm<{
+    company_name?: string
+    company_size?: CompanySizeEnum
+    user_role?: string
+  }>({
+    defaultValues: {
+      company_name: userSignUp?.company_name ?? undefined,
+      company_size: userSignUp?.company_size ?? undefined,
+      user_role: userSignUp?.user_role ?? undefined,
+    },
+  })
 
-  const onSubmit = handleSubmit((data) => {
+  const onSubmit = handleSubmit(async (data) => {
+    if (!userSignUp) return
+
     if (data) {
-      dispatch(
-        postUserSignUp({
+      try {
+        await createUserSignUp({
           ...userSignUp,
           ...data,
         })
-      )
-      navigate(`${ONBOARDING_URL}${ONBOARDING_MORE_URL}`)
+        navigate(`${ONBOARDING_URL}${ONBOARDING_MORE_URL}`)
+      } catch (error) {
+        console.error(error)
+      }
     }
   })
 

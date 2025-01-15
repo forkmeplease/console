@@ -1,27 +1,34 @@
-import { Dispatch, SetStateAction, useState } from 'react'
-import { Icon } from '@qovery/shared/ui'
+import { type Dispatch, type SetStateAction, useState } from 'react'
+import Icon from '../../icon/icon'
 
-export interface TableHeadSortProps {
+export interface TableHeadSortProps<T> {
   title: string
-  data: any[]
+  data: T[]
   currentKey: string
-  setFilterData: Dispatch<SetStateAction<any[]>>
+  setData: Dispatch<SetStateAction<T[]>> | undefined
+  setIsSorted: Dispatch<SetStateAction<boolean>>
 }
 
-export const sortTable = (data: any[], key: string) => [...data].sort((a, b) => +new Date(b[key]) - +new Date(a[key]))
+export function sortTable<T>(data: T[], key: string) {
+  return [...data].sort((a, b) => +new Date(b[key as keyof T] as string) - +new Date(a[key as keyof T] as string))
+}
 
-export function TableHeadSort(props: TableHeadSortProps) {
-  const { title, data, setFilterData, currentKey } = props
+/**
+ * @deprecated Prefer TablePrimitives + tanstack-table for type-safety and documentation
+ */
+export function TableHeadSort<T>(props: TableHeadSortProps<T>) {
+  const { title, data, setData, currentKey, setIsSorted } = props
   const [isSort, setIsSort] = useState(false)
 
   const toggleSort = () => {
-    if (currentKey) {
+    if (currentKey && setData) {
       setIsSort(!isSort)
+      setIsSorted(true)
       const dataSort = sortTable(data, currentKey)
       if (isSort) {
-        setFilterData(dataSort)
+        setData(dataSort)
       } else {
-        setFilterData(dataSort.reverse())
+        setData(dataSort.reverse())
       }
     }
   }
@@ -29,15 +36,15 @@ export function TableHeadSort(props: TableHeadSortProps) {
   return (
     <div
       data-testid="table-head-sort"
-      className={`text-xs font-medium select-none cursor-pointer transition-color transition-timing duration-100 hover:text-text-500 ${
-        isSort ? 'text-text-600' : 'text-text-600'
+      className={`transition-color transition-timing cursor-pointer select-none text-xs font-medium duration-100 hover:text-neutral-400 ${
+        isSort ? 'text-neutral-400' : 'text-neutral-400'
       }`}
       onClick={() => toggleSort()}
     >
       {title}
       <Icon
         name="icon-solid-arrow-down"
-        className={`ml-1 text-xxs inline-block transition-transform ease-out duration-100 ${
+        className={`ml-1 inline-block text-2xs transition-transform duration-100 ease-out ${
           isSort ? 'rotate-180' : ''
         }`}
       />

@@ -1,12 +1,17 @@
-import { Control, Controller } from 'react-hook-form'
-import { Value } from '@qovery/shared/interfaces'
-import { ONBOARDING_PERSONALIZE_URL, ONBOARDING_URL } from '@qovery/shared/router'
-import { Button, ButtonSize, ButtonStyle, InputSelect, InputTextArea } from '@qovery/shared/ui'
+import { type Control, Controller } from 'react-hook-form'
+import { type Value } from '@qovery/shared/interfaces'
+import { ONBOARDING_PERSONALIZE_URL, ONBOARDING_URL } from '@qovery/shared/routes'
+import { Button, Icon, InputSelect, InputTextArea, Link } from '@qovery/shared/ui'
 
 export interface StepMoreProps {
   dataQuestions: Array<Value>
   onSubmit: () => void
-  control: Control<any, any>
+  control: Control<{
+    user_questions?: string
+    qovery_usage: string
+    qovery_usage_other?: string
+    where_to_deploy?: string
+  }>
   displayQoveryUsageOther: boolean
 }
 
@@ -15,8 +20,8 @@ export function StepMore(props: StepMoreProps) {
 
   return (
     <div className="pb-10">
-      <h1 className="h3 text-text-700 mb-3">Tell us more</h1>
-      <p className="text-sm mb-10 text-text-500">We need some information to proceed with your account creation.</p>
+      <h1 className="h3 mb-3 text-neutral-400">Tell us more</h1>
+      <p className="mb-10 text-sm text-neutral-400">We need more information to proceed with your account creation.</p>
       <form onSubmit={onSubmit}>
         <Controller
           name="qovery_usage"
@@ -25,7 +30,7 @@ export function StepMore(props: StepMoreProps) {
           render={({ field, fieldState: { error } }) => (
             <InputSelect
               className="mb-3"
-              label="Why do you want to use Qovery?"
+              label="Why do you want to use Qovery? I want to..."
               options={dataQuestions}
               onChange={field.onChange}
               value={field.value}
@@ -63,16 +68,20 @@ export function StepMore(props: StepMoreProps) {
             />
           )}
         />
-        <div className="mt-10 pt-5 flex justify-between border-t border-element-light-lighter-400">
-          <Button
-            link={`${ONBOARDING_URL}${ONBOARDING_PERSONALIZE_URL}`}
-            size={ButtonSize.XLARGE}
-            style={ButtonStyle.STROKED}
-            iconLeft="icon-solid-arrow-left"
+        <div className="mt-10 flex justify-between border-t border-neutral-200 pt-5">
+          <Link
+            as="button"
+            to={`${ONBOARDING_URL}${ONBOARDING_PERSONALIZE_URL}`}
+            className="gap-2"
+            type="button"
+            color="neutral"
+            variant="surface"
+            size="lg"
           >
+            <Icon name="icon-solid-arrow-left" />
             Back
-          </Button>
-          <Button size={ButtonSize.XLARGE} style={ButtonStyle.BASIC} type="submit">
+          </Link>
+          <Button type="submit" size="lg">
             Validate
           </Button>
         </div>

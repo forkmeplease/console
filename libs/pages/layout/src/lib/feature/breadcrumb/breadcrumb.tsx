@@ -1,32 +1,44 @@
-import { useSelector } from 'react-redux'
 import { useParams } from 'react-router-dom'
-import { selectApplicationsEntitiesByEnvId } from '@qovery/domains/application'
-import { selectDatabasesEntitiesByEnvId } from '@qovery/domains/database'
-import { selectEnvironmentsEntitiesByProjectId } from '@qovery/domains/environment'
-import { selectAllOrganization, selectClustersEntitiesByOrganizationId } from '@qovery/domains/organization'
-import { selectProjectsEntitiesByOrgId } from '@qovery/domains/projects'
-import { Breadcrumb } from '@qovery/shared/ui'
-import { RootState } from '@qovery/store'
+import { useClusters } from '@qovery/domains/clusters/feature'
+import { useEnvironments } from '@qovery/domains/environments/feature'
+import { useOrganization, useOrganizations } from '@qovery/domains/organizations/feature'
+import { useProjects } from '@qovery/domains/projects/feature'
+import { CreateProjectModal } from '@qovery/domains/projects/feature'
+import { useModal } from '@qovery/shared/ui'
+import { BreadcrumbMemo } from '../../ui/breadcrumb/breadcrumb'
 
 export function BreadcrumbFeature() {
-  const { organizationId = '', projectId = '', environmentId = '' } = useParams()
-  const organizations = useSelector(selectAllOrganization)
-  const clusters = useSelector((state: RootState) => selectClustersEntitiesByOrganizationId(state, organizationId))
-  const applications = useSelector((state: RootState) => selectApplicationsEntitiesByEnvId(state, environmentId))
-  const databases = useSelector((state: RootState) => selectDatabasesEntitiesByEnvId(state, environmentId))
-  const environments = useSelector((state: RootState) => selectEnvironmentsEntitiesByProjectId(state, projectId))
-  const projects = useSelector((state: RootState) => selectProjectsEntitiesByOrgId(state, organizationId))
+  const { organizationId = '', projectId = '', clusterId } = useParams()
+  const { data: organizations = [] } = useOrganizations()
+  const { data: organization } = useOrganization({ organizationId, enabled: !!organizationId })
+  const { data: clusters } = useClusters({ organizationId, enabled: !!organizationId })
+
+  const { data: projects = [] } = useProjects({ organizationId, enabled: !clusterId })
+  const { data: environments } = useEnvironments({ projectId })
+
+  const { openModal, closeModal } = useModal()
+
+  const createProjectModal = () => {
+    openModal({
+      content: <CreateProjectModal onClose={closeModal} organizationId={organizationId} />,
+    })
+  }
+
+  // Necessary to keep the organization from client by Qovery team
+  const allOrganizations =
+    organizations.find((org) => org.id !== organizationId) && organization
+      ? [...organizations, organization]
+      : organizations
 
   return (
-    <Breadcrumb
+    <BreadcrumbMemo
       clusters={clusters}
-      organizations={organizations}
-      applications={applications}
-      databases={databases}
+      organizations={allOrganizations}
       environments={environments}
       projects={projects}
+      createProjectModal={createProjectModal}
     />
   )
 }
 
-export default Breadcrumb
+export default BreadcrumbFeature
